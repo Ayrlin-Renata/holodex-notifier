@@ -1,24 +1,55 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart'; // Import hooks
 import 'package:hooks_riverpod/hooks_riverpod.dart'; // Import hooks_riverpod
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:url_launcher/url_launcher.dart'; // For AppControllerProvider
-// REMOVED: No need for SettingsCard import - no longer wrapping with it
-// import 'package:holodex_notifier/ui/widgets/settings_card.dart';
 
 // Helper to format Duration
 String _formatDuration(Duration d) {
+  if (d.inMinutes < 1) {
+    return "< 1 min"; // Handle very short durations if needed
+  }
   if (d.inMinutes < 60) {
     return "${d.inMinutes} min";
   } else {
-    return "${d.inHours} hr";
+    final hours = d.inHours;
+    final minutes = d.inMinutes % 60;
+    if (minutes == 0) {
+      return "$hours hr";
+    } else {
+      // Only show minutes if they exist
+      return "$hours hr ${minutes} min";
+    }
   }
 }
 
 // Define minimum and maximum poll frequencies in minutes
 const double _minPollFrequencyMinutes = 5.0;
 const double _maxPollFrequencyMinutes = 720.0; // 12 hours
+// {{ Power for logarithmic-like scaling (e.g., 2 = quadratic, higher = more compressed lower end) }}
+const double _sliderExponent = 2.0;
+
+double _durationToSliderValue(Duration duration) {
+  final minutes = duration.inMinutes.toDouble().clamp(_minPollFrequencyMinutes, _maxPollFrequencyMinutes);
+  if (minutes <= _minPollFrequencyMinutes) return 0.0;
+  if (minutes >= _maxPollFrequencyMinutes) return 1.0;
+
+  final normalized = (minutes - _minPollFrequencyMinutes) / (_maxPollFrequencyMinutes - _minPollFrequencyMinutes);
+  // Apply inverse of the power function
+  return pow(normalized, 1.0 / _sliderExponent).toDouble();
+}
+
+Duration _sliderValueToDuration(double sliderValue) {
+  final clampedValue = sliderValue.clamp(0.0, 1.0);
+  // Apply power function
+  final scaledValue = pow(clampedValue, _sliderExponent);
+  final minutes = _minPollFrequencyMinutes + (_maxPollFrequencyMinutes - _minPollFrequencyMinutes) * scaledValue;
+  // Round to nearest minute
+  return Duration(minutes: minutes.round());
+}
 
 // Change to HookConsumerWidget to use hooks
 class AppBehaviorSettingsCard extends HookConsumerWidget {
@@ -60,8 +91,9 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
       return null; // No cleanup needed
     }, [apiKey, apiKeyIsLoading, apiKeyError]);
 
-    // REMOVED: SettingsCard(...) wrapper
-    // Return a Column containing the setting widgets directly
+    // Calculate the current slider value based on the duration
+    final currentSliderValue = _durationToSliderValue(pollFrequency);
+
     return Column(
       children: [
         // --- Notification Grouping ---
@@ -91,25 +123,32 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
         ListTile(
           leading: const Icon(Icons.timer_outlined),
           title: const Text('Poll Frequency'),
-          subtitle: Text('Current: ${_formatDuration(pollFrequency)}'),
+          subtitle: Text('Current: ${_formatDuration(pollFrequency)}'), // Display the actual duration
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Slider(
-            value: pollFrequency.inMinutes.toDouble().clamp(_minPollFrequencyMinutes, _maxPollFrequencyMinutes),
-            min: _minPollFrequencyMinutes,
-            max: _maxPollFrequencyMinutes,
-            divisions: (_maxPollFrequencyMinutes - _minPollFrequencyMinutes) ~/ 5, // Divisions every 5 minutes
-            label: _formatDuration(Duration(minutes: pollFrequency.inMinutes)), // Display label on drag
+            // {{ Use the calculated slider value }}
+            value: currentSliderValue,
+            min: 0.0, // Slider range is always 0.0 to 1.0
+            max: 1.0,
+            // {{ Divisions on the 0-1 scale. Adjust for desired granularity }}
+            // E.g., 100 divisions provides fine control, but labels might overlap
+            divisions: 100,
+            // {{ Label shows the *Duration* derived from the current slider position }}
+            label: _formatDuration(_sliderValueToDuration(currentSliderValue)),
             onChanged: (double value) {
-              // Update provider state during drag for immediate feedback
-              ref.read(pollFrequencyProvider.notifier).state = Duration(minutes: value.round());
+              // {{ Convert slider value back to Duration and update provider }}
+              final newDuration = _sliderValueToDuration(value);
+              ref.read(pollFrequencyProvider.notifier).state = newDuration;
             },
             // Persist value when user stops dragging
             onChangeEnd: (double value) async {
-              final newDuration = Duration(minutes: value.round());
-              // Ensure final provider state is accurate
+              // {{ Convert final slider value to Duration }}
+              final newDuration = _sliderValueToDuration(value);
+              // Ensure final provider state is accurate (might be slightly different due to rounding)
               ref.read(pollFrequencyProvider.notifier).state = newDuration;
+              logger.info("Poll Frequency Slider onChangeEnd: Duration = $newDuration");
               // Use AppController to update setting and notify background
               await appController.updateGlobalSetting('pollFrequency', newDuration);
             },

@@ -251,7 +251,12 @@ class AppController {
 
   /// Updates a global application setting and notifies the background service if necessary.
   Future<void> updateGlobalSetting(String settingKey, dynamic value) async {
-    _loggingService.info('AppController: Updating global setting $settingKey to $value');
+    if(settingKey == "apiKey") {
+      _loggingService.debug('AppController: Updating global setting $settingKey to $value');
+      _loggingService.info('AppController: Updating global setting $settingKey to [redacted-for-info-level]');
+    } else {
+      _loggingService.info('AppController: Updating global setting $settingKey to $value');
+    }
     try {
       bool shouldNotifyBackground = false;
       String backgroundMessageKey = '';

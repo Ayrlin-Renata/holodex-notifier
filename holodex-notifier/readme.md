@@ -63,6 +63,11 @@ Notifications display the type of notification (New Media, Channel Mention, Live
 > Title: "🔴 [Media Type (all caps)] LIVE NOW - [Media Time] - [Channel Name]"  
 > Content: "[Media Title]"
 
+**Reminder Notification**
+> Image: "[Channel Image]"  
+> Title: "Live in [Relative to Media Time]: [Media Type] - [Media Time] - [Channel Name]"  
+> Content: "[Media Title]"
+
 **Update Notification**
 > Image: "[Channel Image]"  
 > Title: "⚠️ Update for [Media Type] - [Media Time] - [Channel Name]"  
