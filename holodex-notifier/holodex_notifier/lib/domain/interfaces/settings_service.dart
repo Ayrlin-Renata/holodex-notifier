@@ -1,4 +1,5 @@
 // f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\domain\interfaces\settings_service.dart
+import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart'; // Import the model
 
 /// Defines the contract for managing user settings and application state.
@@ -62,4 +63,12 @@ abstract class ISettingsService {
   // --- First Launch Flag ---
   Future<bool> getIsFirstLaunch();
   Future<void> setIsFirstLaunch(bool isFirst);
+
+  // --- Config Export/Import ---
+  /// Exports the current non-sensitive configuration.
+  Future<AppConfig> exportConfiguration();
+
+  /// Imports and applies the provided configuration.
+  /// Returns true on success, false on failure (e.g., validation error).
+  Future<bool> importConfiguration(AppConfig config);
 }

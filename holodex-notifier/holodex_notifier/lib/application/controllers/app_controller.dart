@@ -1,15 +1,24 @@
+import 'dart:convert';
+import 'dart:io'; // For File access
+
+import 'package:file_picker/file_picker.dart'; // {{ Import file_picker }}
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
+import 'package:holodex_notifier/domain/models/app_config.dart'; // {{ Import AppConfig }}
 import 'package:holodex_notifier/domain/models/channel.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:path_provider/path_provider.dart'; // {{ Import path_provider }}
+import 'package:share_plus/share_plus.dart'; // {{ Import share_plus }}
+import 'package:path/path.dart' as p; // Path manipulation
 
 /// Controller handling actions related to settings and channels.
 class AppController {
@@ -310,4 +319,110 @@ class AppController {
       _loggingService.error('AppController: Failed to apply global defaults', e, s);
     }
   }
+
+     // --- Export Configuration ---
+   Future<bool> exportConfiguration() async {
+      _loggingService.info('AppController: Exporting configuration...');
+      try {
+           // 1. Get config data from SettingsService
+           final AppConfig configData = await _settingsService.exportConfiguration();
+           // 2. Serialize to JSON
+           final String configJson = jsonEncode(configData.toJson());
+           // 3. Write to a temporary file
+           final tempDir = await getTemporaryDirectory();
+           final filePath = p.join(tempDir.path, 'holodex_notifier_config.json');
+           final file = File(filePath);
+           await file.writeAsString(configJson);
+           _loggingService.debug('AppController: Config saved to temporary file: $filePath');
+
+           // 4. Share the file
+           final result = await Share.shareXFiles(
+               [XFile(filePath)],
+               text: 'Holodex Notifier Configuration',
+               subject: 'HolodexNotifier_Config', // Subject for email sharing
+           );
+
+           // 5. Clean up temp file (optional, temp dir is usually cleared by OS)
+           // await file.delete();
+
+           if (result.status == ShareResultStatus.success) {
+               _loggingService.info('AppController: Configuration exported and shared successfully.');
+               return true;
+           } else {
+                _loggingService.warning('AppController: Configuration export sharing status: ${result.status}');
+               return false; // Indicate sharing wasn't explicitly successful
+           }
+
+      } catch (e, s) {
+           _loggingService.error('AppController: Failed to export configuration', e, s);
+           return false;
+      }
+   }
+
+   // --- Import Configuration ---
+   Future<bool> importConfiguration() async {
+       _loggingService.info('AppController: Starting configuration import...');
+       try {
+           // 1. Pick file using file_picker
+           FilePickerResult? result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['json'], // Allow only JSON files
+           );
+
+           if (result != null && result.files.single.path != null) {
+               final filePath = result.files.single.path!;
+                _loggingService.debug('AppController: File picked for import: $filePath');
+               final file = File(filePath);
+               // 2. Read file content
+               final String fileContent = await file.readAsString();
+               // 3. Deserialize JSON
+               final Map<String, dynamic> jsonMap = jsonDecode(fileContent);
+               final AppConfig importedConfig = AppConfig.fromJson(jsonMap);
+                _loggingService.debug('AppController: Configuration JSON parsed successfully.');
+
+               // 4. Apply configuration via SettingsService
+               final bool success = await _settingsService.importConfiguration(importedConfig);
+
+               if(success) {
+                  _loggingService.info('AppController: Configuration imported and applied successfully.');
+                  // 5. Refresh relevant providers
+                   await _refreshStateAfterImport();
+                   _loggingService.debug('AppController: UI State refreshed after import.');
+                   return true;
+               } else {
+                   _loggingService.error('AppController: SettingsService reported failure during import application.');
+                   return false;
+               }
+
+           } else {
+               // User canceled the picker
+                _loggingService.info('AppController: File import canceled by user.');
+               return false; // Indicate cancellation, not error
+           }
+       } catch (e, s) {
+           _loggingService.error('AppController: Failed to import configuration', e, s);
+           return false;
+       }
+   }
+   
+    // Helper to refresh providers after import
+   Future<void> _refreshStateAfterImport() async {
+      // Reload channel list directly from storage via its notifier
+      await _ref.read(channelListProvider.notifier).reloadState();
+      
+       // Refetch individual settings for StateProviders
+      final newFreq = await _settingsService.getPollFrequency();
+      final newGroup = await _settingsService.getNotificationGrouping();
+      final newDelay = await _settingsService.getDelayNewMedia();
+      _ref.read(pollFrequencyProvider.notifier).state = newFreq;
+      _ref.read(notificationGroupingProvider.notifier).state = newGroup;
+      _ref.read(delayNewMediaProvider.notifier).state = newDelay;
+      
+       // Refresh API Key notifier (although it shouldn't change on import)
+       // ignore: unused_result
+       _ref.refresh(apiKeyProvider);
+
+       // Notify background service of potential poll frequency change
+       await updateGlobalSetting('pollFrequency', newFreq);
+   }
 }

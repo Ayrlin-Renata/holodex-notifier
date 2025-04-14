@@ -23,28 +23,21 @@ _$VideoFullImpl _$$VideoFullImplFromJson(Map<String, dynamic> json) =>
       description: json['description'] as String?,
       songcount: (json['songcount'] as num?)?.toInt(),
       channel: ChannelMin.fromJson(json['channel'] as Map<String, dynamic>),
-      clips:
-          (json['clips'] as List<dynamic>?)
-              ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      sources:
-          (json['sources'] as List<dynamic>?)
-              ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      refers:
-          (json['refers'] as List<dynamic>?)
-              ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      simulcasts:
-          (json['simulcasts'] as List<dynamic>?)
-              ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      mentions:
-          (json['mentions'] as List<dynamic>?)
-              ?.map(
-                (e) => ChannelMinWithOrg.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      clips: (json['clips'] as List<dynamic>?)
+          ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      sources: (json['sources'] as List<dynamic>?)
+          ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      refers: (json['refers'] as List<dynamic>?)
+          ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      simulcasts: (json['simulcasts'] as List<dynamic>?)
+          ?.map((e) => VideoWithChannel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      mentions: (json['mentions'] as List<dynamic>?)
+          ?.map((e) => ChannelMinWithOrg.fromJson(e as Map<String, dynamic>))
+          .toList(),
       songs: (json['songs'] as num?)?.toInt(),
       certainty: json['certainty'] as String?,
     );

@@ -12,8 +12,7 @@ part of 'channel.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 Channel _$ChannelFromJson(Map<String, dynamic> json) {
   return _Channel.fromJson(json);
@@ -60,25 +59,24 @@ abstract class $ChannelCopyWith<$Res> {
   factory $ChannelCopyWith(Channel value, $Res Function(Channel) then) =
       _$ChannelCopyWithImpl<$Res, Channel>;
   @useResult
-  $Res call({
-    String id,
-    String name,
-    String? englishName,
-    String? type,
-    String? org,
-    String? group,
-    String? photo,
-    String? banner,
-    String? twitter,
-    @JsonKey(fromJson: _intFromStringNullable) int? videoCount,
-    @JsonKey(fromJson: _intFromStringNullable) int? subscriberCount,
-    @JsonKey(fromJson: _intFromStringNullable) int? viewCount,
-    @JsonKey(fromJson: _intFromStringNullable) int? clipCount,
-    String? lang,
-    @JsonKey(fromJson: _dateTimeFromStringNullable) DateTime? publishedAt,
-    bool? inactive,
-    String? description,
-  });
+  $Res call(
+      {String id,
+      String name,
+      String? englishName,
+      String? type,
+      String? org,
+      String? group,
+      String? photo,
+      String? banner,
+      String? twitter,
+      @JsonKey(fromJson: _intFromStringNullable) int? videoCount,
+      @JsonKey(fromJson: _intFromStringNullable) int? subscriberCount,
+      @JsonKey(fromJson: _intFromStringNullable) int? viewCount,
+      @JsonKey(fromJson: _intFromStringNullable) int? clipCount,
+      String? lang,
+      @JsonKey(fromJson: _dateTimeFromStringNullable) DateTime? publishedAt,
+      bool? inactive,
+      String? description});
 }
 
 /// @nodoc
@@ -114,126 +112,104 @@ class _$ChannelCopyWithImpl<$Res, $Val extends Channel>
     Object? inactive = freezed,
     Object? description = freezed,
   }) {
-    return _then(
-      _value.copyWith(
-            id:
-                null == id
-                    ? _value.id
-                    : id // ignore: cast_nullable_to_non_nullable
-                        as String,
-            name:
-                null == name
-                    ? _value.name
-                    : name // ignore: cast_nullable_to_non_nullable
-                        as String,
-            englishName:
-                freezed == englishName
-                    ? _value.englishName
-                    : englishName // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            type:
-                freezed == type
-                    ? _value.type
-                    : type // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            org:
-                freezed == org
-                    ? _value.org
-                    : org // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            group:
-                freezed == group
-                    ? _value.group
-                    : group // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            photo:
-                freezed == photo
-                    ? _value.photo
-                    : photo // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            banner:
-                freezed == banner
-                    ? _value.banner
-                    : banner // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            twitter:
-                freezed == twitter
-                    ? _value.twitter
-                    : twitter // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            videoCount:
-                freezed == videoCount
-                    ? _value.videoCount
-                    : videoCount // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            subscriberCount:
-                freezed == subscriberCount
-                    ? _value.subscriberCount
-                    : subscriberCount // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            viewCount:
-                freezed == viewCount
-                    ? _value.viewCount
-                    : viewCount // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            clipCount:
-                freezed == clipCount
-                    ? _value.clipCount
-                    : clipCount // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            lang:
-                freezed == lang
-                    ? _value.lang
-                    : lang // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            publishedAt:
-                freezed == publishedAt
-                    ? _value.publishedAt
-                    : publishedAt // ignore: cast_nullable_to_non_nullable
-                        as DateTime?,
-            inactive:
-                freezed == inactive
-                    ? _value.inactive
-                    : inactive // ignore: cast_nullable_to_non_nullable
-                        as bool?,
-            description:
-                freezed == description
-                    ? _value.description
-                    : description // ignore: cast_nullable_to_non_nullable
-                        as String?,
-          )
-          as $Val,
-    );
+    return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      englishName: freezed == englishName
+          ? _value.englishName
+          : englishName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      type: freezed == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String?,
+      org: freezed == org
+          ? _value.org
+          : org // ignore: cast_nullable_to_non_nullable
+              as String?,
+      group: freezed == group
+          ? _value.group
+          : group // ignore: cast_nullable_to_non_nullable
+              as String?,
+      photo: freezed == photo
+          ? _value.photo
+          : photo // ignore: cast_nullable_to_non_nullable
+              as String?,
+      banner: freezed == banner
+          ? _value.banner
+          : banner // ignore: cast_nullable_to_non_nullable
+              as String?,
+      twitter: freezed == twitter
+          ? _value.twitter
+          : twitter // ignore: cast_nullable_to_non_nullable
+              as String?,
+      videoCount: freezed == videoCount
+          ? _value.videoCount
+          : videoCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      subscriberCount: freezed == subscriberCount
+          ? _value.subscriberCount
+          : subscriberCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      viewCount: freezed == viewCount
+          ? _value.viewCount
+          : viewCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      clipCount: freezed == clipCount
+          ? _value.clipCount
+          : clipCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      lang: freezed == lang
+          ? _value.lang
+          : lang // ignore: cast_nullable_to_non_nullable
+              as String?,
+      publishedAt: freezed == publishedAt
+          ? _value.publishedAt
+          : publishedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      inactive: freezed == inactive
+          ? _value.inactive
+          : inactive // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
   }
 }
 
 /// @nodoc
 abstract class _$$ChannelImplCopyWith<$Res> implements $ChannelCopyWith<$Res> {
   factory _$$ChannelImplCopyWith(
-    _$ChannelImpl value,
-    $Res Function(_$ChannelImpl) then,
-  ) = __$$ChannelImplCopyWithImpl<$Res>;
+          _$ChannelImpl value, $Res Function(_$ChannelImpl) then) =
+      __$$ChannelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    String id,
-    String name,
-    String? englishName,
-    String? type,
-    String? org,
-    String? group,
-    String? photo,
-    String? banner,
-    String? twitter,
-    @JsonKey(fromJson: _intFromStringNullable) int? videoCount,
-    @JsonKey(fromJson: _intFromStringNullable) int? subscriberCount,
-    @JsonKey(fromJson: _intFromStringNullable) int? viewCount,
-    @JsonKey(fromJson: _intFromStringNullable) int? clipCount,
-    String? lang,
-    @JsonKey(fromJson: _dateTimeFromStringNullable) DateTime? publishedAt,
-    bool? inactive,
-    String? description,
-  });
+  $Res call(
+      {String id,
+      String name,
+      String? englishName,
+      String? type,
+      String? org,
+      String? group,
+      String? photo,
+      String? banner,
+      String? twitter,
+      @JsonKey(fromJson: _intFromStringNullable) int? videoCount,
+      @JsonKey(fromJson: _intFromStringNullable) int? subscriberCount,
+      @JsonKey(fromJson: _intFromStringNullable) int? viewCount,
+      @JsonKey(fromJson: _intFromStringNullable) int? clipCount,
+      String? lang,
+      @JsonKey(fromJson: _dateTimeFromStringNullable) DateTime? publishedAt,
+      bool? inactive,
+      String? description});
 }
 
 /// @nodoc
@@ -241,9 +217,8 @@ class __$$ChannelImplCopyWithImpl<$Res>
     extends _$ChannelCopyWithImpl<$Res, _$ChannelImpl>
     implements _$$ChannelImplCopyWith<$Res> {
   __$$ChannelImplCopyWithImpl(
-    _$ChannelImpl _value,
-    $Res Function(_$ChannelImpl) _then,
-  ) : super(_value, _then);
+      _$ChannelImpl _value, $Res Function(_$ChannelImpl) _then)
+      : super(_value, _then);
 
   /// Create a copy of Channel
   /// with the given fields replaced by the non-null parameter values.
@@ -268,95 +243,76 @@ class __$$ChannelImplCopyWithImpl<$Res>
     Object? inactive = freezed,
     Object? description = freezed,
   }) {
-    return _then(
-      _$ChannelImpl(
-        id:
-            null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                    as String,
-        name:
-            null == name
-                ? _value.name
-                : name // ignore: cast_nullable_to_non_nullable
-                    as String,
-        englishName:
-            freezed == englishName
-                ? _value.englishName
-                : englishName // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        type:
-            freezed == type
-                ? _value.type
-                : type // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        org:
-            freezed == org
-                ? _value.org
-                : org // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        group:
-            freezed == group
-                ? _value.group
-                : group // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        photo:
-            freezed == photo
-                ? _value.photo
-                : photo // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        banner:
-            freezed == banner
-                ? _value.banner
-                : banner // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        twitter:
-            freezed == twitter
-                ? _value.twitter
-                : twitter // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        videoCount:
-            freezed == videoCount
-                ? _value.videoCount
-                : videoCount // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        subscriberCount:
-            freezed == subscriberCount
-                ? _value.subscriberCount
-                : subscriberCount // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        viewCount:
-            freezed == viewCount
-                ? _value.viewCount
-                : viewCount // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        clipCount:
-            freezed == clipCount
-                ? _value.clipCount
-                : clipCount // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        lang:
-            freezed == lang
-                ? _value.lang
-                : lang // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        publishedAt:
-            freezed == publishedAt
-                ? _value.publishedAt
-                : publishedAt // ignore: cast_nullable_to_non_nullable
-                    as DateTime?,
-        inactive:
-            freezed == inactive
-                ? _value.inactive
-                : inactive // ignore: cast_nullable_to_non_nullable
-                    as bool?,
-        description:
-            freezed == description
-                ? _value.description
-                : description // ignore: cast_nullable_to_non_nullable
-                    as String?,
-      ),
-    );
+    return _then(_$ChannelImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      englishName: freezed == englishName
+          ? _value.englishName
+          : englishName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      type: freezed == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String?,
+      org: freezed == org
+          ? _value.org
+          : org // ignore: cast_nullable_to_non_nullable
+              as String?,
+      group: freezed == group
+          ? _value.group
+          : group // ignore: cast_nullable_to_non_nullable
+              as String?,
+      photo: freezed == photo
+          ? _value.photo
+          : photo // ignore: cast_nullable_to_non_nullable
+              as String?,
+      banner: freezed == banner
+          ? _value.banner
+          : banner // ignore: cast_nullable_to_non_nullable
+              as String?,
+      twitter: freezed == twitter
+          ? _value.twitter
+          : twitter // ignore: cast_nullable_to_non_nullable
+              as String?,
+      videoCount: freezed == videoCount
+          ? _value.videoCount
+          : videoCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      subscriberCount: freezed == subscriberCount
+          ? _value.subscriberCount
+          : subscriberCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      viewCount: freezed == viewCount
+          ? _value.viewCount
+          : viewCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      clipCount: freezed == clipCount
+          ? _value.clipCount
+          : clipCount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      lang: freezed == lang
+          ? _value.lang
+          : lang // ignore: cast_nullable_to_non_nullable
+              as String?,
+      publishedAt: freezed == publishedAt
+          ? _value.publishedAt
+          : publishedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      inactive: freezed == inactive
+          ? _value.inactive
+          : inactive // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
   }
 }
 
@@ -364,25 +320,24 @@ class __$$ChannelImplCopyWithImpl<$Res>
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _$ChannelImpl implements _Channel {
-  const _$ChannelImpl({
-    required this.id,
-    required this.name,
-    this.englishName,
-    this.type,
-    this.org,
-    this.group,
-    this.photo,
-    this.banner,
-    this.twitter,
-    @JsonKey(fromJson: _intFromStringNullable) this.videoCount,
-    @JsonKey(fromJson: _intFromStringNullable) this.subscriberCount,
-    @JsonKey(fromJson: _intFromStringNullable) this.viewCount,
-    @JsonKey(fromJson: _intFromStringNullable) this.clipCount,
-    this.lang,
-    @JsonKey(fromJson: _dateTimeFromStringNullable) this.publishedAt,
-    this.inactive,
-    this.description,
-  });
+  const _$ChannelImpl(
+      {required this.id,
+      required this.name,
+      this.englishName,
+      this.type,
+      this.org,
+      this.group,
+      this.photo,
+      this.banner,
+      this.twitter,
+      @JsonKey(fromJson: _intFromStringNullable) this.videoCount,
+      @JsonKey(fromJson: _intFromStringNullable) this.subscriberCount,
+      @JsonKey(fromJson: _intFromStringNullable) this.viewCount,
+      @JsonKey(fromJson: _intFromStringNullable) this.clipCount,
+      this.lang,
+      @JsonKey(fromJson: _dateTimeFromStringNullable) this.publishedAt,
+      this.inactive,
+      this.description});
 
   factory _$ChannelImpl.fromJson(Map<String, dynamic> json) =>
       _$$ChannelImplFromJson(json);
@@ -393,12 +348,12 @@ class _$ChannelImpl implements _Channel {
   final String name;
   @override
   final String? englishName;
-  // API uses enum: ["vtuber", "subber"]
+// API uses enum: ["vtuber", "subber"]
   @override
   final String? type;
   @override
   final String? org;
-  // This field is specific to ChannelWithGroup used in the /channels response
+// This field is specific to ChannelWithGroup used in the /channels response
   @override
   final String? group;
   @override
@@ -469,25 +424,24 @@ class _$ChannelImpl implements _Channel {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-    runtimeType,
-    id,
-    name,
-    englishName,
-    type,
-    org,
-    group,
-    photo,
-    banner,
-    twitter,
-    videoCount,
-    subscriberCount,
-    viewCount,
-    clipCount,
-    lang,
-    publishedAt,
-    inactive,
-    description,
-  );
+      runtimeType,
+      id,
+      name,
+      englishName,
+      type,
+      org,
+      group,
+      photo,
+      banner,
+      twitter,
+      videoCount,
+      subscriberCount,
+      viewCount,
+      clipCount,
+      lang,
+      publishedAt,
+      inactive,
+      description);
 
   /// Create a copy of Channel
   /// with the given fields replaced by the non-null parameter values.
@@ -499,30 +453,32 @@ class _$ChannelImpl implements _Channel {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$ChannelImplToJson(this);
+    return _$$ChannelImplToJson(
+      this,
+    );
   }
 }
 
 abstract class _Channel implements Channel {
-  const factory _Channel({
-    required final String id,
-    required final String name,
-    final String? englishName,
-    final String? type,
-    final String? org,
-    final String? group,
-    final String? photo,
-    final String? banner,
-    final String? twitter,
-    @JsonKey(fromJson: _intFromStringNullable) final int? videoCount,
-    @JsonKey(fromJson: _intFromStringNullable) final int? subscriberCount,
-    @JsonKey(fromJson: _intFromStringNullable) final int? viewCount,
-    @JsonKey(fromJson: _intFromStringNullable) final int? clipCount,
-    final String? lang,
-    @JsonKey(fromJson: _dateTimeFromStringNullable) final DateTime? publishedAt,
-    final bool? inactive,
-    final String? description,
-  }) = _$ChannelImpl;
+  const factory _Channel(
+      {required final String id,
+      required final String name,
+      final String? englishName,
+      final String? type,
+      final String? org,
+      final String? group,
+      final String? photo,
+      final String? banner,
+      final String? twitter,
+      @JsonKey(fromJson: _intFromStringNullable) final int? videoCount,
+      @JsonKey(fromJson: _intFromStringNullable) final int? subscriberCount,
+      @JsonKey(fromJson: _intFromStringNullable) final int? viewCount,
+      @JsonKey(fromJson: _intFromStringNullable) final int? clipCount,
+      final String? lang,
+      @JsonKey(fromJson: _dateTimeFromStringNullable)
+      final DateTime? publishedAt,
+      final bool? inactive,
+      final String? description}) = _$ChannelImpl;
 
   factory _Channel.fromJson(Map<String, dynamic> json) = _$ChannelImpl.fromJson;
 
@@ -535,7 +491,8 @@ abstract class _Channel implements Channel {
   @override
   String? get type;
   @override
-  String? get org; // This field is specific to ChannelWithGroup used in the /channels response
+  String?
+      get org; // This field is specific to ChannelWithGroup used in the /channels response
   @override
   String? get group;
   @override

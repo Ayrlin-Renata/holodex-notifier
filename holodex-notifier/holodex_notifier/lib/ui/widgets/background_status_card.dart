@@ -49,11 +49,11 @@ class BackgroundStatusCard extends HookConsumerWidget {
                   children: [
                     Text('Service Status', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.secondary)),
                     Chip(
-                      label: Text(status.isRunning ? 'Running' : 'Stopped'),
-                      backgroundColor: status.isRunning ? Colors.cyan.shade100 : Colors.pink.shade100,
+                      label: Text(status.isRunning ? 'Running' : 'Stopped', style: theme.primaryTextTheme.labelLarge),
+                      backgroundColor: status.isRunning ? theme.primaryColor : theme.colorScheme.error,
                       avatar: Icon(
                         status.isRunning ? Icons.check_circle : Icons.cancel,
-                        color: status.isRunning ? Color(0xFF0099AA) : Colors.pink,
+                        color: status.isRunning ? theme.primaryTextTheme.bodyMedium!.color : theme.colorScheme.onError,
                         size: 18,
                       ),
                       visualDensity: VisualDensity.compact,

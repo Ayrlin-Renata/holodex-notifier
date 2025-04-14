@@ -12,8 +12,7 @@ part of 'video_full.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 VideoFull _$VideoFullFromJson(Map<String, dynamic> json) {
   return _VideoFull.fromJson(json);
@@ -21,7 +20,7 @@ VideoFull _$VideoFullFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$VideoFull {
-  // --- Fields from base Video ---
+// --- Fields from base Video ---
   String get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String get type => throw _privateConstructorUsedError;
@@ -44,17 +43,17 @@ mixin _$VideoFull {
       throw _privateConstructorUsedError; // Base Video schema has this
   ChannelMin get channel =>
       throw _privateConstructorUsedError; // Added this to base Video model
-  // --- Fields specific to VideoFull ---
+// --- Fields specific to VideoFull ---
   List<VideoWithChannel>? get clips => throw _privateConstructorUsedError;
   List<VideoWithChannel>? get sources => throw _privateConstructorUsedError;
   List<VideoWithChannel>? get refers => throw _privateConstructorUsedError;
   List<VideoWithChannel>? get simulcasts => throw _privateConstructorUsedError;
   List<ChannelMinWithOrg>? get mentions =>
       throw _privateConstructorUsedError; // API spec shows 'songs' as number under VideoFull properties, but 'songcount' under Video properties.
-  // Let's use 'songs' as potentially distinct from 'songcount' and make it nullable int.
+// Let's use 'songs' as potentially distinct from 'songcount' and make it nullable int.
   int? get songs =>
       throw _privateConstructorUsedError; // Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
-  // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
+// It's often implicitly part of YT data sources Holodex might use. Make it nullable.
   String? get certainty => throw _privateConstructorUsedError;
 
   /// Serializes this VideoFull to a JSON map.
@@ -72,30 +71,29 @@ abstract class $VideoFullCopyWith<$Res> {
   factory $VideoFullCopyWith(VideoFull value, $Res Function(VideoFull) then) =
       _$VideoFullCopyWithImpl<$Res, VideoFull>;
   @useResult
-  $Res call({
-    String id,
-    String title,
-    String type,
-    String? topicId,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? publishedAt,
-    @JsonKey(fromJson: _dateTimeFromStringRequired) DateTime availableAt,
-    int duration,
-    String status,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? startScheduled,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? startActual,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? endActual,
-    int? liveViewers,
-    String? description,
-    int? songcount,
-    ChannelMin channel,
-    List<VideoWithChannel>? clips,
-    List<VideoWithChannel>? sources,
-    List<VideoWithChannel>? refers,
-    List<VideoWithChannel>? simulcasts,
-    List<ChannelMinWithOrg>? mentions,
-    int? songs,
-    String? certainty,
-  });
+  $Res call(
+      {String id,
+      String title,
+      String type,
+      String? topicId,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? publishedAt,
+      @JsonKey(fromJson: _dateTimeFromStringRequired) DateTime availableAt,
+      int duration,
+      String status,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? startScheduled,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? startActual,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? endActual,
+      int? liveViewers,
+      String? description,
+      int? songcount,
+      ChannelMin channel,
+      List<VideoWithChannel>? clips,
+      List<VideoWithChannel>? sources,
+      List<VideoWithChannel>? refers,
+      List<VideoWithChannel>? simulcasts,
+      List<ChannelMinWithOrg>? mentions,
+      int? songs,
+      String? certainty});
 
   $ChannelMinCopyWith<$Res> get channel;
 }
@@ -138,121 +136,96 @@ class _$VideoFullCopyWithImpl<$Res, $Val extends VideoFull>
     Object? songs = freezed,
     Object? certainty = freezed,
   }) {
-    return _then(
-      _value.copyWith(
-            id:
-                null == id
-                    ? _value.id
-                    : id // ignore: cast_nullable_to_non_nullable
-                        as String,
-            title:
-                null == title
-                    ? _value.title
-                    : title // ignore: cast_nullable_to_non_nullable
-                        as String,
-            type:
-                null == type
-                    ? _value.type
-                    : type // ignore: cast_nullable_to_non_nullable
-                        as String,
-            topicId:
-                freezed == topicId
-                    ? _value.topicId
-                    : topicId // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            publishedAt:
-                freezed == publishedAt
-                    ? _value.publishedAt
-                    : publishedAt // ignore: cast_nullable_to_non_nullable
-                        as DateTime?,
-            availableAt:
-                null == availableAt
-                    ? _value.availableAt
-                    : availableAt // ignore: cast_nullable_to_non_nullable
-                        as DateTime,
-            duration:
-                null == duration
-                    ? _value.duration
-                    : duration // ignore: cast_nullable_to_non_nullable
-                        as int,
-            status:
-                null == status
-                    ? _value.status
-                    : status // ignore: cast_nullable_to_non_nullable
-                        as String,
-            startScheduled:
-                freezed == startScheduled
-                    ? _value.startScheduled
-                    : startScheduled // ignore: cast_nullable_to_non_nullable
-                        as DateTime?,
-            startActual:
-                freezed == startActual
-                    ? _value.startActual
-                    : startActual // ignore: cast_nullable_to_non_nullable
-                        as DateTime?,
-            endActual:
-                freezed == endActual
-                    ? _value.endActual
-                    : endActual // ignore: cast_nullable_to_non_nullable
-                        as DateTime?,
-            liveViewers:
-                freezed == liveViewers
-                    ? _value.liveViewers
-                    : liveViewers // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            description:
-                freezed == description
-                    ? _value.description
-                    : description // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            songcount:
-                freezed == songcount
-                    ? _value.songcount
-                    : songcount // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            channel:
-                null == channel
-                    ? _value.channel
-                    : channel // ignore: cast_nullable_to_non_nullable
-                        as ChannelMin,
-            clips:
-                freezed == clips
-                    ? _value.clips
-                    : clips // ignore: cast_nullable_to_non_nullable
-                        as List<VideoWithChannel>?,
-            sources:
-                freezed == sources
-                    ? _value.sources
-                    : sources // ignore: cast_nullable_to_non_nullable
-                        as List<VideoWithChannel>?,
-            refers:
-                freezed == refers
-                    ? _value.refers
-                    : refers // ignore: cast_nullable_to_non_nullable
-                        as List<VideoWithChannel>?,
-            simulcasts:
-                freezed == simulcasts
-                    ? _value.simulcasts
-                    : simulcasts // ignore: cast_nullable_to_non_nullable
-                        as List<VideoWithChannel>?,
-            mentions:
-                freezed == mentions
-                    ? _value.mentions
-                    : mentions // ignore: cast_nullable_to_non_nullable
-                        as List<ChannelMinWithOrg>?,
-            songs:
-                freezed == songs
-                    ? _value.songs
-                    : songs // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            certainty:
-                freezed == certainty
-                    ? _value.certainty
-                    : certainty // ignore: cast_nullable_to_non_nullable
-                        as String?,
-          )
-          as $Val,
-    );
+    return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      title: null == title
+          ? _value.title
+          : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String,
+      topicId: freezed == topicId
+          ? _value.topicId
+          : topicId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      publishedAt: freezed == publishedAt
+          ? _value.publishedAt
+          : publishedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      availableAt: null == availableAt
+          ? _value.availableAt
+          : availableAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      duration: null == duration
+          ? _value.duration
+          : duration // ignore: cast_nullable_to_non_nullable
+              as int,
+      status: null == status
+          ? _value.status
+          : status // ignore: cast_nullable_to_non_nullable
+              as String,
+      startScheduled: freezed == startScheduled
+          ? _value.startScheduled
+          : startScheduled // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      startActual: freezed == startActual
+          ? _value.startActual
+          : startActual // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      endActual: freezed == endActual
+          ? _value.endActual
+          : endActual // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      liveViewers: freezed == liveViewers
+          ? _value.liveViewers
+          : liveViewers // ignore: cast_nullable_to_non_nullable
+              as int?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      songcount: freezed == songcount
+          ? _value.songcount
+          : songcount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      channel: null == channel
+          ? _value.channel
+          : channel // ignore: cast_nullable_to_non_nullable
+              as ChannelMin,
+      clips: freezed == clips
+          ? _value.clips
+          : clips // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      sources: freezed == sources
+          ? _value.sources
+          : sources // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      refers: freezed == refers
+          ? _value.refers
+          : refers // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      simulcasts: freezed == simulcasts
+          ? _value.simulcasts
+          : simulcasts // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      mentions: freezed == mentions
+          ? _value.mentions
+          : mentions // ignore: cast_nullable_to_non_nullable
+              as List<ChannelMinWithOrg>?,
+      songs: freezed == songs
+          ? _value.songs
+          : songs // ignore: cast_nullable_to_non_nullable
+              as int?,
+      certainty: freezed == certainty
+          ? _value.certainty
+          : certainty // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
   }
 
   /// Create a copy of VideoFull
@@ -270,35 +243,33 @@ class _$VideoFullCopyWithImpl<$Res, $Val extends VideoFull>
 abstract class _$$VideoFullImplCopyWith<$Res>
     implements $VideoFullCopyWith<$Res> {
   factory _$$VideoFullImplCopyWith(
-    _$VideoFullImpl value,
-    $Res Function(_$VideoFullImpl) then,
-  ) = __$$VideoFullImplCopyWithImpl<$Res>;
+          _$VideoFullImpl value, $Res Function(_$VideoFullImpl) then) =
+      __$$VideoFullImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    String id,
-    String title,
-    String type,
-    String? topicId,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? publishedAt,
-    @JsonKey(fromJson: _dateTimeFromStringRequired) DateTime availableAt,
-    int duration,
-    String status,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? startScheduled,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? startActual,
-    @JsonKey(fromJson: _dateTimeFromString) DateTime? endActual,
-    int? liveViewers,
-    String? description,
-    int? songcount,
-    ChannelMin channel,
-    List<VideoWithChannel>? clips,
-    List<VideoWithChannel>? sources,
-    List<VideoWithChannel>? refers,
-    List<VideoWithChannel>? simulcasts,
-    List<ChannelMinWithOrg>? mentions,
-    int? songs,
-    String? certainty,
-  });
+  $Res call(
+      {String id,
+      String title,
+      String type,
+      String? topicId,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? publishedAt,
+      @JsonKey(fromJson: _dateTimeFromStringRequired) DateTime availableAt,
+      int duration,
+      String status,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? startScheduled,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? startActual,
+      @JsonKey(fromJson: _dateTimeFromString) DateTime? endActual,
+      int? liveViewers,
+      String? description,
+      int? songcount,
+      ChannelMin channel,
+      List<VideoWithChannel>? clips,
+      List<VideoWithChannel>? sources,
+      List<VideoWithChannel>? refers,
+      List<VideoWithChannel>? simulcasts,
+      List<ChannelMinWithOrg>? mentions,
+      int? songs,
+      String? certainty});
 
   @override
   $ChannelMinCopyWith<$Res> get channel;
@@ -309,9 +280,8 @@ class __$$VideoFullImplCopyWithImpl<$Res>
     extends _$VideoFullCopyWithImpl<$Res, _$VideoFullImpl>
     implements _$$VideoFullImplCopyWith<$Res> {
   __$$VideoFullImplCopyWithImpl(
-    _$VideoFullImpl _value,
-    $Res Function(_$VideoFullImpl) _then,
-  ) : super(_value, _then);
+      _$VideoFullImpl _value, $Res Function(_$VideoFullImpl) _then)
+      : super(_value, _then);
 
   /// Create a copy of VideoFull
   /// with the given fields replaced by the non-null parameter values.
@@ -341,120 +311,96 @@ class __$$VideoFullImplCopyWithImpl<$Res>
     Object? songs = freezed,
     Object? certainty = freezed,
   }) {
-    return _then(
-      _$VideoFullImpl(
-        id:
-            null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                    as String,
-        title:
-            null == title
-                ? _value.title
-                : title // ignore: cast_nullable_to_non_nullable
-                    as String,
-        type:
-            null == type
-                ? _value.type
-                : type // ignore: cast_nullable_to_non_nullable
-                    as String,
-        topicId:
-            freezed == topicId
-                ? _value.topicId
-                : topicId // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        publishedAt:
-            freezed == publishedAt
-                ? _value.publishedAt
-                : publishedAt // ignore: cast_nullable_to_non_nullable
-                    as DateTime?,
-        availableAt:
-            null == availableAt
-                ? _value.availableAt
-                : availableAt // ignore: cast_nullable_to_non_nullable
-                    as DateTime,
-        duration:
-            null == duration
-                ? _value.duration
-                : duration // ignore: cast_nullable_to_non_nullable
-                    as int,
-        status:
-            null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                    as String,
-        startScheduled:
-            freezed == startScheduled
-                ? _value.startScheduled
-                : startScheduled // ignore: cast_nullable_to_non_nullable
-                    as DateTime?,
-        startActual:
-            freezed == startActual
-                ? _value.startActual
-                : startActual // ignore: cast_nullable_to_non_nullable
-                    as DateTime?,
-        endActual:
-            freezed == endActual
-                ? _value.endActual
-                : endActual // ignore: cast_nullable_to_non_nullable
-                    as DateTime?,
-        liveViewers:
-            freezed == liveViewers
-                ? _value.liveViewers
-                : liveViewers // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        description:
-            freezed == description
-                ? _value.description
-                : description // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        songcount:
-            freezed == songcount
-                ? _value.songcount
-                : songcount // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        channel:
-            null == channel
-                ? _value.channel
-                : channel // ignore: cast_nullable_to_non_nullable
-                    as ChannelMin,
-        clips:
-            freezed == clips
-                ? _value._clips
-                : clips // ignore: cast_nullable_to_non_nullable
-                    as List<VideoWithChannel>?,
-        sources:
-            freezed == sources
-                ? _value._sources
-                : sources // ignore: cast_nullable_to_non_nullable
-                    as List<VideoWithChannel>?,
-        refers:
-            freezed == refers
-                ? _value._refers
-                : refers // ignore: cast_nullable_to_non_nullable
-                    as List<VideoWithChannel>?,
-        simulcasts:
-            freezed == simulcasts
-                ? _value._simulcasts
-                : simulcasts // ignore: cast_nullable_to_non_nullable
-                    as List<VideoWithChannel>?,
-        mentions:
-            freezed == mentions
-                ? _value._mentions
-                : mentions // ignore: cast_nullable_to_non_nullable
-                    as List<ChannelMinWithOrg>?,
-        songs:
-            freezed == songs
-                ? _value.songs
-                : songs // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        certainty:
-            freezed == certainty
-                ? _value.certainty
-                : certainty // ignore: cast_nullable_to_non_nullable
-                    as String?,
-      ),
-    );
+    return _then(_$VideoFullImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      title: null == title
+          ? _value.title
+          : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String,
+      topicId: freezed == topicId
+          ? _value.topicId
+          : topicId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      publishedAt: freezed == publishedAt
+          ? _value.publishedAt
+          : publishedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      availableAt: null == availableAt
+          ? _value.availableAt
+          : availableAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      duration: null == duration
+          ? _value.duration
+          : duration // ignore: cast_nullable_to_non_nullable
+              as int,
+      status: null == status
+          ? _value.status
+          : status // ignore: cast_nullable_to_non_nullable
+              as String,
+      startScheduled: freezed == startScheduled
+          ? _value.startScheduled
+          : startScheduled // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      startActual: freezed == startActual
+          ? _value.startActual
+          : startActual // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      endActual: freezed == endActual
+          ? _value.endActual
+          : endActual // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      liveViewers: freezed == liveViewers
+          ? _value.liveViewers
+          : liveViewers // ignore: cast_nullable_to_non_nullable
+              as int?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      songcount: freezed == songcount
+          ? _value.songcount
+          : songcount // ignore: cast_nullable_to_non_nullable
+              as int?,
+      channel: null == channel
+          ? _value.channel
+          : channel // ignore: cast_nullable_to_non_nullable
+              as ChannelMin,
+      clips: freezed == clips
+          ? _value._clips
+          : clips // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      sources: freezed == sources
+          ? _value._sources
+          : sources // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      refers: freezed == refers
+          ? _value._refers
+          : refers // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      simulcasts: freezed == simulcasts
+          ? _value._simulcasts
+          : simulcasts // ignore: cast_nullable_to_non_nullable
+              as List<VideoWithChannel>?,
+      mentions: freezed == mentions
+          ? _value._mentions
+          : mentions // ignore: cast_nullable_to_non_nullable
+              as List<ChannelMinWithOrg>?,
+      songs: freezed == songs
+          ? _value.songs
+          : songs // ignore: cast_nullable_to_non_nullable
+              as int?,
+      certainty: freezed == certainty
+          ? _value.certainty
+          : certainty // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
   }
 }
 
@@ -462,39 +408,39 @@ class __$$VideoFullImplCopyWithImpl<$Res>
 
 @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
 class _$VideoFullImpl implements _VideoFull {
-  const _$VideoFullImpl({
-    required this.id,
-    required this.title,
-    required this.type,
-    this.topicId,
-    @JsonKey(fromJson: _dateTimeFromString) this.publishedAt,
-    @JsonKey(fromJson: _dateTimeFromStringRequired) required this.availableAt,
-    required this.duration,
-    required this.status,
-    @JsonKey(fromJson: _dateTimeFromString) this.startScheduled,
-    @JsonKey(fromJson: _dateTimeFromString) this.startActual,
-    @JsonKey(fromJson: _dateTimeFromString) this.endActual,
-    this.liveViewers,
-    this.description,
-    this.songcount,
-    required this.channel,
-    final List<VideoWithChannel>? clips,
-    final List<VideoWithChannel>? sources,
-    final List<VideoWithChannel>? refers,
-    final List<VideoWithChannel>? simulcasts,
-    final List<ChannelMinWithOrg>? mentions,
-    this.songs,
-    this.certainty,
-  }) : _clips = clips,
-       _sources = sources,
-       _refers = refers,
-       _simulcasts = simulcasts,
-       _mentions = mentions;
+  const _$VideoFullImpl(
+      {required this.id,
+      required this.title,
+      required this.type,
+      this.topicId,
+      @JsonKey(fromJson: _dateTimeFromString) this.publishedAt,
+      @JsonKey(fromJson: _dateTimeFromStringRequired) required this.availableAt,
+      required this.duration,
+      required this.status,
+      @JsonKey(fromJson: _dateTimeFromString) this.startScheduled,
+      @JsonKey(fromJson: _dateTimeFromString) this.startActual,
+      @JsonKey(fromJson: _dateTimeFromString) this.endActual,
+      this.liveViewers,
+      this.description,
+      this.songcount,
+      required this.channel,
+      final List<VideoWithChannel>? clips,
+      final List<VideoWithChannel>? sources,
+      final List<VideoWithChannel>? refers,
+      final List<VideoWithChannel>? simulcasts,
+      final List<ChannelMinWithOrg>? mentions,
+      this.songs,
+      this.certainty})
+      : _clips = clips,
+        _sources = sources,
+        _refers = refers,
+        _simulcasts = simulcasts,
+        _mentions = mentions;
 
   factory _$VideoFullImpl.fromJson(Map<String, dynamic> json) =>
       _$$VideoFullImplFromJson(json);
 
-  // --- Fields from base Video ---
+// --- Fields from base Video ---
   @override
   final String id;
   @override
@@ -528,14 +474,14 @@ class _$VideoFullImpl implements _VideoFull {
   final String? description;
   @override
   final int? songcount;
-  // Base Video schema has this
+// Base Video schema has this
   @override
   final ChannelMin channel;
-  // Added this to base Video model
-  // --- Fields specific to VideoFull ---
+// Added this to base Video model
+// --- Fields specific to VideoFull ---
   final List<VideoWithChannel>? _clips;
-  // Added this to base Video model
-  // --- Fields specific to VideoFull ---
+// Added this to base Video model
+// --- Fields specific to VideoFull ---
   @override
   List<VideoWithChannel>? get clips {
     final value = _clips;
@@ -585,12 +531,12 @@ class _$VideoFullImpl implements _VideoFull {
     return EqualUnmodifiableListView(value);
   }
 
-  // API spec shows 'songs' as number under VideoFull properties, but 'songcount' under Video properties.
-  // Let's use 'songs' as potentially distinct from 'songcount' and make it nullable int.
+// API spec shows 'songs' as number under VideoFull properties, but 'songcount' under Video properties.
+// Let's use 'songs' as potentially distinct from 'songcount' and make it nullable int.
   @override
   final int? songs;
-  // Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
-  // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
+// Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
+// It's often implicitly part of YT data sources Holodex might use. Make it nullable.
   @override
   final String? certainty;
 
@@ -631,10 +577,8 @@ class _$VideoFullImpl implements _VideoFull {
             const DeepCollectionEquality().equals(other._clips, _clips) &&
             const DeepCollectionEquality().equals(other._sources, _sources) &&
             const DeepCollectionEquality().equals(other._refers, _refers) &&
-            const DeepCollectionEquality().equals(
-              other._simulcasts,
-              _simulcasts,
-            ) &&
+            const DeepCollectionEquality()
+                .equals(other._simulcasts, _simulcasts) &&
             const DeepCollectionEquality().equals(other._mentions, _mentions) &&
             (identical(other.songs, songs) || other.songs == songs) &&
             (identical(other.certainty, certainty) ||
@@ -644,30 +588,30 @@ class _$VideoFullImpl implements _VideoFull {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hashAll([
-    runtimeType,
-    id,
-    title,
-    type,
-    topicId,
-    publishedAt,
-    availableAt,
-    duration,
-    status,
-    startScheduled,
-    startActual,
-    endActual,
-    liveViewers,
-    description,
-    songcount,
-    channel,
-    const DeepCollectionEquality().hash(_clips),
-    const DeepCollectionEquality().hash(_sources),
-    const DeepCollectionEquality().hash(_refers),
-    const DeepCollectionEquality().hash(_simulcasts),
-    const DeepCollectionEquality().hash(_mentions),
-    songs,
-    certainty,
-  ]);
+        runtimeType,
+        id,
+        title,
+        type,
+        topicId,
+        publishedAt,
+        availableAt,
+        duration,
+        status,
+        startScheduled,
+        startActual,
+        endActual,
+        liveViewers,
+        description,
+        songcount,
+        channel,
+        const DeepCollectionEquality().hash(_clips),
+        const DeepCollectionEquality().hash(_sources),
+        const DeepCollectionEquality().hash(_refers),
+        const DeepCollectionEquality().hash(_simulcasts),
+        const DeepCollectionEquality().hash(_mentions),
+        songs,
+        certainty
+      ]);
 
   /// Create a copy of VideoFull
   /// with the given fields replaced by the non-null parameter values.
@@ -679,41 +623,42 @@ class _$VideoFullImpl implements _VideoFull {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$VideoFullImplToJson(this);
+    return _$$VideoFullImplToJson(
+      this,
+    );
   }
 }
 
 abstract class _VideoFull implements VideoFull {
-  const factory _VideoFull({
-    required final String id,
-    required final String title,
-    required final String type,
-    final String? topicId,
-    @JsonKey(fromJson: _dateTimeFromString) final DateTime? publishedAt,
-    @JsonKey(fromJson: _dateTimeFromStringRequired)
-    required final DateTime availableAt,
-    required final int duration,
-    required final String status,
-    @JsonKey(fromJson: _dateTimeFromString) final DateTime? startScheduled,
-    @JsonKey(fromJson: _dateTimeFromString) final DateTime? startActual,
-    @JsonKey(fromJson: _dateTimeFromString) final DateTime? endActual,
-    final int? liveViewers,
-    final String? description,
-    final int? songcount,
-    required final ChannelMin channel,
-    final List<VideoWithChannel>? clips,
-    final List<VideoWithChannel>? sources,
-    final List<VideoWithChannel>? refers,
-    final List<VideoWithChannel>? simulcasts,
-    final List<ChannelMinWithOrg>? mentions,
-    final int? songs,
-    final String? certainty,
-  }) = _$VideoFullImpl;
+  const factory _VideoFull(
+      {required final String id,
+      required final String title,
+      required final String type,
+      final String? topicId,
+      @JsonKey(fromJson: _dateTimeFromString) final DateTime? publishedAt,
+      @JsonKey(fromJson: _dateTimeFromStringRequired)
+      required final DateTime availableAt,
+      required final int duration,
+      required final String status,
+      @JsonKey(fromJson: _dateTimeFromString) final DateTime? startScheduled,
+      @JsonKey(fromJson: _dateTimeFromString) final DateTime? startActual,
+      @JsonKey(fromJson: _dateTimeFromString) final DateTime? endActual,
+      final int? liveViewers,
+      final String? description,
+      final int? songcount,
+      required final ChannelMin channel,
+      final List<VideoWithChannel>? clips,
+      final List<VideoWithChannel>? sources,
+      final List<VideoWithChannel>? refers,
+      final List<VideoWithChannel>? simulcasts,
+      final List<ChannelMinWithOrg>? mentions,
+      final int? songs,
+      final String? certainty}) = _$VideoFullImpl;
 
   factory _VideoFull.fromJson(Map<String, dynamic> json) =
       _$VideoFullImpl.fromJson;
 
-  // --- Fields from base Video ---
+// --- Fields from base Video ---
   @override
   String get id;
   @override
@@ -749,7 +694,7 @@ abstract class _VideoFull implements VideoFull {
   int? get songcount; // Base Video schema has this
   @override
   ChannelMin get channel; // Added this to base Video model
-  // --- Fields specific to VideoFull ---
+// --- Fields specific to VideoFull ---
   @override
   List<VideoWithChannel>? get clips;
   @override
@@ -759,11 +704,13 @@ abstract class _VideoFull implements VideoFull {
   @override
   List<VideoWithChannel>? get simulcasts;
   @override
-  List<ChannelMinWithOrg>? get mentions; // API spec shows 'songs' as number under VideoFull properties, but 'songcount' under Video properties.
-  // Let's use 'songs' as potentially distinct from 'songcount' and make it nullable int.
+  List<ChannelMinWithOrg>?
+      get mentions; // API spec shows 'songs' as number under VideoFull properties, but 'songcount' under Video properties.
+// Let's use 'songs' as potentially distinct from 'songcount' and make it nullable int.
   @override
-  int? get songs; // Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
-  // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
+  int?
+      get songs; // Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
+// It's often implicitly part of YT data sources Holodex might use. Make it nullable.
   @override
   String? get certainty;
 

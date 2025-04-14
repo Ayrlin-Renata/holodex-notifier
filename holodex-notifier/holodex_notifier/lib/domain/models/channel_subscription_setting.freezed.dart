@@ -12,23 +12,21 @@ part of 'channel_subscription_setting.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 ChannelSubscriptionSetting _$ChannelSubscriptionSettingFromJson(
-  Map<String, dynamic> json,
-) {
+    Map<String, dynamic> json) {
   return _ChannelSubscriptionSetting.fromJson(json);
 }
 
 /// @nodoc
 mixin _$ChannelSubscriptionSetting {
-  // Identifying information for the channel
+// Identifying information for the channel
   String get channelId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String? get avatarUrl =>
       throw _privateConstructorUsedError; // URL to the channel's avatar image
-  // Notification toggles matching the UI
+// Notification toggles matching the UI
   bool get notifyNewMedia => throw _privateConstructorUsedError;
   bool get notifyMentions => throw _privateConstructorUsedError;
   bool get notifyLive => throw _privateConstructorUsedError;
@@ -41,36 +39,29 @@ mixin _$ChannelSubscriptionSetting {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   $ChannelSubscriptionSettingCopyWith<ChannelSubscriptionSetting>
-  get copyWith => throw _privateConstructorUsedError;
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $ChannelSubscriptionSettingCopyWith<$Res> {
-  factory $ChannelSubscriptionSettingCopyWith(
-    ChannelSubscriptionSetting value,
-    $Res Function(ChannelSubscriptionSetting) then,
-  ) =
-      _$ChannelSubscriptionSettingCopyWithImpl<
-        $Res,
-        ChannelSubscriptionSetting
-      >;
+  factory $ChannelSubscriptionSettingCopyWith(ChannelSubscriptionSetting value,
+          $Res Function(ChannelSubscriptionSetting) then) =
+      _$ChannelSubscriptionSettingCopyWithImpl<$Res,
+          ChannelSubscriptionSetting>;
   @useResult
-  $Res call({
-    String channelId,
-    String name,
-    String? avatarUrl,
-    bool notifyNewMedia,
-    bool notifyMentions,
-    bool notifyLive,
-    bool notifyUpdates,
-  });
+  $Res call(
+      {String channelId,
+      String name,
+      String? avatarUrl,
+      bool notifyNewMedia,
+      bool notifyMentions,
+      bool notifyLive,
+      bool notifyUpdates});
 }
 
 /// @nodoc
-class _$ChannelSubscriptionSettingCopyWithImpl<
-  $Res,
-  $Val extends ChannelSubscriptionSetting
->
+class _$ChannelSubscriptionSettingCopyWithImpl<$Res,
+        $Val extends ChannelSubscriptionSetting>
     implements $ChannelSubscriptionSettingCopyWith<$Res> {
   _$ChannelSubscriptionSettingCopyWithImpl(this._value, this._then);
 
@@ -92,46 +83,36 @@ class _$ChannelSubscriptionSettingCopyWithImpl<
     Object? notifyLive = null,
     Object? notifyUpdates = null,
   }) {
-    return _then(
-      _value.copyWith(
-            channelId:
-                null == channelId
-                    ? _value.channelId
-                    : channelId // ignore: cast_nullable_to_non_nullable
-                        as String,
-            name:
-                null == name
-                    ? _value.name
-                    : name // ignore: cast_nullable_to_non_nullable
-                        as String,
-            avatarUrl:
-                freezed == avatarUrl
-                    ? _value.avatarUrl
-                    : avatarUrl // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            notifyNewMedia:
-                null == notifyNewMedia
-                    ? _value.notifyNewMedia
-                    : notifyNewMedia // ignore: cast_nullable_to_non_nullable
-                        as bool,
-            notifyMentions:
-                null == notifyMentions
-                    ? _value.notifyMentions
-                    : notifyMentions // ignore: cast_nullable_to_non_nullable
-                        as bool,
-            notifyLive:
-                null == notifyLive
-                    ? _value.notifyLive
-                    : notifyLive // ignore: cast_nullable_to_non_nullable
-                        as bool,
-            notifyUpdates:
-                null == notifyUpdates
-                    ? _value.notifyUpdates
-                    : notifyUpdates // ignore: cast_nullable_to_non_nullable
-                        as bool,
-          )
-          as $Val,
-    );
+    return _then(_value.copyWith(
+      channelId: null == channelId
+          ? _value.channelId
+          : channelId // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      avatarUrl: freezed == avatarUrl
+          ? _value.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      notifyNewMedia: null == notifyNewMedia
+          ? _value.notifyNewMedia
+          : notifyNewMedia // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyMentions: null == notifyMentions
+          ? _value.notifyMentions
+          : notifyMentions // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyLive: null == notifyLive
+          ? _value.notifyLive
+          : notifyLive // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyUpdates: null == notifyUpdates
+          ? _value.notifyUpdates
+          : notifyUpdates // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ) as $Val);
   }
 }
 
@@ -139,34 +120,30 @@ class _$ChannelSubscriptionSettingCopyWithImpl<
 abstract class _$$ChannelSubscriptionSettingImplCopyWith<$Res>
     implements $ChannelSubscriptionSettingCopyWith<$Res> {
   factory _$$ChannelSubscriptionSettingImplCopyWith(
-    _$ChannelSubscriptionSettingImpl value,
-    $Res Function(_$ChannelSubscriptionSettingImpl) then,
-  ) = __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>;
+          _$ChannelSubscriptionSettingImpl value,
+          $Res Function(_$ChannelSubscriptionSettingImpl) then) =
+      __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    String channelId,
-    String name,
-    String? avatarUrl,
-    bool notifyNewMedia,
-    bool notifyMentions,
-    bool notifyLive,
-    bool notifyUpdates,
-  });
+  $Res call(
+      {String channelId,
+      String name,
+      String? avatarUrl,
+      bool notifyNewMedia,
+      bool notifyMentions,
+      bool notifyLive,
+      bool notifyUpdates});
 }
 
 /// @nodoc
 class __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>
-    extends
-        _$ChannelSubscriptionSettingCopyWithImpl<
-          $Res,
-          _$ChannelSubscriptionSettingImpl
-        >
+    extends _$ChannelSubscriptionSettingCopyWithImpl<$Res,
+        _$ChannelSubscriptionSettingImpl>
     implements _$$ChannelSubscriptionSettingImplCopyWith<$Res> {
   __$$ChannelSubscriptionSettingImplCopyWithImpl(
-    _$ChannelSubscriptionSettingImpl _value,
-    $Res Function(_$ChannelSubscriptionSettingImpl) _then,
-  ) : super(_value, _then);
+      _$ChannelSubscriptionSettingImpl _value,
+      $Res Function(_$ChannelSubscriptionSettingImpl) _then)
+      : super(_value, _then);
 
   /// Create a copy of ChannelSubscriptionSetting
   /// with the given fields replaced by the non-null parameter values.
@@ -181,45 +158,36 @@ class __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>
     Object? notifyLive = null,
     Object? notifyUpdates = null,
   }) {
-    return _then(
-      _$ChannelSubscriptionSettingImpl(
-        channelId:
-            null == channelId
-                ? _value.channelId
-                : channelId // ignore: cast_nullable_to_non_nullable
-                    as String,
-        name:
-            null == name
-                ? _value.name
-                : name // ignore: cast_nullable_to_non_nullable
-                    as String,
-        avatarUrl:
-            freezed == avatarUrl
-                ? _value.avatarUrl
-                : avatarUrl // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        notifyNewMedia:
-            null == notifyNewMedia
-                ? _value.notifyNewMedia
-                : notifyNewMedia // ignore: cast_nullable_to_non_nullable
-                    as bool,
-        notifyMentions:
-            null == notifyMentions
-                ? _value.notifyMentions
-                : notifyMentions // ignore: cast_nullable_to_non_nullable
-                    as bool,
-        notifyLive:
-            null == notifyLive
-                ? _value.notifyLive
-                : notifyLive // ignore: cast_nullable_to_non_nullable
-                    as bool,
-        notifyUpdates:
-            null == notifyUpdates
-                ? _value.notifyUpdates
-                : notifyUpdates // ignore: cast_nullable_to_non_nullable
-                    as bool,
-      ),
-    );
+    return _then(_$ChannelSubscriptionSettingImpl(
+      channelId: null == channelId
+          ? _value.channelId
+          : channelId // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      avatarUrl: freezed == avatarUrl
+          ? _value.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      notifyNewMedia: null == notifyNewMedia
+          ? _value.notifyNewMedia
+          : notifyNewMedia // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyMentions: null == notifyMentions
+          ? _value.notifyMentions
+          : notifyMentions // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyLive: null == notifyLive
+          ? _value.notifyLive
+          : notifyLive // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyUpdates: null == notifyUpdates
+          ? _value.notifyUpdates
+          : notifyUpdates // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
   }
 }
 
@@ -227,29 +195,28 @@ class __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>
 
 @JsonSerializable()
 class _$ChannelSubscriptionSettingImpl implements _ChannelSubscriptionSetting {
-  const _$ChannelSubscriptionSettingImpl({
-    required this.channelId,
-    required this.name,
-    this.avatarUrl,
-    this.notifyNewMedia = true,
-    this.notifyMentions = true,
-    this.notifyLive = true,
-    this.notifyUpdates = true,
-  });
+  const _$ChannelSubscriptionSettingImpl(
+      {required this.channelId,
+      required this.name,
+      this.avatarUrl,
+      this.notifyNewMedia = true,
+      this.notifyMentions = true,
+      this.notifyLive = true,
+      this.notifyUpdates = true});
 
   factory _$ChannelSubscriptionSettingImpl.fromJson(
-    Map<String, dynamic> json,
-  ) => _$$ChannelSubscriptionSettingImplFromJson(json);
+          Map<String, dynamic> json) =>
+      _$$ChannelSubscriptionSettingImplFromJson(json);
 
-  // Identifying information for the channel
+// Identifying information for the channel
   @override
   final String channelId;
   @override
   final String name;
   @override
   final String? avatarUrl;
-  // URL to the channel's avatar image
-  // Notification toggles matching the UI
+// URL to the channel's avatar image
+// Notification toggles matching the UI
   @override
   @JsonKey()
   final bool notifyNewMedia;
@@ -290,16 +257,8 @@ class _$ChannelSubscriptionSettingImpl implements _ChannelSubscriptionSetting {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    channelId,
-    name,
-    avatarUrl,
-    notifyNewMedia,
-    notifyMentions,
-    notifyLive,
-    notifyUpdates,
-  );
+  int get hashCode => Object.hash(runtimeType, channelId, name, avatarUrl,
+      notifyNewMedia, notifyMentions, notifyLive, notifyUpdates);
 
   /// Create a copy of ChannelSubscriptionSetting
   /// with the given fields replaced by the non-null parameter values.
@@ -307,39 +266,39 @@ class _$ChannelSubscriptionSettingImpl implements _ChannelSubscriptionSetting {
   @override
   @pragma('vm:prefer-inline')
   _$$ChannelSubscriptionSettingImplCopyWith<_$ChannelSubscriptionSettingImpl>
-  get copyWith => __$$ChannelSubscriptionSettingImplCopyWithImpl<
-    _$ChannelSubscriptionSettingImpl
-  >(this, _$identity);
+      get copyWith => __$$ChannelSubscriptionSettingImplCopyWithImpl<
+          _$ChannelSubscriptionSettingImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$ChannelSubscriptionSettingImplToJson(this);
+    return _$$ChannelSubscriptionSettingImplToJson(
+      this,
+    );
   }
 }
 
 abstract class _ChannelSubscriptionSetting
     implements ChannelSubscriptionSetting {
-  const factory _ChannelSubscriptionSetting({
-    required final String channelId,
-    required final String name,
-    final String? avatarUrl,
-    final bool notifyNewMedia,
-    final bool notifyMentions,
-    final bool notifyLive,
-    final bool notifyUpdates,
-  }) = _$ChannelSubscriptionSettingImpl;
+  const factory _ChannelSubscriptionSetting(
+      {required final String channelId,
+      required final String name,
+      final String? avatarUrl,
+      final bool notifyNewMedia,
+      final bool notifyMentions,
+      final bool notifyLive,
+      final bool notifyUpdates}) = _$ChannelSubscriptionSettingImpl;
 
   factory _ChannelSubscriptionSetting.fromJson(Map<String, dynamic> json) =
       _$ChannelSubscriptionSettingImpl.fromJson;
 
-  // Identifying information for the channel
+// Identifying information for the channel
   @override
   String get channelId;
   @override
   String get name;
   @override
   String? get avatarUrl; // URL to the channel's avatar image
-  // Notification toggles matching the UI
+// Notification toggles matching the UI
   @override
   bool get notifyNewMedia;
   @override
@@ -354,5 +313,5 @@ abstract class _ChannelSubscriptionSetting
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ChannelSubscriptionSettingImplCopyWith<_$ChannelSubscriptionSettingImpl>
-  get copyWith => throw _privateConstructorUsedError;
+      get copyWith => throw _privateConstructorUsedError;
 }

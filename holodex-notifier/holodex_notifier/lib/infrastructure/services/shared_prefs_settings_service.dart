@@ -2,6 +2,7 @@
 import 'dart:convert'; // For jsonEncode/Decode
 
 import 'package:flutter/foundation.dart'; // For kDebugMode
+import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart'; // Import Secure Storage Interface
@@ -221,6 +222,51 @@ class SharedPrefsSettingsService implements ISettingsService {
     await _prefs.setBool(_keyIsFirstLaunch, isFirst);
     if (kDebugMode) {
       print("[SharedPrefsSettingsService] IsFirstLaunch flag SET to: $isFirst");
+    }
+  }
+
+    // --- Config Export/Import ---
+
+  @override
+  Future<AppConfig> exportConfiguration() async {
+    // Read current settings
+    final freq = await getPollFrequency();
+    final grouping = await getNotificationGrouping();
+    final delay = await getDelayNewMedia();
+    final channels = await getChannelSubscriptions();
+
+    return AppConfig(
+      pollFrequencyMinutes: freq.inMinutes,
+      notificationGrouping: grouping,
+      delayNewMedia: delay,
+      channelSubscriptions: channels,
+      version: 1, // Current version
+    );
+  }
+
+  @override
+  Future<bool> importConfiguration(AppConfig config) async {
+    // Basic validation (can be expanded)
+    if (config.version > 1) {
+      print("[SharedPrefsSettingsService] Config Import Error: Unsupported version ${config.version}");
+      return false;
+    }
+
+    print("[SharedPrefsSettingsService] Importing configuration version ${config.version}...");
+    try {
+      // Apply settings
+      await setPollFrequency(Duration(minutes: config.pollFrequencyMinutes));
+      await setNotificationGrouping(config.notificationGrouping);
+      await setDelayNewMedia(config.delayNewMedia);
+      // Overwrite channel subscriptions
+      await saveChannelSubscriptions(config.channelSubscriptions);
+      // DO NOT import API key or last poll time etc.
+
+      print("[SharedPrefsSettingsService] Config import successful.");
+      return true;
+    } catch (e) {
+      print("[SharedPrefsSettingsService] Config Import Error during apply: $e");
+      return false;
     }
   }
 }

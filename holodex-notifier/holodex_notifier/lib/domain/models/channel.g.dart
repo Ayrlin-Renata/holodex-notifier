@@ -18,9 +18,8 @@ _$ChannelImpl _$$ChannelImplFromJson(Map<String, dynamic> json) =>
       banner: json['banner'] as String?,
       twitter: json['twitter'] as String?,
       videoCount: _intFromStringNullable(json['video_count'] as String?),
-      subscriberCount: _intFromStringNullable(
-        json['subscriber_count'] as String?,
-      ),
+      subscriberCount:
+          _intFromStringNullable(json['subscriber_count'] as String?),
       viewCount: _intFromStringNullable(json['view_count'] as String?),
       clipCount: _intFromStringNullable(json['clip_count'] as String?),
       lang: json['lang'] as String?,
