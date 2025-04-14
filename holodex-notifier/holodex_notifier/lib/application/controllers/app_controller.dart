@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
+import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/channel.dart';
@@ -6,16 +8,19 @@ import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
-import 'package:flutter_background_service/flutter_background_service.dart'; // Required for invoking
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:holodex_notifier/ui/screens/settings_screen.dart'; // Required for invoking
 
 /// Controller handling actions related to settings and channels.
 class AppController {
   final Ref _ref;
   final ISettingsService _settingsService;
   final ILoggingService _loggingService;
+  final ICacheService _cacheService; // Add CacheService
+  final INotificationService _notificationService; // Add NotificationService
 
   // Updated constructor
-  AppController(this._ref, this._settingsService, this._loggingService);
+  AppController(this._ref, this._settingsService, this._loggingService, this._cacheService, this._notificationService); // Add services to constructor
 
   /// Adds a channel based on search result data.
   Future<void> addChannel(Channel channelData) async {
@@ -43,16 +48,64 @@ class AppController {
     }
   }
 
-  /// Removes a channel by its ID.
+  /// Removes a channel by its ID and cleans up related scheduled notifications.
   Future<void> removeChannel(String channelId) async {
-    _loggingService.info('AppController: Removing channel $channelId');
+    _loggingService.info('AppController: Removing channel $channelId and cleaning up scheduled notifications.');
     try {
+      // --- Cleanup Logic Start ---
+      _loggingService.debug('AppController: Fetching scheduled videos for channel $channelId from cache...');
+      final scheduledVideos = await _cacheService.getScheduledVideos(); // Get all scheduled videos
+       _loggingService.debug('AppController: Found ${scheduledVideos.length} total scheduled videos.');
+
+      // Filter for the specific channel being removed
+      final channelScheduledVideos = scheduledVideos.where((v) => v.channelId == channelId).toList();
+      _loggingService.debug('AppController: Found ${channelScheduledVideos.length} scheduled videos specifically for channel $channelId.');
+
+
+      if (channelScheduledVideos.isNotEmpty) {
+        _loggingService.info('AppController: Cancelling ${channelScheduledVideos.length} scheduled notification(s) for channel $channelId...');
+        for (final video in channelScheduledVideos) {
+          if (video.scheduledLiveNotificationId != null) {
+             _loggingService.debug('AppController: Cancelling notification ID ${video.scheduledLiveNotificationId} for video ${video.videoId}');
+            try {
+              // Cancel platform notification
+              await _notificationService.cancelScheduledNotification(video.scheduledLiveNotificationId!);
+              // Update cache entry to reflect cancellation
+              await _cacheService.updateScheduledNotificationId(video.videoId, null);
+               _loggingService.debug('AppController: Successfully cancelled and updated cache for video ${video.videoId}.');
+            } catch (e, s) {
+              _loggingService.error(
+                'AppController: Error cancelling notification ID ${video.scheduledLiveNotificationId} or updating cache for video ${video.videoId}',
+                e,
+                s,
+              );
+              // Continue to next video even if one fails? Yes.
+            }
+          } else {
+             _loggingService.warning(
+                'AppController: Scheduled video ${video.videoId} found in cache query but had null scheduledLiveNotificationId. Skipping cancellation.',
+             );
+          }
+        }
+        _loggingService.info('AppController: Finished cancelling scheduled notifications for channel $channelId.');
+      }
+      // --- Cleanup Logic End ---
+
+      // Proceed with removing the channel from settings
       _ref.read(channelListProvider.notifier).removeChannel(channelId);
       _loggingService.debug('AppController: Channel $channelId removed from state.');
+
+      // Refresh the UI list after cleanup and removal
+      // ignore: unused_result
+      _ref.refresh(scheduledNotificationsProvider);
+      _loggingService.debug('AppController: Refreshed scheduled notifications provider.');
+
     } catch (e, s) {
       _loggingService.error('AppController: Failed to remove channel $channelId', e, s);
+      // Optionally rethrow or show an error to the user
     }
   }
+
 
   /// Updates a specific notification toggle for a given channel.
   Future<void> updateChannelNotificationSetting(String channelId, String settingKey, bool value) async {
@@ -131,21 +184,12 @@ class AppController {
             _loggingService.info(
               'AppController: Notifying running background service of setting change: $backgroundMessageKey=$backgroundMessageValue',
             );
-            FlutterBackgroundService().invoke('updateSetting', {
-              'key': backgroundMessageKey,
-              'value': backgroundMessageValue,
-            });
+            FlutterBackgroundService().invoke('updateSetting', {'key': backgroundMessageKey, 'value': backgroundMessageValue});
           } else {
-            _loggingService.info(
-              'AppController: Background service not running, setting [$backgroundMessageKey] will be read on next start.',
-            );
+            _loggingService.info('AppController: Background service not running, setting [$backgroundMessageKey] will be read on next start.');
           }
         } catch (e, s) {
-          _loggingService.error(
-            'AppController: Error notifying background service of setting change [$backgroundMessageKey].',
-            e,
-            s,
-          );
+          _loggingService.error('AppController: Error notifying background service of setting change [$backgroundMessageKey].', e, s);
         }
       }
     } catch (e, s) {

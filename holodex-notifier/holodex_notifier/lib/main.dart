@@ -1,7 +1,6 @@
 // f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/application/controllers/app_controller.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
@@ -13,7 +12,6 @@ import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
-import 'package:holodex_notifier/domain/models/notification_instruction.dart'; // Added for invoke listener example
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/infrastructure/network/dio_client.dart';
 import 'package:holodex_notifier/infrastructure/services/background_poller_service.dart';
@@ -146,12 +144,15 @@ final backgroundServiceProvider = Provider<IBackgroundPollingService>((ref) {
 
 // --- AppController ---
 final appControllerProvider = Provider<AppController>((ref) {
-  // Removed cacheService dependency as it was unused
+  // Get all required services
   final settingsService = ref.watch(settingsServiceProvider);
   final loggingService = ref.watch(loggingServiceProvider);
-  return AppController(ref, settingsService, loggingService);
-}, name: 'appControllerProvider');
+  final cacheService = ref.watch(cacheServiceProvider); // Get Cache Service
+  final notificationService = ref.watch(notificationServiceProvider); // Get Notification Service
 
+  // Pass them to the constructor
+  return AppController(ref, settingsService, loggingService, cacheService, notificationService);
+}, name: 'appControllerProvider');
 
 // --- Main Function ---
 Future<void> main() async {
@@ -160,8 +161,6 @@ Future<void> main() async {
   final container = ProviderContainer();
   ILoggingService? logger;
   ISettingsService? settingsService;
-  StreamSubscription? serviceListener;
-  // ############## CHANGE 2: Added NotificationService variable ##############
   INotificationService? notificationService;
 
   try {
@@ -180,12 +179,10 @@ Future<void> main() async {
     logger.info("Main Services Readiness Flag RESET to FALSE.");
 
     // --- Step 3: Wait for OTHER critical async services ---
-    // ############## CHANGE 3: Initialize Notification Service HERE ##############
     logger.info("Waiting for Notification Service FutureProvider...");
     // Ensure notification service is initialized before readiness flag is set
     notificationService = await container.read(notificationServiceFutureProvider.future);
     logger.info("Notification Service resolved.");
-    // ############## END CHANGE 3 ##############
 
     logger.info("Waiting for Background Service FutureProvider...");
     await container.read(backgroundServiceFutureProvider.future);
@@ -299,10 +296,6 @@ Future<void> main() async {
     final initLogger = logger ?? LoggerService(); // Use existing or fallback
     initLogger.fatal("--- FATAL ERROR during app initialization! ---", e, s);
     try {
-      // Use Null-aware call for listener cancellation
-      await serviceListener?.cancel();
-      initLogger.info("Cancelled background service listener during error handling.");
-
       // Use Null check for settingsService
       if (settingsService != null) {
         await settingsService.setMainServicesReady(false);
