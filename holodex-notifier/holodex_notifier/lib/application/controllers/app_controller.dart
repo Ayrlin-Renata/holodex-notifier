@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
@@ -9,7 +10,6 @@ import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:holodex_notifier/ui/screens/settings_screen.dart'; // Required for invoking
 
 /// Controller handling actions related to settings and channels.
 class AppController {
@@ -137,6 +137,7 @@ class AppController {
         await _scheduleMissingLiveNotificationsForChannel(channelId);
       }
       // Always refresh the scheduled list UI after potential changes
+      // ignore: unused_result
       _ref.refresh(scheduledNotificationsProvider);
       _loggingService.debug('AppController: Refreshed scheduled notifications provider after setting update.');
     } catch (e, s) {
@@ -268,11 +269,8 @@ class AppController {
           break;
         case 'apiKey':
           final String? stringValue = value as String?;
-          final String? valueToStore = (stringValue != null && stringValue.isEmpty) ? null : stringValue;
-          await _settingsService.setApiKey(valueToStore);
-          _ref.read(apiKeyProvider.notifier).state = valueToStore;
-          // API key update doesn't require immediate background notification
-          // as the Dio interceptor will fetch it on the next request.
+          await _ref.read(apiKeyProvider.notifier).updateApiKey(stringValue);
+          _loggingService.debug("AppController: updateApiKey called on ApiKeyNotifier.");
           break;
         default:
           _loggingService.warning('AppController: Unknown global setting key: $settingKey');

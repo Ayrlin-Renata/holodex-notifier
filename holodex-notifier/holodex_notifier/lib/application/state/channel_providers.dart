@@ -206,77 +206,89 @@ class ApiKeyRequiredException implements Exception {
 final debouncedChannelSearchProvider = FutureProvider.autoDispose<List<Channel>>(
   (ref) async {
     final query = ref.watch(channelSearchQueryProvider);
-    final apiKey = ref.watch(apiKeyProvider); // Watch the key state directly
+    // --- Watch the AsyncValue ---
+    final apiKeyAsyncValue = ref.watch(apiKeyProvider); 
     final apiService = ref.watch(apiServiceProvider);
     final logger = ref.watch(loggingServiceProvider);
 
-    logger.debug('[Debounced Search] Triggered. Query: "$query", API Key Set: ${apiKey != null && apiKey.isNotEmpty}');
+    // --- Extract the key value ---
+    final String? apiKey = apiKeyAsyncValue.valueOrNull; 
 
-    // Condition 0: Check API Key FIRST
+    logger.debug('[Debounced Search] Triggered. Query: "$query", API Key State: isLoading=${apiKeyAsyncValue.isLoading}, hasError=${apiKeyAsyncValue.hasError}, Key Set: ${apiKey != null && apiKey.isNotEmpty}');
+
+    // --- Handle loading/error states from apiKeyProvider ---
+    if (apiKeyAsyncValue.isLoading) {
+        logger.debug('[Debounced Search] API Key is loading. Returning empty list for now.');
+        return []; // Or throw a specific loading error if preferred
+    }
+    if (apiKeyAsyncValue.hasError) {
+       logger.error('[Debounced Search] API Key provider has error: ${apiKeyAsyncValue.error}. Throwing exception.');
+       throw ApiKeyRequiredException('Failed to load API Key setting. Please check Settings.');
+    }
+    // --- End Handle loading/error ---
+
+    // Condition 0: Check API Key value
     if (apiKey == null || apiKey.isEmpty) {
-      logger.warning('[Debounced Search] API Key missing. Throwing ApiKeyRequiredException.');
-      // Throw an exception that the UI can specifically handle.
+      logger.warning('[Debounced Search] API Key missing or empty. Throwing ApiKeyRequiredException.');
       throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
     }
 
     // Condition 1: Don't search if query is too short
     if (query.length < 3) {
       logger.debug('[Debounced Search] Query too short ("$query"). Returning empty list.');
-      return []; // Return empty list immediately
+      return [];
     }
 
-    // Debounce logic
     logger.debug('[Debounced Search] Debouncing for 1000ms...');
     await Future.delayed(const Duration(milliseconds: 1000));
     logger.debug('[Debounced Search] Debounce finished.');
 
-    // Staleness check
-    final currentQuery = ref.read(channelSearchQueryProvider); // Read latest query *after* debounce
+    // Staleness check for query
+    final currentQuery = ref.read(channelSearchQueryProvider);
     if (query != currentQuery) {
-      // Log the change but let execution continue with the results of the *original* query
-      // to avoid unnecessary throws/error states in UI if user types rapidly changes mind.
-      // The UI will update again when the *new* query finishes debouncing.
-      logger.debug('[Debounced Search] Stale query detected ("$query" vs "$currentQuery"). Proceeding with old query.');
+      logger.debug('[Debounced Search] Stale query detected ("$query" vs "$currentQuery"). Proceeding with old query result (will be replaced by new one soon).');
+      // Let it complete, new query will trigger another run
     }
 
-    // Condition 2: Check again if query is long enough after delay
+    // Check query length again
     if (currentQuery.length < 3) {
       logger.debug('[Debounced Search] Query became too short after debounce ("$currentQuery"). Returning empty list.');
       return [];
     }
 
-    // Condition 3: Check API Key again AFTER debounce (user might have removed it)
-    final currentApiKey = ref.read(apiKeyProvider);
-    if (currentApiKey == null || currentApiKey.isEmpty) {
-      logger.warning('[Debounced Search] API Key missing after debounce. Throwing ApiKeyRequiredException.');
-      throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
-    }
+    // --- Check API Key value again after debounce ---
+    // Need to re-read the provider *value* after debounce, not just rely on the initial read
+    final currentApiKeyAsyncValue = ref.read(apiKeyProvider); // Use read for latest value *after* debounce
+    final currentApiKey = currentApiKeyAsyncValue.valueOrNull;
 
-    logger.info('[Debounced Search] Executing search for channel: "$query"');
+    if (currentApiKey == null || currentApiKey.isEmpty) {
+        logger.warning('[Debounced Search] API Key missing or empty after debounce. Throwing ApiKeyRequiredException.');
+        throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
+    }
+    // --- End Check API Key value ---
+
+
+    logger.info('[Debounced Search] Executing search for channel: "$currentQuery"');
     try {
-      // Perform the actual search and return the results directly.
-      final results = await apiService.searchChannels(query);
-      logger.info('[Debounced Search] Found ${results.length} channels for "$query".');
+      final results = await apiService.searchChannels(currentQuery); // Use currentQuery
+      logger.info('[Debounced Search] Found ${results.length} channels for "$currentQuery".');
       return results;
     } catch (e, s) {
-      logger.error('[Debounced Search] Error searching channels for "$query"', e, s);
-      rethrow; // Rethrow the error to be handled by the UI's .when()
+      logger.error('[Debounced Search] Error searching channels for "$currentQuery"', e, s);
+      rethrow;
     }
   },
   dependencies: [
-    channelSearchQueryProvider, // Watched
-    apiKeyProvider, // Watched
-    apiServiceProvider, // Read
-    loggingServiceProvider, // Read
+    channelSearchQueryProvider,
+    apiKeyProvider, // Keep dependency on the provider itself
+    apiServiceProvider,
+    loggingServiceProvider,
   ],
   name: 'debouncedChannelSearchProvider',
-); // Adding a name is good practice
+);
 
 // Provider for channel search query
 final channelSearchQueryProvider = StateProvider<String>((ref) {
   // No need for complex logic or onDispose here anymore
   return '';
 });
-
-// Provider for current last background poll error message
-final backgroundLastErrorProvider = StateProvider<String?>((ref) => null);

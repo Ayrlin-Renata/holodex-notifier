@@ -1,164 +1,168 @@
-# Holodex Notifier Implementation Plan
+# Holodex Notifier Implementation Plan (v2 - Reflecting Current State & New UI)
 
 ## I. Core Architecture (Flutter/Dart)
 
-*   **UI Layer (Flutter):** Builds the user interface using Flutter widgets for settings and relies on system notifications managed by the Notification Manager.
+*   **UI Layer (Flutter):** Builds the user interface using Flutter widgets. State is managed reactively using `flutter_riverpod`. Key components include screens for different sections and reusable card widgets.
 *   **Application Layer (Dart):**
-    *   **State Management (`flutter_riverpod`):** Manages UI state, user settings, and communication between UI and services.
-    *   **Application Controller:** Central logic unit connecting Poller, Cache, User Settings, and Notification scheduling/dispatch.
-*   **Domain Layer (Dart):** Contains core business logic, data models (`freezed` classes), and interfaces for services.
-*   **Infrastructure Layer (Dart):**
-    *   **API Interface Service (Background Poller):** Handles Holodex API communication via `dio`. Runs periodically using `flutter_background_service`.
-    *   **Cache Service:** Persistent local storage using `drift` (high-level non-ORM wrapper for `sqflite`).
-    *   **Settings Service:** Manages simple settings using `shared_preferences`.
-    *   **Secure Storage Service:** Stores API key using `flutter_secure_storage`.
-    *   **Notification Manager:** Manages scheduling, displaying, and cancelling system notifications using `flutter_local_notifications`.
-    *   **Connectivity Service:** Checks network status using `connectivity_plus`.
-    *   **Logging Service:** Uses `logger` for structured logging.
+    *   **State Management (`flutter_riverpod` / `hooks_riverpod`):** Manages UI state, application settings, channel data, background status, and communication between UI and services using various providers (`StateProvider`, `FutureProvider`, `StateNotifierProvider`, `StreamProvider`).
+    *   **Application Controller (`AppController`):** Central logic unit connecting UI actions (button presses, switch toggles) to service operations. Orchestrates tasks like adding/removing channels, applying global settings, and updating individual channel settings, including related notification cleanup/scheduling logic.
+*   **Domain Layer (Dart):** Contains core business logic definitions, data models (using `freezed` for immutability and serialization), and abstract interfaces (`IApiService`, `ICacheService`, etc.) defining contracts for infrastructure services.
+*   **Infrastructure Layer (Dart):** Provides concrete implementations of domain interfaces:
+    *   **API Service (`HolodexApiService`):** Handles Holodex API communication via `dio`, including interceptors for API key injection and logging. Implements logic for fetching videos and searching channels (using `/search/autocomplete`).
+    *   **Cache Service (`DriftCacheService`):** Persistent local storage for video data using `drift` (on top of `sqflite`). Manages `CachedVideo` entities.
+    *   **Settings Service (`SharedPrefsSettingsService`):** Manages application settings and channel subscription list using `shared_preferences`. Delegates API key storage to Secure Storage. Handles JSON serialization for complex settings.
+    *   **Secure Storage Service (`FlutterSecureStorageService`):** Securely stores sensitive data like the API key using platform-specific mechanisms (`flutter_secure_storage`).
+    *   **Notification Service (`LocalNotificationService`):** Manages scheduling, displaying, and cancelling system notifications using `flutter_local_notifications`. Handles platform setup (channels, permissions), image caching (`flutter_cache_manager`), and notification tap events.
+    *   **Background Polling Service (`BackgroundPollerService`):** Manages the background polling process using `flutter_background_service`. Handles initialization, starting/stopping, and configuration for foreground service behavior on Android. The core polling logic runs within this service's separate isolate.
+    *   **Connectivity Service (`ConnectivityPlusService`):** Checks network status using `connectivity_plus`.
+    *   **Logging Service (`LoggerService`):** Uses the `logger` package for structured logging across the application, including the background isolate.
+    *   **Database (`AppDatabase`):** The `drift` database definition, including table schemas (`CachedVideos`), type converters, migrations, and DAOs/query methods.
 
-## II. User Interface (Settings Page - Android/Windows)
+*   **Isolate Communication:** The background service (`BackgroundPollerService`) runs in a separate isolate. It uses `flutter_background_service`'s `invoke` mechanism for simple commands (stop, trigger poll) and potentially for receiving settings updates. It utilizes a dedicated `ProviderContainer` initialized with necessary service providers (overriding `isolateContextProvider` to `background`). A readiness flag (`main_services_ready` in `SettingsService`) ensures the background isolate waits for critical main isolate services (like `NotificationService`) to be initialized before proceeding.
+
+## II. User Interface (Multi-Page Layout - Android/Windows)
 
 1.  **Framework:** Flutter SDK with Dart.
-2.  **State Management:** Persistently store Poll Frequency, Grouping toggle, Delay toggle, API Key (securely), the state of the Global Switches (for new card defaults), and the list of added channels with their individual toggle states. Use `flutter_riverpod` for managing UI state, settings, and channel lists.
-
-3.  **Layout:**
-    *   Build the UI using standard Flutter widgets (`Scaffold`, `ListView`, `Card`, `Switch`, `Slider`, `TextField`, `DropdownButton`, etc.).
-    *   **App Behavior Settings:** Widgets bound to Riverpod providers for Poll Frequency, Grouping, API Key visibility/input, Delay New Media.
-        *   Poll Frequency Slider/Input (5min - 12hr, Default: 10 min).
-        *   Notification Grouping Toggle (Default ON).
-        *   API Key Input (hidden by default, revealed by button, with info text). Use secure storage (Android Keystore, Windows DPAPI). Store encrypted key in persistent settings (SharedPreferences/Settings).
-        *   Delay New Media Until Scheduled Toggle (Default OFF).
-    *   **Channel Management:**
-        *   **Global Switches:** Four toggles (New Media, Mentions, Live, Update). These bulk-apply settings to all *currently added* channel cards AND set the default state for these toggles on *newly added* channel cards.
-            * `Switch` widgets updating defaults in the Settings Service and iterating through existing channel settings via the Controller/Riverpod.
-        *   **Channel Search:** Text input bar. Uses `/channels` endpoint. Implement throttling (e.g., ≥ 4 chars, 1-sec debounce after typing stops). Display results (avatar, name) in a dropdown/suggestion list.
-            * `TextField` with debounce (`flutter_hooks` or `rxdart`) triggering API calls via Riverpod provider. Display results in an overlay/dropdown (`OverlayPortal` or similar).
-        *   **Add Button:** Confirms selection from search results.
-        *   **Channel Cards Area:** Displays added channels as cards.
-            *   **Card Content:** Avatar (`photo`), Name (`name`), four toggles (New Media, Mentions, Live, Update - initialized from Global Switch defaults).
-            *   **Interactions:** Drag-and-drop reordering, Remove button.
-            * Use `flutter_reorderable_list` or similar for draggable cards. Each card displays channel info (`CachedNetworkImage` for avatar) and `Switch` widgets bound to specific channel settings via Riverpod.
-    *   **Scheduled Notifications UI:**
-        *   Displays upcoming scheduled live notifications in a scrollable list (`ListView`).
-        *   Each entry shows channel avatar, name, stream title (`video.title`), scheduled start time (`start_scheduled` formatted as local time). 
-        *   Includes a cancel button for each entry that triggers `NotificationManager.cancelScheduledNotification()` and updates the cache (`scheduled_live_notification_id = null`).
-        *   Automatic updates via Riverpod provider that monitors CacheService changes (watches `CachedVideo` entries with `scheduled_live_notification_id != null`).
-    *   **Background Process Status Panel**: 
-        *   Status indicator badge (running/stopped) using `Chip` or custom widget bound to `flutter_background_service` state via Riverpod.
-        *   Timeline displays: Last successful poll time (from `last_poll_time`), Next scheduled poll (calculated from Poll Frequency + last poll time).
-        *   Manual poll button (`ElevatedButton`) that triggers immediate background service execution.
-        *   Error display area (`Alert` or colored text) showing last error message from poller (stored in Riverpod state). 
-        *   Auto-refresh mechanism using `Timer.periodic` or Riverpod `StreamProvider` to update status every 30 seconds.
-
-4.  **Data Persistence:** Settings and channel configurations managed by Riverpod providers interacting with `shared_preferences` and the `drift` database via respective services. API key managed via `flutter_secure_storage`.
+2.  **State Management:** Riverpod manages UI state, settings, channel lists, search results, scheduled notifications, and background status. Data is persisted via infrastructure services.
+3.  **Navigation:** A `BottomNavigationBar` provides access to three main pages:
+    *   **Page 1: Scheduled (Default):** Displays upcoming scheduled notifications.
+    *   **Page 2: Channels:** Allows searching, adding, and managing subscribed channels and their notification settings.
+    *   **Page 3: Settings:** Contains application behavior settings and background process status.
+4.  **Page Content & Functionality:**
+    *   **Page 1: Scheduled (`ScheduledNotificationsCard` content)**
+        *   Displays upcoming scheduled live stream notifications fetched from `CacheService` via `scheduledNotificationsProvider` (`StateNotifierProvider` wrapping `AsyncValue<List<CachedVideo>>`).
+        *   Each entry shows channel avatar (`channelAvatarUrl`), name (`channelName`), stream title (`videoTitle`), and scheduled start time (`start_scheduled` formatted). Uses `CachedNetworkImage`.
+        *   Includes a cancel button per entry, triggering cancellation via `NotificationService` and cache update via `CacheService`, handled by `AppController` or directly in the widget via providers.
+        *   Updates automatically based on cache changes (or manual refresh).
+        *   **Refresh:** Pull-to-refresh triggers `ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true)`.
+    *   **Page 2: Channels (`ChannelManagementCard` content)**
+        *   **Global Defaults:** Four `FilterChip` widgets (New, Mentions, Live, Update) bound to simple `StateProvider`s (`global...DefaultProvider`). An "Apply Defaults" button triggers `AppController.applyGlobalDefaultsToAllChannels`.
+        *   **Channel Search:** `TextField` bound to `channelSearchQueryProvider`. Uses `debouncedChannelSearchProvider` (`FutureProvider`) with a debounce mechanism to call `ApiService.searchChannels` (currently using autocomplete endpoint). Displays results (`Channel`) considering loading/error states (`asyncSearchResults.when`). Handles `ApiKeyRequiredException`. Shows an "Add" button per result if not already added, triggering `AppController.addChannel`.
+        *   **Added Channel List:** Displays added channels (`channelListProvider`) using `ChannelSettingsTile` widgets within a `ReorderableListView`. Provides drag-and-drop reordering via `ChannelListNotifier.reorderChannels`.
+            *   `ChannelSettingsTile`: Shows channel avatar, name, individual notification `FilterChip` toggles (bound to `ChannelListNotifier`), and a "Remove" button (with confirmation dialog) triggering `AppController.removeChannel`.
+        *   **Refresh:** Pull-to-refresh triggers `ref.read(channelListProvider.notifier).reloadState()`.
+    *   **Page 3: Settings (`AppBehaviorSettingsCard` + `BackgroundStatusCard` content)**
+        *   **App Behavior:** (`AppBehaviorSettingsCard`)
+            *   Notification Grouping Toggle (`SwitchListTile` bound to `notificationGroupingProvider` and `SettingsService`).
+            *   Delay New Media Toggle (`SwitchListTile` bound to `delayNewMediaProvider` and `SettingsService`).
+            *   Poll Frequency Slider (`Slider` bound to `pollFrequencyProvider` and `SettingsService`, range 5min-12hr, default 10min). Persists `onChangeEnd`.
+            *   API Key Input (`TextField` within `ListTile`, using local `useState` for visibility/editing state, bound to `apiKeyProvider` and `SettingsService` via `SecureStorageService`).
+        *   **Background Status:** (`BackgroundStatusCard`)
+            *   Displays service status (Running/Stopped `Chip`), last successful poll time, next calculated poll time, and last error message using `backgroundServiceStatusStreamProvider` (`StreamProvider` updating periodically and watching `backgroundLastErrorProvider`).
+            *   "Poll Now" button invokes `'triggerPoll'` on the background service.
+            *   Includes a "Clear Error" button.
+        *   **Refresh:** No pull-to-refresh. Status card updates periodically.
+5.  **Data Persistence:** Settings and channel configurations managed by Riverpod providers interacting with `SharedPrefsSettingsService` (which uses `shared_preferences` and `SecureStorageService`). Video cache managed by `DriftCacheService`.
 
 ## III. API Interface Service (Background Poller)
 
-1.  **Background Execution:** Use `flutter_background_service` configured for both Android (foreground service) and Windows (background task). Ensure singleton execution logic within the service setup.
-2.  **Polling Trigger:** Schedule based on periodic execution via `flutter_background_service` "Poll Frequency" setting.
-3.  **API Client:** Use `dio` for requests.
-    *   **Interceptors:** Add interceptors for:
-        *   Injecting the API Key (`X-APIKEY` header) from Secure Storage Service or fallback developer key.
-        *   Logging requests/responses.
-        *   Handling errors (see Error Handling section).
-4.  **Polling Logic (per cycle):**
-    *   Check connectivity using `connectivity_plus`. If offline, log and skip cycle.
-    *   Get `last_poll_time` (timestamp of *start* of last successful poll) from persistent storage.
-    *   Get `current_poll_time` (timestamp of *start* of current poll).
-    *   Identify unique `subscribed_ids` (channels followed for New/Live/Update) from User Settings.
-    *   Identify unique `mention_ids` (channels followed for Mentions) from User Settings.
-    *   Combine unique IDs needed (`all_ids = subscribed_ids U mention_ids`).
-    *   Fetch video data iteratively using `/videos` endpoint via `dio`, requesting `live_info` and `mentions`. Use `freezed` models for parsing responses.
-        *   For each `id` in `all_ids`:
-            *   Determine if this `id` is needed for subscriptions (`is_subscribed = id in subscribed_ids`) or mentions (`is_mentioned = id in mention_ids`).
-            *   If `is_subscribed`: Call `/videos?channel_id={id}&include=live_info,mentions&from={last_poll_time}&limit=50&type=stream,clip,placeholder`. Add results to `results`.
-            *   If `is_mentioned` AND *not* `is_subscribed` (to avoid duplicate calls): Call `/videos?mentioned_channel_id={id}&include=live_info,mentions&from={last_poll_time}&limit=50&type=stream,clip,placeholder`. Add results to `results`.
-    *   Pass unique `results` list (deduplicated by `video.id`) to Application Controller.
-    *   If processing succeeds (no exceptions thrown by Controller), store `current_poll_time` as the new `last_poll_time` in persistent storage.
-5.  **Error Handling:** See Section IX. Transient network/server errors should be retried by `dio` interceptor (`dio_smart_retry` or custom). Persistent errors should be logged and potentially surfaced to the UI via Riverpod state.
+1.  **Background Execution:** Uses `flutter_background_service`. Configured as an Android foreground service (`dataSync` type) with a low-importance notification channel (`holodex_notifier_background_service`). Enabled for `autoStartOnBoot`.
+2.  **Isolate Setup:**
+    *   Runs in a dedicated isolate via `onStart` entry point.
+    *   Initializes `DartPluginRegistrant`.
+    *   Creates a `ProviderContainer` with overrides (setting `IsolateContext.background`).
+    *   Initializes `LoggingService`.
+    *   Sets up listeners for `invoke` calls (`stopService`, `triggerPoll`, `updateSetting`).
+    *   **Readiness Check:** Enters a loop waiting for `SettingsService.getMainServicesReady()` to return true, ensuring main isolate services (esp. `NotificationService`) are ready before proceeding.
+3.  **Polling Trigger:**
+    *   Periodically via `Timer.periodic` based on resolved `currentPollFrequency` from `SettingsService`.
+    *   Manually via `'triggerPoll'` invoke from UI.
+    *   A simple lock (`isPolling`) prevents concurrent poll cycles.
+4.  **API Client:** Uses `dio` instance obtained via the background `ProviderContainer`. `ApiKeyInterceptor` handles API key retrieval from `SettingsService`.
+5.  **Polling Logic (`_executePollCycle`):**
+    *   Resolves necessary services (`Logging`, `Settings`, `Connectivity`, `API`, `Cache`, `Notification`) from the background `ProviderContainer`.
+    *   Checks connectivity (`ConnectivityService`). Skips if offline.
+    *   Gets `lastPollTime` from `SettingsService` (or defaults to lookback).
+    *   Gets current subscribed channels (`ChannelSubscriptionSetting`) from `SettingsService`. Skips API call if none.
+    *   Prepares `subscribedIds` and `mentionIds` sets.
+    *   Fetches video data using `ApiService.fetchVideos` (which handles iterative calls per channel/mention ID) with `from=lastPollTime`, including `live_info` and `mentions`.
+    *   Processes fetched `VideoFull` results:
+        *   For each `video`, calls `_processVideoUpdate`.
+        *   `_processVideoUpdate`:
+            *   Gets cached state (`CacheService.getVideo`).
+            *   Resolves needed services from container (logger, cache, notification, settings).
+            *   Determines event conditions based on fetched vs cached state (`_ProcessingState` helper class: `isNew`, `isCertain`, `statusChanged`, `scheduleChanged`, `becameCertain`, `mentionsChanged`, `wasPendingNewMedia`).
+            *   Calls event-specific helpers (`_handleLiveScheduling`, `_handleNewMediaEvent`, etc.).
+            *   These helpers determine actions based on user settings and state changes, adding `NotificationInstruction`s to dispatch list and notification IDs to cancel list. Crucially, they interact with the *resolved* `NotificationService` instance for scheduling/cancellation calls *if* necessary within the helper logic (e.g., `_handleLiveScheduling`).
+            *   Passively updates channel avatar URL in `SettingsService`.
+            *   Returns a `VideoProcessingResult` containing the `CachedVideosCompanion` to upsert, notifications to dispatch, and cancellations needed.
+        *   Accumulates `VideoProcessingResult`s from all videos.
+    *   Performs **batch database upsert** (`db.batch`) for all collected `CachedVideosCompanion`s *after* processing all videos.
+    *   Dispatches accumulated notification cancellations (`_dispatchCancellations`) and immediate notifications (`_dispatchNotifications`) via `NotificationService` *after* the database batch write succeeds.
+    *   Updates `backgroundLastErrorProvider` state for UI feedback.
+    *   If cycle succeeds, updates `lastPollTime` in `SettingsService`.
+6.  **Error Handling:** Catches errors during the poll cycle, logs them, updates `backgroundLastErrorProvider`. Retry logic for transient errors is handled by `dio` interceptors (if configured). Uses `ILoggingService` within the background isolate. Unhandled initialization errors stop the service.
+7.  **Settings Update:** Listens for `'updateSetting'` invoke (currently only handles `pollFrequency`) to update the `Timer.periodic` interval.
 
 ## IV. Cache Service (`drift` / `sqflite`)
 
-1.  **Storage:** Setup `drift` database for storing video cache.
-2.  **Schema (`CachedVideo` Table):**
+1.  **Storage:** `drift` database (`AppDatabase`) initialized in `main.dart` (or background isolate entry point) via `openConnection()`. Uses `holodex_notifier_db.sqlite` in app documents directory.
+2.  **Schema (`CachedVideos` Table - v1):**
     *   `video_id` (TEXT, PRIMARY KEY)
-    *   `status` (TEXT)
+    *   `channel_id` (TEXT, Default: 'Unknown')
+    *   `status` (TEXT) - 'new', 'upcoming', 'live', 'past', 'missing'
     *   `start_scheduled` (TEXT - ISO8601, nullable)
     *   `start_actual` (TEXT - ISO8601, nullable)
-    *   `available_at` (TEXT - ISO8601) - Needed for pruning and New Media check.
-    *   `certainty` (TEXT, nullable) - Possible values: 'certain', 'likely'. Assume 'certain' if null/missing.
-    *   `mentioned_channel_ids` (TEXT - Store as JSON array string or in a separate relation table)
+    *   `available_at` (TEXT - ISO8601)
+    *   `certainty` (TEXT, nullable) - 'certain', 'likely'
+    *   `mentioned_channel_ids` (TEXT, Default: '[]', `StringListConverter`)
+    *   `video_title` (TEXT, Default: 'Unknown Title')
+    *   `channel_name` (TEXT, Default: 'Unknown Channel')
+    *   `channel_avatar_url` (TEXT, nullable)
     *   `is_pending_new_media_notification` (BOOLEAN, Default: false)
-    *   `last_seen_timestamp` (INTEGER - Unix timestamp)
-    *   `scheduled_live_notification_id` (INTEGER, nullable) - ID for the scheduled platform notification.
-    *   `last_live_notification_sent_time` (INTEGER - Unix timestamp, nullable) - To prevent rapid duplicate "Live".
-3.  **Pruning:** Implement a daily background task (triggered via `flutter_background_service`) to delete stale entries based on `status` and `available_at`.
-    *   Delete entries where `status == 'past'`.
-    *   Delete entries where `available_at` is older than 4 days from the current time.
+    *   `last_seen_timestamp` (INTEGER - Unix ms)
+    *   `scheduled_live_notification_id` (INTEGER, nullable) - Platform notification ID.
+    *   `last_live_notification_sent_time` (INTEGER - Unix ms, nullable) - Debounce for immediate live.
+3.  **Methods (`DriftCacheService` wrapping `AppDatabase`):** Provides standard CRUD (`getVideo`, `upsertVideo`, `deleteVideo`), status-based retrieval (`getVideosByStatus`), state updates (`updateVideoStatus`, `updateScheduledNotificationId`, etc.), and specific queries for UI (`getScheduledVideos`, `watchScheduledVideos`).
+4.  **Pruning:** `pruneOldVideos` method implemented in `DriftCacheService`. Called potentially by background poller or a separate timer. Deletes entries where `status == 'past'` OR `available_at` is older than a defined `maxAge`.
 
-## V. Application Controller
+## V. Application Controller (`AppController`)
 
-1.  **Inputs:** `List<VideoFull>` from Poller, User Settings (via Riverpod/SettingsService), CacheService access, NotificationManager access.
-2.  **Processing:**
-    *   Initialize `notifications_to_dispatch = []`, `scheduled_tasks_to_update = []`.
-    *   Get `current_system_time`.
-    *   For each `video` in the list from Poller:
-        *   Get `cached_video` from CacheService.
-        *   Determine `is_certain`, `was_certain`, `is_delayed_new`.
-            *   `is_certain = (video.certainty === 'certain' || video.certainty == null)`
-            *   `was_certain = (cached_video != null && (cached_video.certainty === 'certain' || cached_video.certainty == null))` // Check previous certainty
-            *   `is_delayed_new = UserSettings.delay_new_media_until_scheduled`
-        *   `has_live_notification_scheduled = cached_video?.scheduled_live_notification_id != null`.
-        *   **Detect Events & Schedule/Cancel Live Notifications:**
-            *   **Live Scheduling Logic:**
-                *   If user wants 'Live' notifications for `video.channel.id` AND `video.status === 'upcoming'` AND `video.start_scheduled != null`:
-                    *   If `!has_live_notification_scheduled` OR `video.start_scheduled != cached_video.start_scheduled`:
-                        *   If `has_live_notification_scheduled`, add cancellation for `cached_video.scheduled_live_notification_id` to `scheduled_tasks_to_update`.
-                        *   Schedule a new timed notification via NotificationManager for `video.start_scheduled`. Get the `new_notification_id`. Update cache entry with `scheduled_live_notification_id = new_notification_id`.
-                        *   *Note:* The NotificationManager handles the actual platform scheduling.
-                *   Else if `has_live_notification_scheduled` AND (`video.status !== 'upcoming'` OR `video.start_scheduled == null`):
-                    *   Add cancellation for `cached_video.scheduled_live_notification_id` to `scheduled_tasks_to_update`. Update cache entry `scheduled_live_notification_id = null`.
-            *   **New Media Event:** Determine if a 'New Media' event occurred (as per previous logic: check cache null, age, delay setting, certainty). If yes, add to `notifications_to_dispatch`. Cancel any scheduled live notification for this video (it's now considered "known").
-            *   **Pending New Media Trigger:** As before. If triggered, add to `notifications_to_dispatch`.
-            *   **Live Event (Poll-Detected):** If (`cached_video == null` OR `cached_video.status !== 'live'`) AND `video.status === 'live'`:
-                *   Check `last_live_notification_sent_time` to prevent duplicates within a short window (e.g., 2 mins).
-                *   If okay to send, add 'Live' event to `notifications_to_dispatch`. Update `last_live_notification_sent_time` in cache.
-                *   Cancel any potentially pending scheduled live notification via `scheduled_tasks_to_update`. Update cache entry `scheduled_live_notification_id = null`.
-            *   **Update Event:** As before (check `start_scheduled` change, suppress if only certainty changes with delay enabled). If yes, add to `notifications_to_dispatch`. *Note: Live notification scheduling logic above handles schedule changes proactively.*
-            *   **Mention Event:** As before (check new mentions, check user settings per mentioned channel). If yes, add specific 'Mention' event(s) to `notifications_to_dispatch`.
+1.  **Dependencies:** Riverpod `Ref`, `ISettingsService`, `ILoggingService`, `ICacheService`, `INotificationService`.
+2.  **Responsibilities:**
+    *   `addChannel`: Creates `ChannelSubscriptionSetting` from `Channel` data (using global defaults from providers), adds to `channelListProvider`, triggers save.
+    *   `removeChannel`:
+        *   Fetches scheduled videos for the channel from `CacheService`.
+        *   Iterates and cancels corresponding platform notifications via `NotificationService`.
+        *   Updates cache entries to clear `scheduledLiveNotificationId`.
+        *   Removes channel from `channelListProvider`, triggers save.
+        *   Refreshes `scheduledNotificationsProvider`.
+    *   `updateChannelNotificationSetting`: Updates a specific toggle (new, mention, live, update) for a channel in `channelListProvider`, triggers save.
+        *   If disabling 'Live', calls helper (`_cancelScheduledLiveNotificationsForChannel`) to cancel existing scheduled notifications for that channel via `NotificationService` and update cache.
+        *   If enabling 'Live', calls helper (`_scheduleMissingLiveNotificationsForChannel`) to find upcoming videos in cache and schedule notifications via `NotificationService` if not already scheduled/past.
+        *   Refreshes `scheduledNotificationsProvider`.
+    *   `updateGlobalSetting`: Updates simple settings (grouping, delay, poll frequency, API key) via `StateProvider`s and persists using `SettingsService`. Notifies background service ('updateSetting' invoke) if `pollFrequency` changes.
+    *   `applyGlobalDefaultsToAllChannels`: Updates all entries in `channelListProvider` with current global defaults (`global...DefaultProvider`), triggers save.
 
-        *   **Update Cache:** Update the `CachedVideo` entry with latest data from `video`, including any changes to `is_pending_new_media_notification`, `scheduled_live_notification_id`, `last_live_notification_sent_time`, and `last_seen_timestamp`.
-3.  **Dispatch Scheduled Task Updates:** Call NotificationManager methods to cancel/update any tasks listed in `scheduled_tasks_to_update`.
-4.  **Grouping:** Apply grouping logic to `notifications_to_dispatch` based on user setting.
-    *   `// TODO: Implement advanced collaboration-based grouping per readme.md V2`
-    *   If `UserSettings.notification_grouping` is ON:
-        *   Group entries in `notifications_to_send` by `video_data.id`.
-        *   For each group, format for grouped display (pass grouped data containing list of events/targets to Notification Manager).
-    *   Else (Grouping OFF):
-        *   Pass each entry in `notifications_to_send` individually to Notification Manager.
-5.  **Dispatch Notifications:** Pass the final (potentially grouped) list to NotificationManager for immediate display.
-6.  **Error Signaling:** Catch exceptions during processing. Log errors. If critical, update UI state via Riverpod.
+## VI. Notification Service (`LocalNotificationService`)
 
-## VI. Notification Manager
-
-1.  **Initialization:** Configure the plugin for Android and Windows (channels, permissions).
-2.  **Methods:**
-    *   `displayNotification(data)`: Takes processed notification data (single/grouped), fetches images (`flutter_cache_manager`), formats, and displays using `flutter_local_notifications`.
-    *   `scheduleLiveNotification(videoId, channelId, scheduledTime)`: Generates a unique notification ID, creates a pending notification payload with verification data (video ID, expected time), and schedules it using the plugin's zoned schedule feature. Returns the notification ID.
-    *   `cancelScheduledNotification(notificationId)`: Cancels a previously scheduled notification.
-    *   `handleScheduledNotificationCallback(payload)`: (Called by the platform when a scheduled notification fires).
-        *   Parse `payload` to get `videoId` and `expectedTime`.
-        *   **Verification Step:** Quickly check CacheService (or potentially a very quick targeted API call if allowed in background):
-            *   Is the video's *current* status 'live'?
-            *   Did `start_actual` or `start_scheduled` occur close to `expectedTime` (within tolerance)?
-            *   Was a 'Live' notification already sent recently (`last_live_notification_sent_time`)?
-        *   If verification passes:
-            *   Fetch latest video data from cache.
-            *   Format and display the "Live" notification via `displayNotification`.
-            *   Update `last_live_notification_sent_time` in cache.
-        *   Log the outcome (sent, skipped-already-live, skipped-cancelled, skipped-failed-verification).
-        *   Update `scheduled_live_notification_id = null` in cache for this video.
-3.  **Image Caching:** Use `flutter_cache_manager` to download and cache channel/mention avatars efficiently.
+1.  **Technology:** Uses `flutter_local_notifications`.
+2.  **Initialization (`initialize`):**
+    *   Called only by the **main isolate**.
+    *   Handles timezone setup (`timezone` package).
+    *   Sets up platform-specific initialization settings (Android, iOS, Linux).
+    *   Initializes the plugin, setting `onDidReceiveNotificationResponse` (foreground tap) and `onDidReceiveBackgroundNotificationResponse` (background tap). Tap events push the payload (videoId) to `_notificationTapController`.
+    *   Requests permissions on Android (Notifications, Exact Alarms).
+    *   Creates Android Notification Channels (`holodex_notifier_default`, `holodex_notifier_scheduled`).
+    *   Uses a lock (`_initLock`) to prevent concurrent initialization.
+3.  **Methods:**
+    *   `showNotification(NotificationInstruction)`:
+        *   Formats title/body based on `eventType`.
+        *   Fetches channel avatar using `flutter_cache_manager` (`_cacheManager`).
+        *   Builds `NotificationDetails` for platforms (includes `largeIcon` for Android).
+        *   Generates a consistent notification ID based on `videoId` and `eventType` (`_generateImmediateNotificationId`).
+        *   Displays the notification using `_flutterLocalNotificationsPlugin.show()`.
+    *   `scheduleNotification({videoId, scheduledTime, ...})`:
+        *   Formats title/body.
+        *   Builds `NotificationDetails` using the `scheduledChannelId`.
+        *   Converts `scheduledTime` to `TZDateTime`.
+        *   Generates a consistent notification ID based on `videoId` (`_generateScheduledNotificationId`).
+        *   Schedules using `_flutterLocalNotificationsPlugin.zonedSchedule()` with `AndroidScheduleMode.exactAllowWhileIdle`.
+        *   Returns the generated notification ID or null on error.
+    *   `cancelScheduledNotification(notificationId)`: Cancels using `_flutterLocalNotificationsPlugin.cancel()`.
+    *   `cancelAllNotifications()`: Cancels all using `_flutterLocalNotificationsPlugin.cancelAll()`.
+    *   `notificationTapStream (get)`: Exposes the stream of payloads from tapped notifications.
+4.  **Scheduled Notification Handling:** The background polling service (`_processVideoUpdate`) detects when a stream actually goes live and dispatches an *immediate* 'Live' notification. It also cancels the previously scheduled notification at that point. The scheduled notification itself, if it fires before being cancelled, simply displays the "Scheduled to go live" message. There is no complex verification logic within the `onDidReceive...` callbacks for scheduled notifications in this version.
 
 ## VII. Initial Target Platforms
 
@@ -167,44 +171,44 @@
 
 ## VIII. Technology Stack Summary
 
-*   **Language:** Dart
-*   **Framework:** Flutter
-*   **State Management:** `flutter_riverpod`
-*   **HTTP Client:** `dio` (with `dio_smart_retry`)
+*   **Language:** Dart 3.x
+*   **Framework:** Flutter 3.x
+*   **State Management:** `flutter_riverpod`, `hooks_riverpod`, `flutter_hooks`
+*   **HTTP Client:** `dio`
 *   **Background Execution:** `flutter_background_service`
-*   **Database (Cache):** `drift` (over `sqflite`)
+*   **Database (Cache):** `drift`, `sqlite3_flutter_libs`, `path_provider`, `path`
 *   **Simple Settings:** `shared_preferences`
 *   **Secure Storage:** `flutter_secure_storage`
 *   **Notifications:** `flutter_local_notifications`
 *   **Connectivity:** `connectivity_plus`
-*   **Data Modeling:** `freezed`, `json_serializable`
-*   **Image Caching:** `flutter_cache_manager`
+*   **Data Modeling:** `freezed`, `json_serializable`, `freezed_annotation`, `json_annotation`
+*   **Image Caching:** `cached_network_image`, `flutter_cache_manager`
 *   **Logging:** `logger`
-*   **Testing:** `flutter_test`, `integration_test`, `mockito` (or `mocktail`), `riverpod_test`
+*   **Asynchronous:** `synchronized`, `stream_transform`
+*   **Utilities:** `intl`, `collection`, `timezone`
+*   **Build/Codegen:** `build_runner`, `drift_dev`
+*   **Linting:** `flutter_lints`
 
 ## IX. Error Handling, Debugging & Testing Strategy
 
 1.  **Error Handling:**
-    *   **Graceful Degradation:** Aim for resilience. API errors or background task failures should not crash the app. The UI should remain responsive.
-    *   **API/Network Errors:** Use `dio` interceptors and `try-catch` blocks. Log detailed errors (HTTP status, URL, body snippet if possible, timestamp). Use retry mechanisms for transient errors (429, 5xx, network timeout).
-    *   **Parsing/Data Errors:** Use `try-catch` around `freezed` model deserialization. Log the problematic data snippet if possible.
-    *   **Background Service Errors:** Wrap main background logic in `try-catch`. Log exceptions using the `logger` service. Ensure the service reschedules itself even after failure.
-    *   **Database/Storage Errors:** Catch exceptions during DB/preference operations. Log errors.
-    *   **User-Facing Errors:**
-        *   Use Riverpod state to reflect persistent error conditions (e.g., "API Unreachable", "Invalid API Key") in the UI settings page via non-modal indicators (e.g., `SnackBar`, banner).
-        *   Provide clear error messages understandable to the user where possible.
-        *   Include a unique error code/ID and timestamp in logged errors.
-        *   Consider an "About" or "Debug" section with an option to view/copy/export logs for bug reporting.
+    *   **Network/API:** `dio` interceptors for logging/retries. `try-catch` around API calls in `HolodexApiService`. `ApiKeyRequiredException` handled in `ChannelManagementCard`.
+    *   **Background Service:** Main logic wrapped in `try-catch`. Errors logged via `LoggerService`. `backgroundLastErrorProvider` updated to show errors in UI. Readiness check prevents early execution. Initialization errors stop the service.
+    *   **Database/Storage:** `try-catch` around critical operations (e.g., JSON parsing in `SharedPrefsSettingsService`). Drift handles many DB errors internally.
+    *   **Notifications:** `try-catch` around scheduling/showing/cancelling in `LocalNotificationService` and relevant controller/poller logic.
+    *   **Initialization:** `main.dart` has a top-level `try-catch`. Fatal errors launch a minimal `ErrorApp` and attempt to reset the readiness flag.
+    *   **UI:** `AsyncValue.when` used extensively for handling loading/error states from providers (`ScheduledNotificationsCard`, `ChannelManagementCard`, `BackgroundStatusCard`). `ScaffoldMessenger` shows transient errors/success messages.
 2.  **Debugging:**
-    *   Utilize Flutter DevTools for UI inspection, performance monitoring, and debugging.
-    *   Implement comprehensive logging using the `logger` package, with different levels (debug, info, warning, error). Log key events, state changes, API calls, background task execution, errors.
-    *   Conditional logging based on build mode (verbose logs in debug, essential logs in release).
-3.  **Testing:**
-    *   **Unit Tests (`flutter_test`):** Test individual functions, controller logic, data transformations, parsing logic. Mock dependencies (API client, cache, settings, notifications) using `mockito` or `mocktail`.
-    *   **Widget Tests (`flutter_test`):** Test individual UI widgets and simple screen flows in isolation. Provide mock data via Riverpod overrides.
-    *   **State Management Tests (`riverpod_test`):** Test Riverpod providers and state transitions.
-    *   **Integration Tests (`integration_test`):** Test key end-to-end flows:
-        *   Adding/removing a channel and verifying settings persistence.
-        *   Simulating API poll responses and verifying cache updates and notification scheduling/dispatch (mock the NotificationManager display/scheduling).
-        *   Testing background task initialization and execution cycle (mocking API/time).
-    *   **Code Coverage:** Aim for high test coverage, especially for core logic (Controller, Services).
+    *   `LoggerService` provides structured logs with timestamps and levels, functional in both main and background isolates.
+    *   Flutter DevTools.
+    *   `kDebugMode` used for conditional logging/behavior (e.g., Dio logging).
+    *   `drift`'s `logStatements: true` enabled for debug builds.
+3.  **Testing (Strategy):**
+    *   **Unit Tests:** Test services (mocking dependencies like Dio, SharedPreferences, Drift), `AppController` logic (mocking services), `freezed` models, utility functions. Use `mocktail` or `mockito`.
+    *   **Widget Tests:** Test individual cards and tiles, providing mock data via Riverpod overrides. Test UI interactions (button taps, switch toggles).
+    *   **Riverpod Tests:** Test `StateNotifier` logic (`ChannelListNotifier`, `ScheduledNotificationsNotifier`), provider state transitions.
+    *   **Integration Tests:** Test key flows:
+        *   Adding channel -> Verifying list update and persistence.
+        *   Changing setting -> Verifying persistence and potential background notification.
+        *   Simulating poll -> Verifying cache update & notification scheduling/dispatch (mock `flutter_local_notifications`).
+        *   Background service lifecycle and readiness flag interaction.

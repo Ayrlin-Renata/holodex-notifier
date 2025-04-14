@@ -3,9 +3,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
-import 'package:holodex_notifier/main.dart';
+import 'package:holodex_notifier/main.dart'; // For appControllerProvider
 import 'package:holodex_notifier/ui/widgets/channel_settings_tile.dart';
-import 'package:holodex_notifier/ui/widgets/settings_card.dart';
+// import 'package:holodex_notifier/ui/widgets/settings_card.dart'; // Remove SettingsCard import
 
 class ChannelManagementCard extends HookConsumerWidget {
   const ChannelManagementCard({super.key});
@@ -46,8 +46,10 @@ class ChannelManagementCard extends HookConsumerWidget {
       return null;
     }, [searchQuery]);
 
-    return SettingsCard(
-      title: 'Channel Notifications',
+    // REMOVED: SettingsCard wrapper
+    // Return the Column containing the card content directly
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align content to start
       children: [
         // --- Global Switches ---
         const Text('Notification Type Defaults'),
@@ -235,13 +237,13 @@ class ChannelManagementCard extends HookConsumerWidget {
               ),
             );
           },
-          loading:
-              () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ), // Show a centered loading spinner while fetching
-              ),
+          // Keep loading spinner centered
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.0),
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
         ),
 
         const Divider(height: 24.0),
@@ -263,12 +265,13 @@ class ChannelManagementCard extends HookConsumerWidget {
             ReorderableListView.builder(
               key: ValueKey('reorderable_channel_list_${channelList.length}'),
               shrinkWrap: true,
+              // Disable internal scrolling for this list. The parent page will handle overall scrolling.
               physics: const NeverScrollableScrollPhysics(),
               itemCount: channelList.length,
               itemBuilder: (context, index) {
                  final channelSetting = channelList[index];
                  return ChannelSettingsTile(
-                    key: ValueKey(channelSetting.channelId),
+                    key: ValueKey(channelSetting.channelId), // Key required for reorderable items
                     channelSetting: channelSetting,
                  );
               },

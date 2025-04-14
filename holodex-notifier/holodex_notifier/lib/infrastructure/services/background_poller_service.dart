@@ -6,6 +6,7 @@ import 'dart:ui'; // Required for DartPluginRegistrant
 import 'package:drift/drift.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:holodex_notifier/application/state/background_service_state.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart'; // Need lastErrorProvider
 import 'package:holodex_notifier/domain/interfaces/background_polling_service.dart';
 import 'package:holodex_notifier/domain/interfaces/api_service.dart';

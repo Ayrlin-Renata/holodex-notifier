@@ -22,7 +22,7 @@ import 'package:holodex_notifier/infrastructure/services/holodex_api_service.dar
 import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
 import 'package:holodex_notifier/infrastructure/services/logger_service.dart';
 import 'package:holodex_notifier/infrastructure/services/shared_prefs_settings_service.dart';
-import 'package:holodex_notifier/ui/screens/settings_screen.dart';
+import 'package:holodex_notifier/ui/screens/home_screen.dart';
 import 'package:dio/dio.dart';
 
 enum IsolateContext { main, background }
@@ -70,6 +70,7 @@ final dioProvider = Provider<Dio>((ref) {
   apiKeyGetter() async {
     return settingsService.getApiKey();
   }
+
   final dioClient = DioClient(apiKeyGetter: apiKeyGetter);
   return dioClient.instance;
 });
@@ -101,7 +102,8 @@ final notificationServiceFutureProvider = FutureProvider<INotificationService>((
 
   log.info("Resolving Notification Service Provider (Isolate Context: $isolateContext)");
 
-  if (isolateContext == IsolateContext.main) { // Check the context
+  if (isolateContext == IsolateContext.main) {
+    // Check the context
     // Only run full initialization in the main isolate
     log.info("Initializing Notification Service (Main Isolate)...");
     try {
@@ -111,7 +113,8 @@ final notificationServiceFutureProvider = FutureProvider<INotificationService>((
       log.fatal("Failed Notification Service initialization in Main Isolate", e, s);
       rethrow;
     }
-  } else { // context == IsolateContext.background
+  } else {
+    // context == IsolateContext.background
     // In background isolate, DO NOT call initialize().
     log.info("Skipping Notification Service initialization (Background Isolate). Assumes main isolate succeeded.");
   }
@@ -161,6 +164,7 @@ Future<void> main() async {
   final container = ProviderContainer();
   ILoggingService? logger;
   ISettingsService? settingsService;
+  // ignore: unused_local_variable
   INotificationService? notificationService;
 
   try {
@@ -185,10 +189,20 @@ Future<void> main() async {
     logger.info("Notification Service resolved.");
 
     logger.info("Waiting for Background Service FutureProvider...");
-    await container.read(backgroundServiceFutureProvider.future);
+    // Get the instance after awaiting
+    final backgroundService = await container.read(backgroundServiceFutureProvider.future); 
     logger.info("Background Service resolved.");
 
     logger.info("All core async services initialized.");
+
+    try {
+      logger.info("Starting background polling service...");
+      await backgroundService.startPolling(); // Call startPolling here
+      logger.info("Background polling service start initiated.");
+    } catch (e, s) {
+      logger.error("Error starting background polling service", e, s);
+      // Decide if this is fatal or app can continue
+    }
 
     // --- Step 4: Set Readiness Flag to TRUE ---
     // Null Assertion OK: settingsService is guaranteed non-null here
@@ -270,7 +284,6 @@ Future<void> main() async {
     final initialPollFrequency = await settingsService.getPollFrequency();
     final initialGrouping = await settingsService.getNotificationGrouping();
     final initialDelay = await settingsService.getDelayNewMedia();
-    final initialApiKey = await settingsService.getApiKey();
     logger.info("Initial state values loaded.");
 
     // --- Step 7: Run the App ---
@@ -283,14 +296,12 @@ Future<void> main() async {
             pollFrequencyProvider.overrideWith((ref) => initialPollFrequency),
             notificationGroupingProvider.overrideWith((ref) => initialGrouping),
             delayNewMediaProvider.overrideWith((ref) => initialDelay),
-            apiKeyProvider.overrideWith((ref) => initialApiKey),
           ],
           child: const MainApp(),
         ),
       ),
     );
     logger.info("App started successfully.");
-
   } catch (e, s) {
     // --- Fatal Error Handling ---
     final initLogger = logger ?? LoggerService(); // Use existing or fallback
@@ -311,7 +322,6 @@ Future<void> main() async {
     }
     // Show minimal error UI
     runApp(ErrorApp(error: e, stackTrace: s));
-
   } // End try/catch
 } // End main
 
@@ -321,27 +331,15 @@ class MainApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ColorScheme lightColorScheme = ColorScheme.fromSeed(
-      seedColor: Colors.blue,
-      brightness: Brightness.light,
-    );
-    final ColorScheme darkColorScheme = ColorScheme.fromSeed(
-      seedColor: Colors.blue,
-      brightness: Brightness.dark,
-    );
+    final ColorScheme lightColorScheme = ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light);
+    final ColorScheme darkColorScheme = ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark);
 
     return MaterialApp(
       title: 'Holodex Notifier',
-      theme: ThemeData(
-        colorScheme: lightColorScheme,
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: darkColorScheme,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorScheme: lightColorScheme, useMaterial3: true),
+      darkTheme: ThemeData(colorScheme: darkColorScheme, useMaterial3: true),
       themeMode: ThemeMode.system,
-      home: const SettingsScreen(),
+      home: const HomeScreen(),
     );
   }
 }
@@ -362,10 +360,7 @@ class ErrorApp extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Center(
             child: SingleChildScrollView(
-              child: Text(
-                'Fatal error during app startup:\n\n$error\n\n$stackTrace',
-                style: const TextStyle(color: Colors.red),
-              ),
+              child: Text('Fatal error during app startup:\n\n$error\n\n$stackTrace', style: const TextStyle(color: Colors.red)),
             ),
           ),
         ),

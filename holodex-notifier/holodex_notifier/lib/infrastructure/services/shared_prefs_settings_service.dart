@@ -15,6 +15,7 @@ const String _keyLastPollTime = 'settings_lastPollTime';
 const String _keyChannelSubscriptions = 'settings_channelSubscriptions';
 const String _apiKeySecureStorageKey = 'holodex_api_key';
 const String _keyMainServicesReady = 'app_main_services_ready'; // Key for readiness flag
+const String _keyIsFirstLaunch = 'app_is_first_launch'; // Key for first launch flag
 
 class SharedPrefsSettingsService implements ISettingsService {
   // Dependencies
@@ -204,6 +205,22 @@ class SharedPrefsSettingsService implements ISettingsService {
     await _prefs.setBool(_keyMainServicesReady, ready);
     if (kDebugMode) {
       print("[SharedPrefsSettingsService] Main Services Ready flag SET to: $ready");
+    }
+  }
+
+  // --- First Launch Flag ---
+  @override
+  Future<bool> getIsFirstLaunch() async {
+    await _ensureFreshPrefs();
+    // Default to true if the key doesn't exist yet
+    return _prefs.getBool(_keyIsFirstLaunch) ?? true;
+  }
+
+  @override
+  Future<void> setIsFirstLaunch(bool isFirst) async {
+    await _prefs.setBool(_keyIsFirstLaunch, isFirst);
+    if (kDebugMode) {
+      print("[SharedPrefsSettingsService] IsFirstLaunch flag SET to: $isFirst");
     }
   }
 }
