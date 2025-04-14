@@ -25,8 +25,8 @@ class ScheduledNotificationsNotifier extends StateNotifier<AsyncValue<List<Cache
 
   Future<void> fetchScheduledNotifications({bool isRefreshing = false}) async {
     if (_isFetching && !isRefreshing) {
-       _logger.debug("[ScheduledNotificationsNotifier] Fetch already in progress, skipping.");
-       return;
+      _logger.debug("[ScheduledNotificationsNotifier] Fetch already in progress, skipping.");
+      return;
     }
     _isFetching = true;
     _logger.info("[ScheduledNotificationsNotifier] Fetching scheduled notifications...");
@@ -40,22 +40,23 @@ class ScheduledNotificationsNotifier extends StateNotifier<AsyncValue<List<Cache
 
     try {
       final data = await _cacheService.getScheduledVideos();
-      if (mounted) { // Check if notifier is still mounted before setting state
-         state = AsyncValue.data(data);
-         _logger.info("[ScheduledNotificationsNotifier] Fetch successful, found ${data.length} items.");
+      if (mounted) {
+        // Check if notifier is still mounted before setting state
+        state = AsyncValue.data(data);
+        _logger.info("[ScheduledNotificationsNotifier] Fetch successful, found ${data.length} items.");
       } else {
-         _logger.info("[ScheduledNotificationsNotifier] Notifier unmounted after fetch, discarding data.");
+        _logger.info("[ScheduledNotificationsNotifier] Notifier unmounted after fetch, discarding data.");
       }
     } catch (e, s) {
-       _logger.error("[ScheduledNotificationsNotifier] Error fetching scheduled notifications", e, s);
+      _logger.error("[ScheduledNotificationsNotifier] Error fetching scheduled notifications", e, s);
       if (mounted) {
         state = AsyncValue.error(e, s);
       }
     } finally {
-       // Check mounted again before resetting lock, though less critical here
-       if (mounted) {
-         _isFetching = false;
-       }
+      // Check mounted again before resetting lock, though less critical here
+      if (mounted) {
+        _isFetching = false;
+      }
     }
   }
 }
@@ -98,26 +99,28 @@ class SettingsScreen extends HookConsumerWidget {
 
     // --- Build the UI (Scaffold, ListView, Cards) ---
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Holodex Notifier Settings'),
-        elevation: 1,
-      ),
+      appBar: AppBar(title: const Text('Holodex Notifier Settings'), elevation: 1),
       body: RefreshIndicator(
         onRefresh: () async {
           // Manual refresh logic
           final logger = ref.read(loggingServiceProvider);
           logger.info("Pull-to-refresh triggered.");
-          // Refresh key providers
-          final futures = [
-             // Call reloadState on the notifier instance
-             ref.read(channelListProvider.notifier).reloadState(), // <-- ADD THIS
-             // Refreshing the provider re-fetches scheduled videos
-             Future(() => ref.refresh(scheduledNotificationsProvider)),
-             // Refresh background status stream
-             ref.refresh(backgroundServiceStatusStreamProvider.future),
+
+          // Create a list of the Futures we need to wait for.
+          final List<Future<void>> refreshFutures = [
+            // Call reloadState on the channel list notifier
+            ref.read(channelListProvider.notifier).reloadState(),
+
+            // Call the fetch method on the scheduled notifications notifier
+            // This method already returns a Future<void> implicitly or explicitly
+            // because it's marked async.
+            ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true),
           ];
-          // Show loading indicator during refresh
-          await Future.wait(futures);
+
+          // Wait for both asynchronous operations to complete.
+          // Future.wait expects an Iterable<Future>, which refreshFutures now is.
+          await Future.wait(refreshFutures);
+
           logger.info("Refresh complete.");
         },
         child: ListView(
@@ -127,9 +130,9 @@ class SettingsScreen extends HookConsumerWidget {
             SizedBox(height: 16),
             ChannelManagementCard(),
             SizedBox(height: 16),
-            ScheduledNotificationsCard(), // Should update correctly now
+            ScheduledNotificationsCard(),
             SizedBox(height: 16),
-            BackgroundStatusCard(), // Should update correctly now
+            BackgroundStatusCard(),
             SizedBox(height: 16),
           ],
         ),
@@ -159,7 +162,7 @@ final backgroundServiceStatusStreamProvider = StreamProvider.autoDispose<Backgro
       final isRunning = await backgroundService.isRunning();
       final lastPoll = await settingsService.getLastPollTime();
       final lastError = ref.read(backgroundLastErrorProvider); // Read last error state
-       print("Background Status Check: Running=$isRunning, LastPoll=$lastPoll, Error=$lastError");
+      print("Background Status Check: Running=$isRunning, LastPoll=$lastPoll, Error=$lastError");
       if (!controller.isClosed) {
         controller.add(BackgroundStatus(isRunning: isRunning, lastPollTime: lastPoll, lastError: lastError));
       }
@@ -180,7 +183,7 @@ final backgroundServiceStatusStreamProvider = StreamProvider.autoDispose<Backgro
   ref.onDispose(() {
     timer?.cancel();
     controller.close();
-     print("Disposed background status stream.");
+    print("Disposed background status stream.");
   });
 
   return controller.stream;
