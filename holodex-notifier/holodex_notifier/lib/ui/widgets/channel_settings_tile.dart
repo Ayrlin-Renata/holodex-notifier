@@ -29,8 +29,8 @@ class ChannelSettingsTile extends ConsumerWidget {
 
             // Avatar
                         SizedBox(
-              width: 48,
-              height: 48,
+              width: 64,
+              height: 64,
               child: ClipOval(
                 child: CachedNetworkImage(
                   // Use the avatarUrl from the setting object

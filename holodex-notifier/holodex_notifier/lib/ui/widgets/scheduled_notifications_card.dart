@@ -77,7 +77,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                 return ListTile(
                     // --- Add Avatar ---
                     leading: CircleAvatar(
-                      radius: 20, // Adjust size as needed
+                      radius: 24, // Adjust size as needed
                       backgroundColor: theme.colorScheme.secondaryContainer, // Placeholder color
                       backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
                       child: avatarUrl == null ? const Icon(Icons.person_outline, size: 20) : null,

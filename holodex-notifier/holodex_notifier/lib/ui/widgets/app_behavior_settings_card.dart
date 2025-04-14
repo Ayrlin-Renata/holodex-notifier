@@ -210,11 +210,11 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
           childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           children: <Widget>[
             Text(
-              'An API key allows this app to access more data from Holodex.\n\n'
-              '1. Log in to your Google Account on holodex.net.\n'
-              '2. Go to your Account page (click your avatar in the top right).\n'
+              'An API key allows this app to access data from Holodex.\n\n'
+              '1. Log in to your account on holodex.net.\n'
+              '2. Go to your Account Settings page (click your avatar in the top right).\n'
               '3. Find the "API Key" section.\n'
-              '4. If you don\'t have one, click "Generate".\n'
+              '4. If you don\'t have one, click "GET NEW API KEY".\n'
               '5. Copy the generated key and paste it here.',
               style: theme.textTheme.bodySmall,
             ),
@@ -223,14 +223,14 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 icon: const Icon(Icons.open_in_new, size: 16),
-                label: const Text('Go to Holodex Account'),
+                label: const Text('Go to Holodex Account Settings'),
                 onPressed: () async {
-                  final url = Uri.parse('https://holodex.net/account');
+                  final url = Uri.parse('https://holodex.net/login');
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   } else {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Holodex Account page.')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Holodex Account Settings page.')));
                     }
                   }
                 },
