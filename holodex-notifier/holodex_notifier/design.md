@@ -38,6 +38,18 @@
             *   **Card Content:** Avatar (`photo`), Name (`name`), four toggles (New Media, Mentions, Live, Update - initialized from Global Switch defaults).
             *   **Interactions:** Drag-and-drop reordering, Remove button.
             * Use `flutter_reorderable_list` or similar for draggable cards. Each card displays channel info (`CachedNetworkImage` for avatar) and `Switch` widgets bound to specific channel settings via Riverpod.
+    *   **Scheduled Notifications UI:**
+        *   Displays upcoming scheduled live notifications in a scrollable list (`ListView`).
+        *   Each entry shows channel avatar, name, stream title (`video.title`), scheduled start time (`start_scheduled` formatted as local time). 
+        *   Includes a cancel button for each entry that triggers `NotificationManager.cancelScheduledNotification()` and updates the cache (`scheduled_live_notification_id = null`).
+        *   Automatic updates via Riverpod provider that monitors CacheService changes (watches `CachedVideo` entries with `scheduled_live_notification_id != null`).
+    *   **Background Process Status Panel**: 
+        *   Status indicator badge (running/stopped) using `Chip` or custom widget bound to `flutter_background_service` state via Riverpod.
+        *   Timeline displays: Last successful poll time (from `last_poll_time`), Next scheduled poll (calculated from Poll Frequency + last poll time).
+        *   Manual poll button (`ElevatedButton`) that triggers immediate background service execution.
+        *   Error display area (`Alert` or colored text) showing last error message from poller (stored in Riverpod state). 
+        *   Auto-refresh mechanism using `Timer.periodic` or Riverpod `StreamProvider` to update status every 30 seconds.
+
 4.  **Data Persistence:** Settings and channel configurations managed by Riverpod providers interacting with `shared_preferences` and the `drift` database via respective services. API key managed via `flutter_secure_storage`.
 
 ## III. API Interface Service (Background Poller)

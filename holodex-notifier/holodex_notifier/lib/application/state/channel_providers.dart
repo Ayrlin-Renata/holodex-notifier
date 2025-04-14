@@ -1,0 +1,231 @@
+// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\application\state\channel_providers.dart
+import 'dart:async'; // For Future used in _saveState
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
+import 'package:holodex_notifier/domain/models/channel.dart';
+import 'package:holodex_notifier/domain/interfaces/settings_service.dart'; // Import Settings Service Interface
+import 'package:holodex_notifier/domain/interfaces/logging_service.dart'; // For Logger
+import 'package:holodex_notifier/main.dart'; // For settingsServiceProvider, apiServiceProvider, loggingServiceProvider
+import 'package:holodex_notifier/application/state/settings_providers.dart'; // For global defaults
+
+// Provider for the list of subscribed channels and their settings
+final channelListProvider = StateNotifierProvider<ChannelListNotifier, List<ChannelSubscriptionSetting>>((ref) {
+  // Inject SettingsService & Logger
+  final settingsService = ref.watch(settingsServiceProvider);
+  final logger = ref.watch(loggingServiceProvider);
+
+  // Pass ref, service and logger to the notifier
+  final notifier = ChannelListNotifier(ref, settingsService, logger, []);
+
+  // Trigger initial load when the provider is first read
+  notifier.loadInitialState();
+
+  return notifier;
+}, name: 'channelListProvider');
+
+class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>> {
+  final Ref _ref;
+  final ISettingsService _settingsService; // Add SettingsService dependency
+  final ILoggingService _logger; // Add Logger dependency
+
+  // Update constructor
+  ChannelListNotifier(this._ref, this._settingsService, this._logger, List<ChannelSubscriptionSetting> initialState) : super(initialState);
+
+  /// Loads the initial list from persistent storage.
+  Future<void> loadInitialState() async {
+    _logger.info("ChannelListNotifier: Loading initial state...");
+    try {
+      final loadedState = await _settingsService.getChannelSubscriptions();
+      // Only update state if it's different to avoid unnecessary rebuilds at startup
+      // A simple length check can prevent some unnecessary deep equality checks
+      if (state.length != loadedState.length || state != loadedState) {
+        state = loadedState;
+        _logger.info("ChannelListNotifier: Loaded ${state.length} channels.");
+      } else {
+        _logger.info("ChannelListNotifier: Loaded state matches initial state.");
+      }
+    } catch (e, s) {
+      _logger.error("ChannelListNotifier: Error loading initial state", e, s);
+      // Handle error appropriately, maybe set state to empty list?
+      state = [];
+    }
+  }
+
+  // --- State Modification Methods ---
+
+  void addChannel(ChannelSubscriptionSetting channel) {
+    if (state.any((existing) => existing.channelId == channel.channelId)) {
+      _logger.warning("ChannelListNotifier: Channel ${channel.channelId} already exists, cannot add.");
+      return;
+    }
+    _logger.debug("ChannelListNotifier: Adding channel ${channel.channelId}");
+    state = [...state, channel];
+    _saveState(); // Call save helper
+  }
+
+  void removeChannel(String channelId) {
+    _logger.debug("ChannelListNotifier: Removing channel $channelId");
+    state = state.where((c) => c.channelId != channelId).toList();
+    _saveState(); // Call save helper
+  }
+
+  void updateChannelSettings(String channelId, {bool? newMedia, bool? mentions, bool? live, bool? updates}) {
+    _logger.debug("ChannelListNotifier: Updating settings for $channelId (New:$newMedia, Mention:$mentions, Live:$live, Update:$updates)");
+    final index = state.indexWhere((c) => c.channelId == channelId);
+    if (index == -1) return;
+
+    final currentSetting = state[index];
+    final updatedSetting = currentSetting.copyWith(
+      notifyNewMedia: newMedia ?? currentSetting.notifyNewMedia,
+      notifyMentions: mentions ?? currentSetting.notifyMentions,
+      notifyLive: live ?? currentSetting.notifyLive,
+      notifyUpdates: updates ?? currentSetting.notifyUpdates,
+    );
+
+    final newState = List<ChannelSubscriptionSetting>.from(state);
+    newState[index] = updatedSetting;
+    state = newState;
+    _saveState(); // Call save helper
+  }
+
+  void reorderChannels(int oldIndex, int newIndex) {
+    _logger.debug("ChannelListNotifier: Reordering from $oldIndex to $newIndex");
+    if (oldIndex < 0 || oldIndex >= state.length) return;
+    if (newIndex < 0 || newIndex > state.length) return; // Allow moving to end
+
+    final item = state[oldIndex];
+    final newState = List<ChannelSubscriptionSetting>.from(state);
+    newState.removeAt(oldIndex);
+
+    // Adjust index if moving downwards
+    final adjustedNewIndex = (oldIndex < newIndex) ? newIndex - 1 : newIndex;
+    // Ensure index is within bounds after potential removal/adjustment
+    final finalIndex = adjustedNewIndex.clamp(0, newState.length);
+
+    newState.insert(finalIndex, item);
+
+    state = newState;
+    _saveState(); // Call save helper
+  }
+
+  void applyGlobalSwitches() {
+    _logger.info("ChannelListNotifier: Applying global notification defaults to all channels.");
+    final globalNewMedia = _ref.read(globalNewMediaDefaultProvider);
+    final globalMentions = _ref.read(globalMentionsDefaultProvider);
+    final globalLive = _ref.read(globalLiveDefaultProvider);
+    final globalUpdate = _ref.read(globalUpdateDefaultProvider);
+
+    state = [
+      for (final channel in state)
+        channel.copyWith(
+          notifyNewMedia: globalNewMedia,
+          notifyMentions: globalMentions,
+          notifyLive: globalLive,
+          notifyUpdates: globalUpdate,
+        ),
+    ];
+    _saveState(); // Call save helper
+  }
+
+  // --- Persistence Helper ---
+
+  /// Saves the current state list to persistent storage.
+  Future<void> _saveState() async {
+    _logger.info("ChannelListNotifier: Saving state (${state.length} channels)...");
+    try {
+      await _settingsService.saveChannelSubscriptions(state);
+      _logger.info("ChannelListNotifier: State saved successfully.");
+    } catch (e, s) {
+      _logger.error("ChannelListNotifier: Error saving state", e, s);
+      // Handle error appropriately (e.g., log, maybe signal UI via another provider)
+    }
+  }
+}
+
+// Custom Exception for API Key requirement
+class ApiKeyRequiredException implements Exception {
+  final String message;
+  ApiKeyRequiredException([this.message = 'API Key is required for this operation.']);
+  @override
+  String toString() => message;
+}
+
+// FutureProvider for debounced search execution
+final debouncedChannelSearchProvider = FutureProvider.autoDispose<List<Channel>>(
+  (ref) async {
+    final query = ref.watch(channelSearchQueryProvider);
+    final apiKey = ref.watch(apiKeyProvider); // Watch the key state directly
+    final apiService = ref.watch(apiServiceProvider);
+    final logger = ref.watch(loggingServiceProvider);
+
+    logger.debug('[Debounced Search] Triggered. Query: "$query", API Key Set: ${apiKey != null && apiKey.isNotEmpty}');
+
+    // Condition 0: Check API Key FIRST
+    if (apiKey == null || apiKey.isEmpty) {
+      logger.warning('[Debounced Search] API Key missing. Throwing ApiKeyRequiredException.');
+      // Throw an exception that the UI can specifically handle.
+      throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
+    }
+
+    // Condition 1: Don't search if query is too short
+    if (query.length < 3) {
+      logger.debug('[Debounced Search] Query too short ("$query"). Returning empty list.');
+      return []; // Return empty list immediately
+    }
+
+    // Debounce logic
+    logger.debug('[Debounced Search] Debouncing for 1000ms...');
+    await Future.delayed(const Duration(milliseconds: 1000));
+    logger.debug('[Debounced Search] Debounce finished.');
+
+    // Staleness check
+    final currentQuery = ref.read(channelSearchQueryProvider); // Read latest query *after* debounce
+    if (query != currentQuery) {
+      // Log the change but let execution continue with the results of the *original* query
+      // to avoid unnecessary throws/error states in UI if user types rapidly changes mind.
+      // The UI will update again when the *new* query finishes debouncing.
+      logger.debug('[Debounced Search] Stale query detected ("$query" vs "$currentQuery"). Proceeding with old query.');
+    }
+
+    // Condition 2: Check again if query is long enough after delay
+    if (currentQuery.length < 3) {
+      logger.debug('[Debounced Search] Query became too short after debounce ("$currentQuery"). Returning empty list.');
+      return [];
+    }
+
+    // Condition 3: Check API Key again AFTER debounce (user might have removed it)
+    final currentApiKey = ref.read(apiKeyProvider);
+    if (currentApiKey == null || currentApiKey.isEmpty) {
+      logger.warning('[Debounced Search] API Key missing after debounce. Throwing ApiKeyRequiredException.');
+      throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
+    }
+
+    logger.info('[Debounced Search] Executing search for channel: "$query"');
+    try {
+      // Perform the actual search and return the results directly.
+      final results = await apiService.searchChannels(query);
+      logger.info('[Debounced Search] Found ${results.length} channels for "$query".');
+      return results;
+    } catch (e, s) {
+      logger.error('[Debounced Search] Error searching channels for "$query"', e, s);
+      rethrow; // Rethrow the error to be handled by the UI's .when()
+    }
+  },
+  dependencies: [
+    channelSearchQueryProvider, // Watched
+    apiKeyProvider, // Watched
+    apiServiceProvider, // Read
+    loggingServiceProvider, // Read
+  ],
+  name: 'debouncedChannelSearchProvider',
+); // Adding a name is good practice
+
+// Provider for channel search query
+final channelSearchQueryProvider = StateProvider<String>((ref) {
+  // No need for complex logic or onDispose here anymore
+  return '';
+});
+
+// Provider for current last background poll error message
+final backgroundLastErrorProvider = StateProvider<String?>((ref) => null);

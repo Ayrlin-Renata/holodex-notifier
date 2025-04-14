@@ -94,6 +94,8 @@ If media has a start time in the past, it will not cause a notification other th
 
 If the user has opted to delay unknown start time New Media notifications using the Delay New Media Until Scheduled switch, these Update Notifications are not sent for the time change when the media changes from unknown start time to known start time, so as to not duplicate notifications.
 
+Live notifications will be scheduled based on the anticipated start time of the media, and updated based on the information retrieved during polling. If a live notification is incorrectly sent at an anticipated time, and a later update reveals a change that means it starts later, a new live notification will be sent based on the new anticipated time.
+
 ### Cache
 Stores information about the known state of the API information, for comparison against new information. Only stores information necessary to make the determinations. 
 
