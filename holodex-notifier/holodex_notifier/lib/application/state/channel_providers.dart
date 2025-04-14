@@ -52,6 +52,62 @@ class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>
     }
   }
 
+  /// Reloads the list from persistent storage.
+  Future<void> reloadState() async {
+    _logger.info("ChannelListNotifier: Reloading state from storage...");
+    await _reloadFromStorage(isInitialLoad: false); // Use helper
+  }
+
+  // --- Internal Helper for Loading/Reloading ---
+  Future<void> _reloadFromStorage({required bool isInitialLoad}) async {
+    try {
+      final loadedState = await _settingsService.getChannelSubscriptions();
+      // Only update state if it's different to avoid unnecessary rebuilds
+      // This check prevents infinite loops if a reload triggers another reload indirectly.
+      if (!mounted) return; // Check if notifier is still alive
+
+      // Use Set comparison for efficient equality check regardless of order
+      final currentStateSet = Set.from(state.map((e) => e.channelId));
+      final loadedStateSet = Set.from(loadedState.map((e) => e.channelId));
+
+      // Basic check: if IDs differ or content differs (deep equality might be too slow)
+      bool changed = currentStateSet.length != loadedStateSet.length || !currentStateSet.containsAll(loadedStateSet);
+
+      // If IDs are the same, do a slightly deeper check for avatar differences
+      if (!changed && state.length == loadedState.length) {
+        final currentAvatars = Map.fromEntries(state.map((e) => MapEntry(e.channelId, e.avatarUrl)));
+        for (final loaded in loadedState) {
+          if (currentAvatars[loaded.channelId] != loaded.avatarUrl) {
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      if (changed) {
+        state = loadedState;
+        if (!isInitialLoad)
+          _logger.info("ChannelListNotifier: Reloaded state with changes (${state.length} channels).");
+        else
+          _logger.info("ChannelListNotifier: Loaded initial state (${state.length} channels).");
+      } else {
+        if (!isInitialLoad)
+          _logger.info("ChannelListNotifier: Reloaded state, no changes detected.");
+        else
+          _logger.info("ChannelListNotifier: Loaded initial state matches current state.");
+      }
+    } catch (e, s) {
+      _logger.error("ChannelListNotifier: Error ${isInitialLoad ? 'loading initial' : 'reloading'} state", e, s);
+      if (mounted) {
+        // Handle error appropriately, maybe set state to empty list or previous state?
+        // Setting to empty on error might be confusing if it previously had data.
+        // Consider adding an error state to the provider if needed. For now, keep previous state.
+        _logger.warning("ChannelListNotifier: State kept unchanged due to reload error.");
+      }
+    }
+  }
+  // --- End Internal Helper ---
+
   // --- State Modification Methods ---
 
   void addChannel(ChannelSubscriptionSetting channel) {
@@ -118,12 +174,7 @@ class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>
 
     state = [
       for (final channel in state)
-        channel.copyWith(
-          notifyNewMedia: globalNewMedia,
-          notifyMentions: globalMentions,
-          notifyLive: globalLive,
-          notifyUpdates: globalUpdate,
-        ),
+        channel.copyWith(notifyNewMedia: globalNewMedia, notifyMentions: globalMentions, notifyLive: globalLive, notifyUpdates: globalUpdate),
     ];
     _saveState(); // Call save helper
   }

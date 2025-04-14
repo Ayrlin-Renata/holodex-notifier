@@ -149,6 +149,43 @@ class SharedPrefsSettingsService implements ISettingsService {
     await _prefs.setStringList(_keyChannelSubscriptions, jsonList);
   }
 
+  @override
+  Future<void> updateChannelAvatar(String channelId, String? newAvatarUrl) async {
+    await _ensureFreshPrefs(); // Ensure we have latest data if called concurrently
+
+    final List<ChannelSubscriptionSetting> currentSettings = await getChannelSubscriptions();
+    int foundIndex = -1;
+    for (int i = 0; i < currentSettings.length; i++) {
+      if (currentSettings[i].channelId == channelId) {
+        foundIndex = i;
+        break;
+      }
+    }
+
+    if (foundIndex != -1) {
+      final currentSetting = currentSettings[foundIndex];
+      // Only update and save if the URL has actually changed
+      if (currentSetting.avatarUrl != newAvatarUrl) {
+        if (kDebugMode) {
+          print("[SharedPrefsSettingsService] Updating avatar for $channelId from ${currentSetting.avatarUrl} to $newAvatarUrl");
+        }
+        // Create updated list
+        final updatedSettings = List<ChannelSubscriptionSetting>.from(currentSettings);
+        updatedSettings[foundIndex] = currentSetting.copyWith(avatarUrl: newAvatarUrl);
+        // Save the updated list
+        await saveChannelSubscriptions(updatedSettings);
+      } else {
+        // Log that no update was needed (optional)
+        if (kDebugMode) {
+          print("[SharedPrefsSettingsService] Avatar URL for $channelId is already up-to-date ($newAvatarUrl). No save needed.");
+        }
+      }
+    } else {
+      // Log warning: Attempted to update avatar for a non-existent channel subscription
+      print("[SharedPrefsSettingsService] WARNING: Attempted to update avatar for non-subscribed channel ID: $channelId");
+    }
+  }
+
   // --- Initialization Readiness Flag ---
 
   @override

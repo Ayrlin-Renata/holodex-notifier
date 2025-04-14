@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:holodex_notifier/application/state/channel_providers.dart' hide backgroundLastErrorProvider;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/ui/screens/settings_screen.dart'; // For providers
 import 'package:holodex_notifier/application/state/settings_providers.dart'; // For pollFrequencyProvider
@@ -119,6 +120,7 @@ class BackgroundStatusCard extends HookConsumerWidget {
                                 ref.refresh(backgroundServiceStatusStreamProvider);
                                 // ignore: unused_result
                                 ref.refresh(scheduledNotificationsProvider);
+                                ref.read(channelListProvider.notifier).reloadState();
                               } else {
                                 logger.debug("Widget unmounted, skipping 1s delayed refresh.");
                               }
@@ -132,6 +134,7 @@ class BackgroundStatusCard extends HookConsumerWidget {
                                 ref.refresh(backgroundServiceStatusStreamProvider);
                                 // ignore: unused_result
                                 ref.refresh(scheduledNotificationsProvider);
+                                ref.read(channelListProvider.notifier).reloadState();
                               } else {
                                 logger.debug("Widget unmounted, skipping 3s delayed refresh.");
                               }
@@ -145,6 +148,7 @@ class BackgroundStatusCard extends HookConsumerWidget {
                                 ref.refresh(backgroundServiceStatusStreamProvider);
                                 // ignore: unused_result
                                 ref.refresh(scheduledNotificationsProvider);
+                                ref.read(channelListProvider.notifier).reloadState();
                               } else {
                                 logger.debug("Widget unmounted, skipping 6s delayed refresh.");
                               }

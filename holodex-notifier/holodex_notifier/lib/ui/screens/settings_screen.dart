@@ -109,10 +109,12 @@ class SettingsScreen extends HookConsumerWidget {
           logger.info("Pull-to-refresh triggered.");
           // Refresh key providers
           final futures = [
-             // Refreshing the notifier provider should trigger its initialLoad/fetch again
-             Future(() => ref.refresh(scheduledNotificationsProvider)), // Use Future() trick if direct await needed
+             // Call reloadState on the notifier instance
+             ref.read(channelListProvider.notifier).reloadState(), // <-- ADD THIS
+             // Refreshing the provider re-fetches scheduled videos
+             Future(() => ref.refresh(scheduledNotificationsProvider)),
+             // Refresh background status stream
              ref.refresh(backgroundServiceStatusStreamProvider.future),
-             ref.read(channelListProvider.notifier).loadInitialState(),
           ];
           // Show loading indicator during refresh
           await Future.wait(futures);

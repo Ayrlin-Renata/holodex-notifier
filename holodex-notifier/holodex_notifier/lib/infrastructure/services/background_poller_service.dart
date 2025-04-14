@@ -648,6 +648,17 @@ Future<VideoProcessingResult> _processVideoUpdate(
     lastLiveNotificationSentTime: Value(processingState.lastLiveNotificationSentTime?.millisecondsSinceEpoch),
   );
 
+  try {
+    final latestAvatarUrl = fetchedVideo.channel.photo;
+    // No need to check for null here, updateChannelAvatar handles it.
+    // Use settingsService resolved earlier in the function
+    await settingsService.updateChannelAvatar(fetchedVideo.channel.id, latestAvatarUrl);
+    logger.debug("[_processVideoUpdate] ($videoId) Attempted passive avatar update for channel ${fetchedVideo.channel.id}.");
+  } catch (e, s) {
+    logger.error("[_processVideoUpdate] ($videoId) Error updating channel avatar via SettingsService", e, s);
+    // Decide if this error should be propagated or just logged
+  }
+
   logger.info("[_processVideoUpdate] ($videoId) Processing finished. Returning results.");
   return VideoProcessingResult(
     companionToUpsert: companion,

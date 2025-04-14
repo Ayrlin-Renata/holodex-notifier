@@ -42,6 +42,9 @@ abstract class ISettingsService {
   /// Saves the list of subscribed channels and their settings.
   Future<void> saveChannelSubscriptions(List<ChannelSubscriptionSetting> channels);
 
+    /// Updates the avatar URL for a specific channel subscription setting.
+  Future<void> updateChannelAvatar(String channelId, String? newAvatarUrl); // <-- ADD THIS LINE
+
   // --- Initialization Readiness Flag ---
 
   /// Checks if the main isolate has finished initializing its critical services.

@@ -28,14 +28,21 @@ class ChannelSettingsTile extends ConsumerWidget {
             const Padding(padding: EdgeInsets.symmetric(horizontal: 8.0), child: Icon(Icons.drag_handle)),
 
             // Avatar
-            SizedBox(
+                        SizedBox(
               width: 48,
               height: 48,
               child: ClipOval(
                 child: CachedNetworkImage(
-                  imageUrl: channelSetting.avatarUrl ?? '',
-                  placeholder: (context, url) => const CircleAvatar(child: Icon(Icons.person)),
-                  errorWidget: (context, url, error) => const CircleAvatar(child: Icon(Icons.error_outline)),
+                  // Use the avatarUrl from the setting object
+                  imageUrl: channelSetting.avatarUrl ?? '', // Use null-aware operator and provide empty string if null
+                  placeholder: (context, url) => const CircleAvatar(
+                     backgroundColor: Colors.grey, // Placeholder background
+                     child: Icon(Icons.person_outline, color: Colors.white70),
+                  ),
+                  errorWidget: (context, url, error) => const CircleAvatar(
+                     backgroundColor: Colors.grey, // Placeholder background
+                     child: Icon(Icons.error_outline, color: Colors.white70), // Error icon
+                  ),
                   fit: BoxFit.cover,
                 ),
               ),
