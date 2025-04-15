@@ -143,13 +143,6 @@ class ChannelManagementCard extends HookConsumerWidget {
                   final bool alreadyAdded = channelList.any((c) => c.channelId == channel.id);
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      // Autocomplete doesn't provide photo, use placeholder
-                      backgroundColor: theme.colorScheme.secondaryContainer,
-                      child: const Icon(Icons.person_outline),
-                      // backgroundImage: channel.photo != null ? CachedNetworkImageProvider(channel.photo!) : null,
-                      // child: channel.photo == null ? const Icon(Icons.person) : null,
-                    ),
                     title: Text(channel.name),
                     subtitle: Text(channel.englishName ?? channel.id, style: theme.textTheme.bodySmall),
                     trailing:

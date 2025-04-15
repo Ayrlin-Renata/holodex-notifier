@@ -79,9 +79,10 @@ final apiKeyProvider = StateNotifierProvider<ApiKeyNotifier, AsyncValue<String?>
 
 // --- Global Switch defaults remain simple states ---
 // These don't store persistent state, they are just UI state for the switches themselves.
+// GLOBAL SETTINGS DEFAULTS (move to config file later)
 final globalNewMediaDefaultProvider = StateProvider<bool>((ref) => true);
 final globalMentionsDefaultProvider = StateProvider<bool>((ref) => true);
 final globalLiveDefaultProvider = StateProvider<bool>((ref) => true);
 final globalUpdateDefaultProvider = StateProvider<bool>((ref) => true);
-final globalMembersOnlyDefaultProvider = StateProvider<bool>((ref) => true);
-final globalClipsDefaultProvider = StateProvider<bool>((ref) => true);
+final globalMembersOnlyDefaultProvider = StateProvider<bool>((ref) => false);
+final globalClipsDefaultProvider = StateProvider<bool>((ref) => false);
