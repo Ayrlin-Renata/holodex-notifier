@@ -24,6 +24,11 @@ final delayNewMediaProvider = StateProvider<bool>((ref) {
   return false; // Default value
 });
 
+final reminderLeadTimeProvider = StateProvider<Duration>((ref) {
+   // Default value, will be overridden by main.dart
+   return Duration.zero;
+});
+
 // Define the StateNotifier
 class ApiKeyNotifier extends StateNotifier<AsyncValue<String?>> {
   final ISettingsService _settingsService;

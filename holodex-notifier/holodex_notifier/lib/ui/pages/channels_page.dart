@@ -16,7 +16,6 @@ class ChannelsPage extends ConsumerWidget {
     final bgService = FlutterBackgroundService(); // {{ Get service instance }}
     final scaffoldMessenger = ScaffoldMessenger.of(context); // {{ Get ScaffoldMessenger }}
 
-
     return RefreshIndicator(
       // Define the refresh action
       onRefresh: () async {
@@ -27,12 +26,12 @@ class ChannelsPage extends ConsumerWidget {
         // Check if service is running before invoking
         final isRunning = await bgService.isRunning(); // Check status directly
         if (isRunning) {
-           logger.info("ChannelsPage: Invoking manual poll from refresh...");
-           bgService.invoke('triggerPoll');
-           // Show feedback immediately
-           scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)));
+          logger.info("ChannelsPage: Invoking manual poll from refresh...");
+          bgService.invoke('triggerPoll');
+          // Show feedback immediately
+          scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)));
         } else {
-           logger.warning("ChannelsPage: Background service not running, manual poll not triggered from refresh.");
+          logger.warning("ChannelsPage: Background service not running, manual poll not triggered from refresh.");
         }
 
         // Await the original refresh future
@@ -40,12 +39,7 @@ class ChannelsPage extends ConsumerWidget {
         logger.info("ChannelsPage: Refresh action completed.");
       },
       // The content of the page
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: const [
-          ChannelManagementCard(),
-        ],
-      ),
+      child: ListView(padding: const EdgeInsets.all(16.0), children: const [ChannelManagementCard()]),
     );
   }
 }

@@ -52,7 +52,7 @@ class ChannelManagementCard extends HookConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start, // Align content to start
       children: [
         // --- Global Switches ---
-        const Text('Notification Type Defaults'),
+        Text('Notification Type Defaults', style:theme.textTheme.labelLarge),
         Wrap(
           spacing: 8.0,
           children: [

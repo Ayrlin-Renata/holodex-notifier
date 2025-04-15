@@ -4,144 +4,144 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
+import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/main.dart'; // For main providers
 // For scheduledNotificationsProvider
 // Removed: import 'package:holodex_notifier/ui/widgets/settings_card.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
-// Removed the SettingsCard wrapper. This widget now returns the content directly.
 class ScheduledNotificationsCard extends HookConsumerWidget {
   const ScheduledNotificationsCard({super.key});
-  static const int _initialItemLimit = 4;
+  static const int _initialItemLimit = 16;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    // The type is now AsyncValue<List<CachedVideo>>
-    final scheduledListAsync = ref.watch(scheduledNotificationsProvider);
-    final logger = ref.watch(loggingServiceProvider); // Get logger
-
-    // Access needed services/controllers for cancel action
+    // {{ Watch the FILTERED provider }}
+    final scheduledListAsync = ref.watch(filteredScheduledNotificationsProvider);
+    final logger = ref.watch(loggingServiceProvider);
     final notificationService = ref.watch(notificationServiceProvider);
-    final cacheService = ref.watch(cacheServiceProvider); // To update cache after cancel
+    // {{ Import and read CacheService correctly }}
+    final cacheService = ref.watch(cacheServiceProvider);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final isExpanded = useState(false);
 
     logger.debug(
-      "[ScheduledNotificationsCard] Build method called. AsyncValue state: isRefreshing=${scheduledListAsync.isRefreshing}, isLoading=${scheduledListAsync.isLoading}, hasValue=${scheduledListAsync.hasValue}, hasError=${scheduledListAsync.hasError}",
+      "[ScheduledNotificationsCard] Build. Filtered Async state: isRefreshing=${scheduledListAsync.isRefreshing}, isLoading=${scheduledListAsync.isLoading}, hasValue=${scheduledListAsync.hasValue}, hasError=${scheduledListAsync.hasError}",
     );
 
-    // REMOVED: SettingsCard wrapper
-    // Return the primary content based on the AsyncValue state
     return scheduledListAsync.when(
-      data: (scheduledList) {
-        logger.info("[ScheduledNotificationsCard] Rebuilt with data. List length: ${scheduledList.length}");
-        if (scheduledList.isNotEmpty) {
-          // Log details of the first item for inspection
-          final firstItem = scheduledList.first;
-          logger.debug(
-            "[ScheduledNotificationsCard] First item details: videoId=${firstItem.videoId}, status=${firstItem.status}, scheduledTime=${firstItem.startScheduled}, scheduledId=${firstItem.scheduledLiveNotificationId}, title=${firstItem.videoTitle}",
-          );
+      data: (List<ScheduledNotificationItem> filteredItems) {
+        // This is now the filtered list
+        logger.info("[ScheduledNotificationsCard] Rebuilt with filtered data. List length: ${filteredItems.length}");
+        if (filteredItems.isEmpty) {
+          // Show message indicating filtering might be active if the *base* list is not empty
+          final baseListCount = ref.read(scheduledNotificationsProvider).asData?.value.length ?? 0;
+          if (baseListCount > 0) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 32.0),
+                child: Text('No scheduled items match current filters.', style: TextStyle(fontStyle: FontStyle.italic)),
+              ),
+            );
+          } else {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 32.0),
+                child: Text('No upcoming notifications scheduled.', style: TextStyle(fontStyle: FontStyle.italic)),
+              ),
+            );
+          }
         }
-        if (scheduledList.isEmpty) {
-          // Return only the 'empty' message. Refresh is handled by parent page.
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 32.0), // Added more padding
-              child: Text('No upcoming notifications scheduled.', style: TextStyle(fontStyle: FontStyle.italic)),
-            ),
-          );
-          // REMOVED: Column wrapper and Refresh button for empty state
-        }
-        final itemCount = isExpanded.value ? scheduledList.length : min(scheduledList.length, _initialItemLimit);
+        // Determine how many items to show (Show All/Fewer logic)
+         final itemCount = isExpanded.value ? filteredItems.length : min(filteredItems.length, _initialItemLimit);
+
         return Column(
-          // Keep Column to hold list and Show All/Fewer button
           children: [
             ListView.builder(
-              shrinkWrap: true, // Important inside another scrollable
-              physics: const NeverScrollableScrollPhysics(), // Disable internal scrolling
-              itemCount: itemCount, // Use calculated item count
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: itemCount,
               itemBuilder: (context, index) {
-                final item = scheduledList[index];
-                logger.debug(
-                  "[ScheduledNotificationsCard] Building tile for index $index, Video ID: ${item.videoId}, Scheduled ID: ${item.scheduledLiveNotificationId}",
-                );
-                final scheduledTime = item.startScheduled != null ? DateTime.tryParse(item.startScheduled!) : null;
-                final notificationId = item.scheduledLiveNotificationId; // Get the ID
+                // {{ Get the ScheduledNotificationItem }}
+                final item = filteredItems[index];
+                // {{ Access video data and item-specific properties }}
+                final videoData = item.videoData;
+                final bool isReminder = item.type == NotificationEventType.reminder;
+                final DateTime scheduledTime = item.scheduledTime; // Use the item's time
+                final int? notificationId = item.notificationId; // Use the getter
 
-                final String channelName = item.channelName; // Use cached name
-                final String? avatarUrl = item.channelAvatarUrl; // Use cached avatar URL
-                final String videoTitle = item.videoTitle; // Use cached title
+                final String prefix = isReminder ? 'Reminder for:' : 'Scheduled:';
+                final String timeString = DateFormat.yMd().add_jm().format(scheduledTime.toLocal());
 
                 return ListTile(
-                    // --- Add Avatar ---
-                    leading: CircleAvatar(
-                      radius: 24, // Adjust size as needed
-                      backgroundColor: theme.colorScheme.secondaryContainer, // Placeholder color
-                      backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
-                      child: avatarUrl == null ? const Icon(Icons.person_outline, size: 20) : null,
-                    ),
-                    // --- Use cached names ---
-                    title: Text(channelName, style: theme.textTheme.titleSmall),
-                    subtitle: Text(
-                      // Use cached title
-                      "$videoTitle\nScheduled: ${scheduledTime != null ? DateFormat.yMd().add_jm().format(scheduledTime.toLocal()) : 'Unknown'}",
-                      style: theme.textTheme.bodySmall,
-                      maxLines: 3, // Allow title to wrap
-                      overflow: TextOverflow.ellipsis,
-                      // Make subtitle slightly smaller if needed
-                      // textScaleFactor: 0.9,
-                    ),
-                    trailing: notificationId != null
-                        ? IconButton(
-                            icon: Icon(Icons.cancel_outlined, color: theme.colorScheme.error),
-                            tooltip: 'Cancel Scheduled Notification',
-                            onPressed: () async {
-                              if (!context.mounted) return;
-                              try {
-                                logger.info("Attempting to cancel scheduled notification ID: $notificationId for video: ${item.videoId}");
-                                // 1. Cancel platform notification
-                                await notificationService.cancelScheduledNotification(notificationId);
-                                logger.debug("Platform notification cancelled.");
-                                // 2. Update cache to remove scheduled ID
-                                // NOTE: The stream provider will automatically pick up this change
-                                await cacheService.updateScheduledNotificationId(item.videoId, null);
-                                logger.debug("Cache updated to remove scheduled ID.");
-                                if (!context.mounted) return;
-                                scaffoldMessenger.showSnackBar(
-                                  const SnackBar(content: Text('Scheduled notification cancelled.'), duration: Duration(seconds: 2)),
-                                );
-                                // Refresh provider manually after successful cancel
-                                ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
-                              } catch (e, s) {
-                                logger.error("Error cancelling notification: $notificationId", e, s);
-                                if (!context.mounted) return;
-                                scaffoldMessenger.showSnackBar(
-                                  SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: theme.colorScheme.error),
-                                );
+                  leading: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    backgroundImage: videoData.channelAvatarUrl != null ? CachedNetworkImageProvider(videoData.channelAvatarUrl!) : null,
+                    child: videoData.channelAvatarUrl == null ? const Icon(Icons.person_outline, size: 20) : null,
+                  ),
+                  // {{ Use data from videoData }}
+                  title: Text(videoData.channelName, style: theme.textTheme.titleSmall),
+                  subtitle: Text(
+                    "${videoData.videoTitle}\n$prefix $timeString", // Use prefix and calculated timeString
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: notificationId != null
+                      ? IconButton(
+                          icon: Icon(Icons.cancel_outlined, color: theme.colorScheme.error),
+                          tooltip: 'Cancel Scheduled ${isReminder ? 'Reminder' : 'Live'}', // Dynamic tooltip
+                          onPressed: () async {
+                            if (!context.mounted) return;
+                            try {
+                              logger.info(
+                                "Attempting to cancel scheduled ${item.type.name} ID: $notificationId for video: ${videoData.videoId}",
+                              );
+                              await notificationService.cancelScheduledNotification(notificationId);
+
+                              // Update cache to remove the specific ID based on type
+                              if (item.type == NotificationEventType.reminder) {
+                                await cacheService.updateScheduledReminderNotificationId(videoData.videoId, null);
+                                await cacheService.updateScheduledReminderTime(videoData.videoId, null);
+                              } else { // Must be live
+                                await cacheService.updateScheduledNotificationId(videoData.videoId, null);
                               }
-                            },
-                          )
-                        : null, // No button if ID is null (shouldn't happen based on query)
-                    dense: true,
-                  );
+                              logger.debug("Cache updated to remove scheduled ID.");
+                              if (!context.mounted) return;
+                               scaffoldMessenger.showSnackBar(
+                                const SnackBar(content: Text('Scheduled notification cancelled.'), duration: Duration(seconds: 2)),
+                              );
+                              // Refresh BASE provider manually after successful cancel
+                              ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
+                            } catch (e, s) {
+                              logger.error("Error cancelling notification ID: $notificationId", e, s);
+                              if (!context.mounted) return;
+                               scaffoldMessenger.showSnackBar(
+                                SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: theme.colorScheme.error),
+                              );
+                            }
+                          },
+                        )
+                      : null,
+                  dense: true,
+                );
               },
             ),
-             // --- Show All/Fewer Button ---
-            if (scheduledList.length > _initialItemLimit)
+            // --- Show All/Fewer Button ---
+            // {{ Use filteredItems length }}
+            if (filteredItems.length > _initialItemLimit)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: TextButton(
-                  child: Text(isExpanded.value ? 'Show Fewer' : 'Show All (${scheduledList.length})'),
+                  child: Text(isExpanded.value ? 'Show Fewer' : 'Show All (${filteredItems.length})'),
                   onPressed: () {
-                    isExpanded.value = !isExpanded.value; // Toggle expansion state
+                    isExpanded.value = !isExpanded.value;
                   },
                 ),
               ),
-            // --- End Show All/Fewer Button ---
-
-             // REMOVED: Refresh Button - handled by parent page's RefreshIndicator
           ],
         );
       },

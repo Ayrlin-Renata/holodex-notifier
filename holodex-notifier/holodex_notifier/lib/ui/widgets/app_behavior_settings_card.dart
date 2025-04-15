@@ -51,6 +51,49 @@ Duration _sliderValueToDuration(double sliderValue) {
   return Duration(minutes: minutes.round());
 }
 
+const double _minReminderLeadMinutes = 0.0; // 0 means disabled
+const double _maxReminderLeadMinutes = 1440.0; // 24 hours
+const double _reminderSliderExponent = 2.5; // Less aggressive curve than poll freq
+
+String _formatReminderDuration(Duration d) {
+  if (d.inMinutes <= 0) {
+    return "Disabled";
+  }
+  if (d.inMinutes < 60) {
+    return "${d.inMinutes} min before";
+  } else {
+    final hours = d.inHours;
+    final minutes = d.inMinutes % 60;
+    if (minutes == 0) {
+      return "$hours hr before";
+    } else {
+      return "$hours hr ${minutes} min before";
+    }
+  }
+}
+
+double _reminderDurationToSliderValue(Duration duration) {
+  final minutes = duration.inMinutes.toDouble().clamp(_minReminderLeadMinutes, _maxReminderLeadMinutes);
+  if (minutes <= _minReminderLeadMinutes) return 0.0;
+  if (minutes >= _maxReminderLeadMinutes) return 1.0;
+
+  final range = _maxReminderLeadMinutes - _minReminderLeadMinutes;
+  if (range == 0) return 0.0; // Avoid division by zero if min == max
+
+  final normalized = (minutes - _minReminderLeadMinutes) / range;
+  return pow(normalized, 1.0 / _reminderSliderExponent).toDouble();
+}
+
+Duration _reminderSliderValueToDuration(double sliderValue) {
+  final clampedValue = sliderValue.clamp(0.0, 1.0);
+  final scaledValue = pow(clampedValue, _reminderSliderExponent);
+  final totalMinutes = _minReminderLeadMinutes + (_maxReminderLeadMinutes - _minReminderLeadMinutes) * scaledValue;
+  // Round to sensible steps (e.g., nearest 5 minutes? Or 1 min?)
+  final roundedMinutes = (totalMinutes / 5).round() * 5; // Round to nearest 5 minutes
+  // Ensure 0 remains 0 after rounding
+  return Duration(minutes: max(0, roundedMinutes)); // Ensure non-negative
+}
+
 // Change to HookConsumerWidget to use hooks
 class AppBehaviorSettingsCard extends HookConsumerWidget {
   const AppBehaviorSettingsCard({super.key});
@@ -61,6 +104,7 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
     final groupNotifications = ref.watch(notificationGroupingProvider);
     final delayNewMedia = ref.watch(delayNewMediaProvider);
     final pollFrequency = ref.watch(pollFrequencyProvider);
+    final reminderLeadTime = ref.watch(reminderLeadTimeProvider);
     final apiKeyAsyncValue = ref.watch(apiKeyProvider); // WATCH the key state (now AsyncValue)
     final logger = ref.watch(loggingServiceProvider);
 
@@ -92,7 +136,8 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
     }, [apiKey, apiKeyIsLoading, apiKeyError]);
 
     // Calculate the current slider value based on the duration
-    final currentSliderValue = _durationToSliderValue(pollFrequency);
+    final currentPollSliderValue = _durationToSliderValue(pollFrequency);
+    final currentReminderSliderValue = _reminderDurationToSliderValue(reminderLeadTime); // {{ Calc reminder slider value }}
 
     return Column(
       children: [
@@ -101,9 +146,11 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
           title: const Text('Group Notifications'),
           subtitle: const Text('Combine notifications for the same video'),
           value: groupNotifications,
-          onChanged: (bool value) async {
+          onChanged: (bool value) {
             // Use AppController to update the setting
-            await appController.updateGlobalSetting('notificationGrouping', value);
+            logger.info("[AppBehaviorSettingsCard] Grouping onChanged triggered with value: $value");
+            ref.read(notificationGroupingProvider.notifier).update((_) => value);
+            appController.updateGlobalSetting('notificationGrouping', value);
           },
           secondary: const Icon(Icons.group_work_outlined),
         ),
@@ -113,12 +160,40 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
           title: const Text('Delay New Media'),
           subtitle: const Text('Wait until scheduled time for new media notifications (if possible)'),
           value: delayNewMedia,
-          onChanged: (bool value) async {
-            await appController.updateGlobalSetting('delayNewMedia', value);
+          onChanged: (bool value) {
+            logger.info("[AppBehaviorSettingsCard] Delay onChanged triggered with value: $value");
+            ref.read(delayNewMediaProvider.notifier).update((_) => value);
+            appController.updateGlobalSetting('delayNewMedia', value);
           },
           secondary: const Icon(Icons.schedule_outlined),
         ),
 
+        ListTile(
+          leading: const Icon(Icons.notifications_active_outlined),
+          title: const Text('Live Stream Reminder'),
+          subtitle: Text('Notify ${_formatReminderDuration(reminderLeadTime)} ${reminderLeadTime.compareTo(Duration.zero) == 0 ? '' : 'start time'}'),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Slider(
+            value: currentReminderSliderValue,
+            min: 0.0,
+            max: 1.0,
+            divisions: 100, // Adjust divisions as needed
+            label: _formatReminderDuration(_reminderSliderValueToDuration(currentReminderSliderValue)),
+            onChanged: (double value) {
+              final newDuration = _reminderSliderValueToDuration(value);
+              ref.read(reminderLeadTimeProvider.notifier).state = newDuration;
+            },
+            onChangeEnd: (double value) async {
+              final newDuration = _reminderSliderValueToDuration(value);
+              ref.read(reminderLeadTimeProvider.notifier).state = newDuration; // Ensure final state
+              logger.info("Reminder Lead Time Slider onChangeEnd: Duration = $newDuration");
+              await appController.updateGlobalSetting('reminderLeadTime', newDuration);
+            },
+          ),
+        ),
+        const SizedBox(height: 8), // Spacing
         // --- Poll Frequency ---
         ListTile(
           leading: const Icon(Icons.timer_outlined),
@@ -129,14 +204,14 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Slider(
             // {{ Use the calculated slider value }}
-            value: currentSliderValue,
+            value: currentPollSliderValue,
             min: 0.0, // Slider range is always 0.0 to 1.0
             max: 1.0,
             // {{ Divisions on the 0-1 scale. Adjust for desired granularity }}
             // E.g., 100 divisions provides fine control, but labels might overlap
             divisions: 100,
             // {{ Label shows the *Duration* derived from the current slider position }}
-            label: _formatDuration(_sliderValueToDuration(currentSliderValue)),
+            label: _formatDuration(_sliderValueToDuration(currentPollSliderValue)),
             onChanged: (double value) {
               // {{ Convert slider value back to Duration and update provider }}
               final newDuration = _sliderValueToDuration(value);

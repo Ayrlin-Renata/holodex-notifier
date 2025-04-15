@@ -45,13 +45,17 @@ class DriftCacheService implements ICacheService {
   @override
   Future<void> setPendingNewMediaFlag(String videoId, bool isPending) => _db.setPendingNewMediaFlagInternal(videoId, isPending);
 
+  Future<void> updateScheduledReminderNotificationId(String videoId, int? notificationId) =>
+      _db.updateScheduledReminderNotificationIdInternal(videoId, notificationId);
+
+  Future<void> updateScheduledReminderTime(String videoId, DateTime? time) => _db.updateScheduledReminderTimeInternal(videoId, time);
+
   @override
   Future<List<CachedVideo>> getScheduledVideos() => _db.getScheduledVideosInternal();
 
   @override
   Stream<List<CachedVideo>> watchScheduledVideos() => _db.watchScheduledVideosInternal();
 
-  // REMOVED: watchUnprocessedVideos() method implementation as it's no longer in the interface.
-  // REMOVED: getUnprocessedVideos() method implementation as it's no longer in the interface.
-  // REMOVED: markVideoProcessed() method implementation as it's no longer in the interface.
+  @override
+  Future<List<CachedVideo>> getVideosWithScheduledReminders() => _db.getVideosWithScheduledRemindersInternal();
 }

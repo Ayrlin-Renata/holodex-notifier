@@ -7,7 +7,7 @@ enum NotificationEventType {
   live,
   update,
   mention,
-  // Add more types if needed
+  reminder,
 }
 
 @freezed

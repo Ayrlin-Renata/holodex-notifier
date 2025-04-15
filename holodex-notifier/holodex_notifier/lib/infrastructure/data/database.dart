@@ -63,8 +63,11 @@ class CachedVideos extends Table {
   // --- Internal Processing State ---
   BoolColumn get isPendingNewMediaNotification => boolean().named('is_pending_new_media_notification').withDefault(const Constant(false))();
   IntColumn get lastSeenTimestamp => integer().named('last_seen_timestamp')(); // When poller last saw this video's data
-  IntColumn? get scheduledLiveNotificationId => integer().named('scheduled_live_notification_id').nullable()(); // Platform notification ID if scheduled
+  IntColumn? get scheduledLiveNotificationId =>
+      integer().named('scheduled_live_notification_id').nullable()(); // Platform notification ID if scheduled
   IntColumn? get lastLiveNotificationSentTime => integer().named('last_live_notification_sent_time').nullable()(); // Debounce for immediate live
+  IntColumn? get scheduledReminderNotificationId => integer().named('scheduled_reminder_notification_id').nullable()(); // Platform ID for reminder
+  IntColumn? get scheduledReminderTime => integer().named('scheduled_reminder_time').nullable()(); // Calculated timestamp for reminder
 
   // REMOVED: lastProcessedTimestamp is no longer needed with the new architecture
 
@@ -98,7 +101,9 @@ class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       // TODO: Use actual logger
-      print("Drift DB: Opening database. Was Created: ${details.wasCreated}, Version Before: ${details.versionBefore}, Current Version: ${details.versionNow}");
+      print(
+        "Drift DB: Opening database. Was Created: ${details.wasCreated}, Version Before: ${details.versionBefore}, Current Version: ${details.versionNow}",
+      );
       await customStatement('PRAGMA foreign_keys = ON;');
     },
   );
@@ -149,7 +154,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> updateScheduledNotificationIdInternal(String id, int? notificationId) {
-    return (update(cachedVideos)..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledLiveNotificationId: Value(notificationId)));
+    return (update(cachedVideos)
+      ..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledLiveNotificationId: Value(notificationId)));
   }
 
   Future<void> updateLastLiveNotificationTimeInternal(String id, DateTime? time) {
@@ -164,23 +170,43 @@ class AppDatabase extends _$AppDatabase {
   // --- Scheduled Video Queries (Used by UI) ---
 
   Future<List<CachedVideo>> getScheduledVideosInternal() {
-    // Gets videos that have a scheduled notification ID, ordered by schedule time
     return (select(cachedVideos)
-          ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull())
-          ..orderBy([(t) => OrderingTerm(expression: t.startScheduled)])) // Order by schedule time
+          ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull())
+          ..orderBy([
+            // Order by reminder time if it exists, otherwise by live schedule time
+            (t) => OrderingTerm.asc(CustomExpression<int>(
+                 "CASE WHEN scheduled_reminder_notification_id IS NOT NULL THEN scheduled_reminder_time ELSE CAST(strftime('%s', start_scheduled) * 1000 AS INTEGER) END",
+                 precedence: Precedence.primary, // Needed for CASE WHEN
+               ))
+          ]))
         .get();
   }
 
   Stream<List<CachedVideo>> watchScheduledVideosInternal() {
-    // Watches videos that have a scheduled notification ID, ordered by schedule time
     return (select(cachedVideos)
-          ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull())
-          ..orderBy([(t) => OrderingTerm(expression: t.startScheduled)])) // Order by schedule time
+          ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull())
+          ..orderBy([
+             // Order by reminder time if it exists, otherwise by live schedule time
+            (t) => OrderingTerm.asc(CustomExpression<int>(
+                 "CASE WHEN scheduled_reminder_notification_id IS NOT NULL THEN scheduled_reminder_time ELSE CAST(strftime('%s', start_scheduled) * 1000 AS INTEGER) END",
+                  precedence: Precedence.primary, // Needed for CASE WHEN
+               ))
+          ]))
         .watch();
   }
 
-  // REMOVED: watchUnprocessedVideos() - No longer needed
-  // REMOVED: markVideoProcessedInternal() - No longer needed
+  Future<List<CachedVideo>> getVideosWithScheduledRemindersInternal() {
+    return (select(cachedVideos)..where((tbl) => tbl.scheduledReminderNotificationId.isNotNull())).get();
+  }
+
+    Future<void> updateScheduledReminderNotificationIdInternal(String id, int? notificationId) {
+    return (update(cachedVideos)..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledReminderNotificationId: Value(notificationId)));
+  }
+
+  Future<void> updateScheduledReminderTimeInternal(String id, DateTime? time) {
+    final timestamp = time?.millisecondsSinceEpoch;
+    return (update(cachedVideos)..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledReminderTime: Value(timestamp)));
+  }
 }
 
 // --- Database Connection Factory ---

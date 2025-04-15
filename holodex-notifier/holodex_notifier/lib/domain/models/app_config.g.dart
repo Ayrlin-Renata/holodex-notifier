@@ -11,6 +11,7 @@ _$AppConfigImpl _$$AppConfigImplFromJson(Map<String, dynamic> json) =>
       pollFrequencyMinutes: (json['pollFrequencyMinutes'] as num).toInt(),
       notificationGrouping: json['notificationGrouping'] as bool,
       delayNewMedia: json['delayNewMedia'] as bool,
+      reminderLeadTimeMinutes: (json['reminderLeadTimeMinutes'] as num).toInt(),
       channelSubscriptions: (json['channelSubscriptions'] as List<dynamic>)
           .map((e) =>
               ChannelSubscriptionSetting.fromJson(e as Map<String, dynamic>))
@@ -23,6 +24,7 @@ Map<String, dynamic> _$$AppConfigImplToJson(_$AppConfigImpl instance) =>
       'pollFrequencyMinutes': instance.pollFrequencyMinutes,
       'notificationGrouping': instance.notificationGrouping,
       'delayNewMedia': instance.delayNewMedia,
+      'reminderLeadTimeMinutes': instance.reminderLeadTimeMinutes,
       'channelSubscriptions':
           instance.channelSubscriptions.map((e) => e.toJson()).toList(),
       'version': instance.version,

@@ -1,5 +1,6 @@
 // f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\infrastructure\services\shared_prefs_settings_service.dart
 import 'dart:convert'; // For jsonEncode/Decode
+import 'dart:math';
 
 import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:holodex_notifier/domain/models/app_config.dart';
@@ -12,6 +13,7 @@ import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart
 const String _keyPollFrequencyMinutes = 'settings_pollFrequencyMinutes';
 const String _keyNotificationGrouping = 'settings_notificationGrouping';
 const String _keyDelayNewMedia = 'settings_delayNewMedia';
+const String _keyReminderLeadTimeMinutes = 'settings_reminderLeadTimeMinutes';
 const String _keyLastPollTime = 'settings_lastPollTime';
 const String _keyChannelSubscriptions = 'settings_channelSubscriptions';
 const String _apiKeySecureStorageKey = 'holodex_api_key';
@@ -27,6 +29,7 @@ class SharedPrefsSettingsService implements ISettingsService {
   static const Duration _defaultPollFrequency = Duration(minutes: 10);
   static const bool _defaultNotificationGrouping = true;
   static const bool _defaultDelayNewMedia = false;
+  static const Duration _defaultReminderLeadTime = Duration.zero;
 
   // Inject ISecureStorageService
   SharedPrefsSettingsService(this._secureStorageService);
@@ -80,6 +83,20 @@ class SharedPrefsSettingsService implements ISettingsService {
   @override
   Future<void> setDelayNewMedia(bool enabled) async {
     await _prefs.setBool(_keyDelayNewMedia, enabled);
+  }
+
+  @override
+  Future<Duration> getReminderLeadTime() async {
+    await _ensureFreshPrefs();
+    final minutes = _prefs.getInt(_keyReminderLeadTimeMinutes) ?? _defaultReminderLeadTime.inMinutes;
+    return Duration(minutes: minutes);
+  }
+
+  @override
+  Future<void> setReminderLeadTime(Duration leadTime) async {
+    // Store 0 if duration is zero or negative
+    final minutesToStore = leadTime.isNegative ? 0 : leadTime.inMinutes;
+    await _prefs.setInt(_keyReminderLeadTimeMinutes, minutesToStore);
   }
 
   @override
@@ -225,20 +242,21 @@ class SharedPrefsSettingsService implements ISettingsService {
     }
   }
 
-    // --- Config Export/Import ---
-
+  // --- Config Export/Import ---
   @override
   Future<AppConfig> exportConfiguration() async {
     // Read current settings
     final freq = await getPollFrequency();
     final grouping = await getNotificationGrouping();
     final delay = await getDelayNewMedia();
+    final reminderLead = await getReminderLeadTime(); // {{ Get reminder lead time }}
     final channels = await getChannelSubscriptions();
 
     return AppConfig(
       pollFrequencyMinutes: freq.inMinutes,
       notificationGrouping: grouping,
       delayNewMedia: delay,
+      reminderLeadTimeMinutes: reminderLead.inMinutes, // {{ Export reminder lead time }}
       channelSubscriptions: channels,
       version: 1, // Current version
     );
@@ -246,11 +264,7 @@ class SharedPrefsSettingsService implements ISettingsService {
 
   @override
   Future<bool> importConfiguration(AppConfig config) async {
-    // Basic validation (can be expanded)
-    if (config.version > 1) {
-      print("[SharedPrefsSettingsService] Config Import Error: Unsupported version ${config.version}");
-      return false;
-    }
+    // ... (validation) ...
 
     print("[SharedPrefsSettingsService] Importing configuration version ${config.version}...");
     try {
@@ -258,6 +272,9 @@ class SharedPrefsSettingsService implements ISettingsService {
       await setPollFrequency(Duration(minutes: config.pollFrequencyMinutes));
       await setNotificationGrouping(config.notificationGrouping);
       await setDelayNewMedia(config.delayNewMedia);
+       // {{ Import reminder lead time }}
+      await setReminderLeadTime(Duration(minutes: max(0, config.reminderLeadTimeMinutes))); // Ensure non-negative
+
       // Overwrite channel subscriptions
       await saveChannelSubscriptions(config.channelSubscriptions);
       // DO NOT import API key or last poll time etc.

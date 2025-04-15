@@ -12,6 +12,7 @@ abstract class INotificationService {
     required String payload,
     required String title,
     required String channelName,
+    required NotificationEventType eventType,
   });
 
   Future<void> cancelScheduledNotification(int notificationId);

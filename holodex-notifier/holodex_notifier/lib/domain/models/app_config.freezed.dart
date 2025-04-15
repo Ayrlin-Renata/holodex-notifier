@@ -23,8 +23,8 @@ mixin _$AppConfig {
 // Include non-sensitive settings
   int get pollFrequencyMinutes => throw _privateConstructorUsedError;
   bool get notificationGrouping => throw _privateConstructorUsedError;
-  bool get delayNewMedia =>
-      throw _privateConstructorUsedError; // Include channel subscriptions
+  bool get delayNewMedia => throw _privateConstructorUsedError;
+  int get reminderLeadTimeMinutes => throw _privateConstructorUsedError;
   List<ChannelSubscriptionSetting> get channelSubscriptions =>
       throw _privateConstructorUsedError; // DO NOT include API Key or other sensitive/runtime data like lastPollTime
 // Add version if needed for future compatibility
@@ -49,6 +49,7 @@ abstract class $AppConfigCopyWith<$Res> {
       {int pollFrequencyMinutes,
       bool notificationGrouping,
       bool delayNewMedia,
+      int reminderLeadTimeMinutes,
       List<ChannelSubscriptionSetting> channelSubscriptions,
       int version});
 }
@@ -71,6 +72,7 @@ class _$AppConfigCopyWithImpl<$Res, $Val extends AppConfig>
     Object? pollFrequencyMinutes = null,
     Object? notificationGrouping = null,
     Object? delayNewMedia = null,
+    Object? reminderLeadTimeMinutes = null,
     Object? channelSubscriptions = null,
     Object? version = null,
   }) {
@@ -87,6 +89,10 @@ class _$AppConfigCopyWithImpl<$Res, $Val extends AppConfig>
           ? _value.delayNewMedia
           : delayNewMedia // ignore: cast_nullable_to_non_nullable
               as bool,
+      reminderLeadTimeMinutes: null == reminderLeadTimeMinutes
+          ? _value.reminderLeadTimeMinutes
+          : reminderLeadTimeMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
       channelSubscriptions: null == channelSubscriptions
           ? _value.channelSubscriptions
           : channelSubscriptions // ignore: cast_nullable_to_non_nullable
@@ -111,6 +117,7 @@ abstract class _$$AppConfigImplCopyWith<$Res>
       {int pollFrequencyMinutes,
       bool notificationGrouping,
       bool delayNewMedia,
+      int reminderLeadTimeMinutes,
       List<ChannelSubscriptionSetting> channelSubscriptions,
       int version});
 }
@@ -131,6 +138,7 @@ class __$$AppConfigImplCopyWithImpl<$Res>
     Object? pollFrequencyMinutes = null,
     Object? notificationGrouping = null,
     Object? delayNewMedia = null,
+    Object? reminderLeadTimeMinutes = null,
     Object? channelSubscriptions = null,
     Object? version = null,
   }) {
@@ -147,6 +155,10 @@ class __$$AppConfigImplCopyWithImpl<$Res>
           ? _value.delayNewMedia
           : delayNewMedia // ignore: cast_nullable_to_non_nullable
               as bool,
+      reminderLeadTimeMinutes: null == reminderLeadTimeMinutes
+          ? _value.reminderLeadTimeMinutes
+          : reminderLeadTimeMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
       channelSubscriptions: null == channelSubscriptions
           ? _value._channelSubscriptions
           : channelSubscriptions // ignore: cast_nullable_to_non_nullable
@@ -167,6 +179,7 @@ class _$AppConfigImpl implements _AppConfig {
       {required this.pollFrequencyMinutes,
       required this.notificationGrouping,
       required this.delayNewMedia,
+      required this.reminderLeadTimeMinutes,
       required final List<ChannelSubscriptionSetting> channelSubscriptions,
       this.version = 1})
       : _channelSubscriptions = channelSubscriptions;
@@ -181,9 +194,9 @@ class _$AppConfigImpl implements _AppConfig {
   final bool notificationGrouping;
   @override
   final bool delayNewMedia;
-// Include channel subscriptions
+  @override
+  final int reminderLeadTimeMinutes;
   final List<ChannelSubscriptionSetting> _channelSubscriptions;
-// Include channel subscriptions
   @override
   List<ChannelSubscriptionSetting> get channelSubscriptions {
     if (_channelSubscriptions is EqualUnmodifiableListView)
@@ -200,7 +213,7 @@ class _$AppConfigImpl implements _AppConfig {
 
   @override
   String toString() {
-    return 'AppConfig(pollFrequencyMinutes: $pollFrequencyMinutes, notificationGrouping: $notificationGrouping, delayNewMedia: $delayNewMedia, channelSubscriptions: $channelSubscriptions, version: $version)';
+    return 'AppConfig(pollFrequencyMinutes: $pollFrequencyMinutes, notificationGrouping: $notificationGrouping, delayNewMedia: $delayNewMedia, reminderLeadTimeMinutes: $reminderLeadTimeMinutes, channelSubscriptions: $channelSubscriptions, version: $version)';
   }
 
   @override
@@ -214,6 +227,9 @@ class _$AppConfigImpl implements _AppConfig {
                 other.notificationGrouping == notificationGrouping) &&
             (identical(other.delayNewMedia, delayNewMedia) ||
                 other.delayNewMedia == delayNewMedia) &&
+            (identical(
+                    other.reminderLeadTimeMinutes, reminderLeadTimeMinutes) ||
+                other.reminderLeadTimeMinutes == reminderLeadTimeMinutes) &&
             const DeepCollectionEquality()
                 .equals(other._channelSubscriptions, _channelSubscriptions) &&
             (identical(other.version, version) || other.version == version));
@@ -226,6 +242,7 @@ class _$AppConfigImpl implements _AppConfig {
       pollFrequencyMinutes,
       notificationGrouping,
       delayNewMedia,
+      reminderLeadTimeMinutes,
       const DeepCollectionEquality().hash(_channelSubscriptions),
       version);
 
@@ -250,6 +267,7 @@ abstract class _AppConfig implements AppConfig {
       {required final int pollFrequencyMinutes,
       required final bool notificationGrouping,
       required final bool delayNewMedia,
+      required final int reminderLeadTimeMinutes,
       required final List<ChannelSubscriptionSetting> channelSubscriptions,
       final int version}) = _$AppConfigImpl;
 
@@ -262,7 +280,9 @@ abstract class _AppConfig implements AppConfig {
   @override
   bool get notificationGrouping;
   @override
-  bool get delayNewMedia; // Include channel subscriptions
+  bool get delayNewMedia;
+  @override
+  int get reminderLeadTimeMinutes;
   @override
   List<ChannelSubscriptionSetting>
       get channelSubscriptions; // DO NOT include API Key or other sensitive/runtime data like lastPollTime

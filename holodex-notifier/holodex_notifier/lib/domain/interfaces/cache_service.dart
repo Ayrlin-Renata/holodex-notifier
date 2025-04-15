@@ -38,7 +38,8 @@ abstract class ICacheService {
   /// Returns a stream that emits the list of scheduled videos whenever it changes.
   Stream<List<CachedVideo>> watchScheduledVideos();
 
-  // REMOVED: watchUnprocessedVideos() - Logic moved to background poller.
-  // REMOVED: getUnprocessedVideos() - Logic moved to background poller.
-  // REMOVED: markVideoProcessed() - Processing handled differently now.
+  Future<List<CachedVideo>> getVideosWithScheduledReminders();
+
+  Future<void> updateScheduledReminderNotificationId(String videoId, int? notificationId);
+  Future<void> updateScheduledReminderTime(String videoId, DateTime? time);
 }

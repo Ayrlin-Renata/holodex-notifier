@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io'; // For File access
 
 import 'package:file_picker/file_picker.dart'; // {{ Import file_picker }}
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
@@ -11,6 +10,9 @@ import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/app_config.dart'; // {{ Import AppConfig }}
 import 'package:holodex_notifier/domain/models/channel.dart';
+import 'package:holodex_notifier/domain/models/notification_instruction.dart';
+import 'package:holodex_notifier/infrastructure/data/database.dart';
+import 'package:holodex_notifier/infrastructure/services/drift_cache_service.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
@@ -119,7 +121,7 @@ class AppController {
     try {
       if (settingKey == 'notifyLive' && !value) {
         // If turning Live notifications OFF
-        await _cancelScheduledLiveNotificationsForChannel(channelId);
+        await _cancelScheduledRemindersAndLiveForChannel(channelId);
       }
 
       final notifier = _ref.read(channelListProvider.notifier);
@@ -143,7 +145,7 @@ class AppController {
 
       if (settingKey == 'notifyLive' && value) {
         // If turning Live notifications ON
-        await _scheduleMissingLiveNotificationsForChannel(channelId);
+        await _scheduleMissingRemindersAndLiveForChannel(channelId);
       }
       // Always refresh the scheduled list UI after potential changes
       // ignore: unused_result
@@ -155,94 +157,206 @@ class AppController {
   }
 
   // --- Helper: Cancel Scheduled Live Notifications ---
-  Future<void> _cancelScheduledLiveNotificationsForChannel(String channelId) async {
-    _loggingService.info('AppController: Cancelling Existing Live schedules for channel $channelId.');
+  Future<void> _cancelScheduledRemindersAndLiveForChannel(String channelId) async {
+    _loggingService.info('AppController: Cancelling Existing Live & Reminder schedules for channel $channelId.');
     try {
-      // Get all currently scheduled videos (regardless of channel initially)
-      // Filtering is done manually after getting the list
-      final allScheduled = await _cacheService.getScheduledVideos();
-      final channelScheduledToCancel = allScheduled.where((v) => v.channelId == channelId && v.scheduledLiveNotificationId != null).toList();
+      // Get all currently scheduled LIVE videos for the channel
+      // Note: getScheduledVideos only returns LIVE scheduled ones currently.
+      // TODO: Maybe filter all cached videos for the channel first?
+      final allScheduledLive = await _cacheService.getScheduledVideos();
+      final channelScheduledLiveToCancel = allScheduledLive.where((v) => v.channelId == channelId && v.scheduledLiveNotificationId != null).toList();
 
-      if (channelScheduledToCancel.isEmpty) {
-        _loggingService.debug('AppController: No active live schedules found for channel $channelId to cancel.');
+      // {{ Get all currently scheduled REMINDER videos for the channel }}
+      // Assume DriftCacheService has getVideosWithScheduledReminders() -> database.getVideosWithScheduledRemindersInternal()
+      // Cast is safe IF the interface/impl matches. Add try-catch just in case.
+      List<CachedVideo> channelScheduledRemindersToCancel = [];
+      try {
+        if (_cacheService is DriftCacheService) {
+          final allReminders = await (_cacheService as DriftCacheService).getVideosWithScheduledReminders();
+          channelScheduledRemindersToCancel =
+              allReminders.where((v) => v.channelId == channelId && v.scheduledReminderNotificationId != null).toList();
+        } else {
+          _loggingService.warning("AppController: CacheService is not DriftCacheService, cannot fetch reminders directly.");
+        }
+      } catch (e, s) {
+        _loggingService.error("AppController: Error fetching reminders for channel $channelId.", e, s);
+      }
+
+      final totalToCancel = channelScheduledLiveToCancel.length + channelScheduledRemindersToCancel.length;
+      if (totalToCancel == 0) {
+        _loggingService.debug('AppController: No active live or reminder schedules found for channel $channelId to cancel.');
         return;
       }
 
-      _loggingService.info('AppController: Found ${channelScheduledToCancel.length} live schedules to cancel for channel $channelId.');
-      for (final video in channelScheduledToCancel) {
+      _loggingService.info(
+        'AppController: Found $totalToCancel schedules (Live: ${channelScheduledLiveToCancel.length}, Reminder: ${channelScheduledRemindersToCancel.length}) to cancel for channel $channelId.',
+      );
+
+      // Cancel Live Notifications
+      for (final video in channelScheduledLiveToCancel) {
         final notificationId = video.scheduledLiveNotificationId!; // Assert non-null based on query logic
-        _loggingService.debug('AppController: Cancelling notification ID $notificationId for video ${video.videoId}');
+        _loggingService.debug('AppController: Cancelling LIVE notification ID $notificationId for video ${video.videoId}');
         try {
           await _notificationService.cancelScheduledNotification(notificationId);
-          // Update cache entry ONLY AFTER successful cancellation
           await _cacheService.updateScheduledNotificationId(video.videoId, null);
-          _loggingService.debug('AppController: Successfully cancelled and updated cache for video ${video.videoId}.');
+          _loggingService.debug('AppController: Successfully cancelled LIVE and updated cache for video ${video.videoId}.');
         } catch (e, s) {
-          _loggingService.error('AppController: Error cancelling notification ID $notificationId or updating cache for video ${video.videoId}', e, s);
-          // Decide if we should attempt to proceed with others? Yes.
+          _loggingService.error(
+            'AppController: Error cancelling LIVE notification ID $notificationId or updating cache for video ${video.videoId}',
+            e,
+            s,
+          );
         }
       }
-      _loggingService.info('AppController: Finished cancelling live schedules for channel $channelId.');
+
+      // {{ Cancel Reminder Notifications }}
+      for (final video in channelScheduledRemindersToCancel) {
+        final notificationId = video.scheduledReminderNotificationId!;
+        _loggingService.debug('AppController: Cancelling REMINDER notification ID $notificationId for video ${video.videoId}');
+        try {
+          await _notificationService.cancelScheduledNotification(notificationId);
+          // Update cache entry ONLY AFTER successful cancellation - needs specific method
+          // Assume DriftCacheService has `updateScheduledReminderNotificationId`
+          if (_cacheService is DriftCacheService) {
+            await (_cacheService as DriftCacheService).updateScheduledReminderNotificationId(video.videoId, null);
+            // Also clear the reminder time? Yes. Needs `updateScheduledReminderTime`
+            await (_cacheService as DriftCacheService).updateScheduledReminderTime(video.videoId, null);
+            _loggingService.debug('AppController: Successfully cancelled REMINDER and updated cache for video ${video.videoId}.');
+          } else {
+            _loggingService.warning("AppController: Cannot update reminder cache for ${video.videoId}, CacheService not DriftCacheService.");
+          }
+        } catch (e, s) {
+          _loggingService.error(
+            'AppController: Error cancelling REMINDER notification ID $notificationId or updating cache for video ${video.videoId}',
+            e,
+            s,
+          );
+        }
+      }
+
+      _loggingService.info('AppController: Finished cancelling schedules for channel $channelId.');
     } catch (e, s) {
       _loggingService.error('AppController: Error fetching or processing scheduled videos for cancellation ($channelId).', e, s);
     }
   }
 
-  // --- Helper: Schedule Missing Live Notifications ---
-  Future<void> _scheduleMissingLiveNotificationsForChannel(String channelId) async {
-    _loggingService.info('AppController: Checking for missing Live schedules for channel $channelId.');
+  // --- Helper: Schedule Missing Notifications (Live AND Reminder) ---
+  // {{ --- Rename and update helper to schedule BOTH --- }}
+  Future<void> _scheduleMissingRemindersAndLiveForChannel(String channelId) async {
+    _loggingService.info('AppController: Checking for missing Live & Reminder schedules for channel $channelId.');
     try {
-      // Get all upcoming videos for this specific channel from the cache
-      // This needs a new method in CacheService/Database to get *all* videos for a channel
-      // For now, let's filter manually after getting all videos (less efficient)
-      // TODO: Improve efficiency by adding CacheService.getUpcomingVideosByChannel(channelId)
-      final allCachedVideos = await _cacheService.getVideosByStatus('upcoming'); // Approximation, might miss 'new'
-      final channelUpcomingVideos = allCachedVideos.where((v) => v.channelId == channelId).toList();
+      // Get reminder lead time setting first
+      final reminderLeadTime = await _settingsService.getReminderLeadTime();
+      _loggingService.debug('AppController: Reminder lead time is ${reminderLeadTime.inMinutes} minutes.');
 
-      if (channelUpcomingVideos.isEmpty) {
-        _loggingService.debug('AppController: No upcoming videos found in cache for channel $channelId to potentially schedule.');
+      // Get all upcoming/new videos for this specific channel from the cache
+      // TODO: Improve efficiency with CacheService method
+      final allCachedVideos = await _cacheService.getVideosByStatus('upcoming') + await _cacheService.getVideosByStatus('new'); // Get both
+      final channelRelevantVideos = allCachedVideos.where((v) => v.channelId == channelId).toList();
+
+      if (channelRelevantVideos.isEmpty) {
+        _loggingService.debug('AppController: No upcoming/new videos found in cache for channel $channelId to potentially schedule.');
         return;
       }
 
-      int scheduledCount = 0;
-      for (final video in channelUpcomingVideos) {
-        // Check if it SHOULD be scheduled now, but ISN'T
-        if (video.startScheduled != null && video.scheduledLiveNotificationId == null) {
-          final scheduledTime = DateTime.tryParse(video.startScheduled!);
-          if (scheduledTime != null && scheduledTime.isAfter(DateTime.now())) {
-            // Ensure it's in the future
-            _loggingService.debug('AppController: Scheduling missing live notification for video ${video.videoId}');
+      int scheduledLiveCount = 0;
+      int scheduledReminderCount = 0;
+
+      for (final video in channelRelevantVideos) {
+        final scheduledTime = DateTime.tryParse(video.startScheduled ?? '');
+        if (scheduledTime == null || scheduledTime.isBefore(DateTime.now())) {
+          _loggingService.debug('AppController: Skipping ${video.videoId}: Scheduled time is null, invalid, or in the past ($scheduledTime).');
+          continue; // Skip if no valid future schedule time
+        }
+
+        // Schedule Live Notification if missing
+        if (video.scheduledLiveNotificationId == null) {
+          _loggingService.debug('AppController: Attempting to schedule missing LIVE notification for video ${video.videoId}');
+          try {
+            final newId = await _notificationService.scheduleNotification(
+              videoId: video.videoId,
+              scheduledTime: scheduledTime, // Live notification at scheduled time
+              payload: video.videoId,
+              title: video.videoTitle,
+              channelName: video.channelName,
+              eventType: NotificationEventType.live, // Type is LIVE
+            );
+            if (newId != null) {
+              await _cacheService.updateScheduledNotificationId(video.videoId, newId);
+              scheduledLiveCount++;
+            } else {
+              _loggingService.warning('AppController: scheduleNotification (Live) returned null ID for ${video.videoId}');
+            }
+          } catch (e, s) {
+            _loggingService.error('AppController: Error scheduling LIVE notification for ${video.videoId}', e, s);
+          }
+        } else {
+          _loggingService.debug(
+            'AppController: Skipping LIVE scheduling for ${video.videoId}: Already scheduled (ID: ${video.scheduledLiveNotificationId}).',
+          );
+        }
+
+        // {{ Schedule Reminder Notification if applicable and missing }}
+        if (reminderLeadTime > Duration.zero) {
+          // Check if reminder setting is enabled
+          final calculatedReminderTime = scheduledTime.subtract(reminderLeadTime);
+          // Check if reminder time is in the future AND reminder is not already scheduled
+          // AND reminder time is significantly different from existing (if exists)
+          final bool needsReminderSchedule = calculatedReminderTime.isAfter(DateTime.now()) && video.scheduledReminderNotificationId == null;
+          // Add check for time difference if complex rescheduling needed
+
+          if (needsReminderSchedule) {
+            _loggingService.debug(
+              'AppController: Attempting to schedule missing REMINDER notification for video ${video.videoId} at $calculatedReminderTime',
+            );
             try {
               final newId = await _notificationService.scheduleNotification(
                 videoId: video.videoId,
-                scheduledTime: scheduledTime,
+                scheduledTime: calculatedReminderTime, // Reminder notification at calculated time
                 payload: video.videoId,
                 title: video.videoTitle,
                 channelName: video.channelName,
+                eventType: NotificationEventType.reminder, // Type is REMINDER
               );
               if (newId != null) {
-                await _cacheService.updateScheduledNotificationId(video.videoId, newId);
-                _loggingService.debug('AppController: Successfully scheduled ${video.videoId} with ID $newId.');
-                scheduledCount++;
+                // Assume DriftCacheService has these methods
+                if (_cacheService is DriftCacheService) {
+                  await (_cacheService as DriftCacheService).updateScheduledReminderNotificationId(video.videoId, newId);
+                  await (_cacheService as DriftCacheService).updateScheduledReminderTime(video.videoId, calculatedReminderTime);
+                  scheduledReminderCount++;
+                } else {
+                  _loggingService.warning("AppController: Cannot update reminder cache post-schedule, CacheService not DriftCacheService.");
+                }
               } else {
-                _loggingService.warning('AppController: scheduleNotification returned null ID for ${video.videoId}');
+                _loggingService.warning('AppController: scheduleNotification (Reminder) returned null ID for ${video.videoId}');
               }
             } catch (e, s) {
-              _loggingService.error('AppController: Error scheduling notification for ${video.videoId}', e, s);
-              // Continue attempting others
+              _loggingService.error('AppController: Error scheduling REMINDER notification for ${video.videoId}', e, s);
             }
-          } else {
-            _loggingService.debug('AppController: Skipping ${video.videoId}: Scheduled time is null, invalid, or in the past.');
+          } else if (video.scheduledReminderNotificationId != null) {
+            _loggingService.debug(
+              'AppController: Skipping REMINDER scheduling for ${video.videoId}: Already scheduled (ID: ${video.scheduledReminderNotificationId}).',
+            );
+          } else if (!calculatedReminderTime.isAfter(DateTime.now())) {
+            _loggingService.debug(
+              'AppController: Skipping REMINDER scheduling for ${video.videoId}: Calculated reminder time ($calculatedReminderTime) is in the past.',
+            );
           }
         } else {
-          // Already scheduled or no schedule time - skip
-          _loggingService.debug(
-            'AppController: Skipping ${video.videoId}: Already scheduled (ID: ${video.scheduledLiveNotificationId}) or no startScheduled.',
-          );
+          _loggingService.debug('AppController: Skipping REMINDER scheduling for ${video.videoId}: Reminder setting disabled (LeadTime 0).');
+          // Optionally, cancel existing reminder if setting is now disabled
+          if (video.scheduledReminderNotificationId != null) {
+            _loggingService.info('AppController: Cancelling existing REMINDER for ${video.videoId} as setting is now disabled.');
+            await _notificationService.cancelScheduledNotification(video.scheduledReminderNotificationId!);
+            if (_cacheService is DriftCacheService) {
+              await (_cacheService as DriftCacheService).updateScheduledReminderNotificationId(video.videoId, null);
+              await (_cacheService as DriftCacheService).updateScheduledReminderTime(video.videoId, null);
+            }
+          }
         }
       }
       _loggingService.info(
-        'AppController: Finished checking for missing live schedules for $channelId. Scheduled $scheduledCount new notifications.',
+        'AppController: Finished checking for missing schedules for $channelId. Scheduled $scheduledLiveCount new Live and $scheduledReminderCount new Reminder notifications.',
       );
     } catch (e, s) {
       _loggingService.error('AppController: Error fetching or processing cached videos for scheduling ($channelId).', e, s);
@@ -251,7 +365,7 @@ class AppController {
 
   /// Updates a global application setting and notifies the background service if necessary.
   Future<void> updateGlobalSetting(String settingKey, dynamic value) async {
-    if(settingKey == "apiKey") {
+    if (settingKey == "apiKey") {
       _loggingService.debug('AppController: Updating global setting $settingKey to $value');
       _loggingService.info('AppController: Updating global setting $settingKey to [redacted-for-info-level]');
     } else {
@@ -262,35 +376,70 @@ class AppController {
       String backgroundMessageKey = '';
       dynamic backgroundMessageValue;
 
+      try {
+        switch (settingKey) {
+          case 'notificationGrouping':
+            // {{ Use .update() method for state change }}
+            _ref.read(notificationGroupingProvider.notifier).update((_) => value as bool);
+            break;
+          case 'delayNewMedia':
+            // {{ Use .update() method for state change }}
+            _ref.read(delayNewMediaProvider.notifier).update((_) => value as bool);
+            break;
+          case 'pollFrequency':
+            // {{ Use .update() method for state change }}
+             _ref.read(pollFrequencyProvider.notifier).update((_) => value as Duration);
+            break;
+          case 'reminderLeadTime':
+            // {{ Use .update() method for state change }}
+            _ref.read(reminderLeadTimeProvider.notifier).update((_) => value as Duration);
+            break;
+          case 'apiKey':
+            // ApiKeyNotifier handles its own state update internally upon successful save.
+            // We trigger the save later in this method.
+            break;
+          default:
+            _loggingService.warning('AppController: Unknown global setting key for state update: $settingKey');
+            // Do not proceed if the key is unknown
+            return;
+        }
+        _loggingService.debug('AppController: Riverpod state updated immediately for $settingKey.');
+      } catch (stateError) {
+        _loggingService.error('AppController: Error updating Riverpod state for $settingKey', stateError);
+        // Optionally rethrow or return if state update fails critically
+      }
+
+      // --- Perform Persistence and Side Effects (async) ---
       switch (settingKey) {
         case 'notificationGrouping':
-          final bool boolValue = value as bool;
-          await _settingsService.setNotificationGrouping(boolValue);
-          _ref.read(notificationGroupingProvider.notifier).state = boolValue;
+          await _settingsService.setNotificationGrouping(value as bool);
           break;
         case 'delayNewMedia':
-          final bool boolValue = value as bool;
-          await _settingsService.setDelayNewMedia(boolValue);
-          _ref.read(delayNewMediaProvider.notifier).state = boolValue;
+          await _settingsService.setDelayNewMedia(value as bool);
           break;
         case 'pollFrequency':
           final Duration durationValue = value as Duration;
           await _settingsService.setPollFrequency(durationValue);
-          _ref.read(pollFrequencyProvider.notifier).state = durationValue;
           shouldNotifyBackground = true;
           backgroundMessageKey = 'pollFrequency';
           backgroundMessageValue = durationValue.inMinutes;
           break;
-        case 'apiKey':
-          final String? stringValue = value as String?;
-          await _ref.read(apiKeyProvider.notifier).updateApiKey(stringValue);
-          _loggingService.debug("AppController: updateApiKey called on ApiKeyNotifier.");
+        case 'reminderLeadTime':
+          final Duration durationValue = value as Duration;
+          await _settingsService.setReminderLeadTime(durationValue);
+          await _scheduleOrCancelRemindersForAllChannels(); // Keep this side effect with persistence
+          shouldNotifyBackground = true;
+          backgroundMessageKey = 'reminderLeadTime';
+          backgroundMessageValue = durationValue.inMinutes;
           break;
-        default:
-          _loggingService.warning('AppController: Unknown global setting key: $settingKey');
-          return;
+        case 'apiKey':
+          // Trigger the save action in the ApiKeyNotifier
+          await _ref.read(apiKeyProvider.notifier).updateApiKey(value as String?);
+          _loggingService.debug("AppController: updateApiKey called on ApiKeyNotifier for persistence.");
+          break;
+        // Default case already handled above
       }
-      _loggingService.debug('AppController: Global setting $settingKey updated in state and persisted.');
+      _loggingService.debug('AppController: Global setting $settingKey persisted.'); // Log persistence completion
 
       // Notify background service if a relevant setting changed
       if (shouldNotifyBackground) {
@@ -314,6 +463,23 @@ class AppController {
     }
   }
 
+  Future<void> _scheduleOrCancelRemindersForAllChannels() async {
+    _loggingService.info("AppController: Re-evaluating reminders for all channels due to lead time change...");
+    final channels = _ref.read(channelListProvider); // Get current channel subscriptions
+    for (final channelSetting in channels) {
+      // Only process channels where Live notifications are enabled
+      if (channelSetting.notifyLive) {
+        _loggingService.debug("AppController: Re-evaluating reminders for channel ${channelSetting.channelId}");
+        // Combine the logic from enable/disable helpers for this specific channel
+        await _cancelScheduledRemindersAndLiveForChannel(channelSetting.channelId); // Cancel existing first (safer)
+        await _scheduleMissingRemindersAndLiveForChannel(channelSetting.channelId); // Reschedule based on new setting
+      }
+    }
+    _loggingService.info("AppController: Finished re-evaluating reminders for all channels.");
+    // Ignore: unused_result // ignore is needed because the ref is mutated
+    _ref.refresh(scheduledNotificationsProvider); // Refresh UI list
+  }
+
   /// Applies the current global default notification settings to all subscribed channels.
   Future<void> applyGlobalDefaultsToAllChannels() async {
     _loggingService.info('AppController: Applying global defaults to all channels.');
@@ -325,109 +491,110 @@ class AppController {
     }
   }
 
-     // --- Export Configuration ---
-   Future<bool> exportConfiguration() async {
-      _loggingService.info('AppController: Exporting configuration...');
-      try {
-           // 1. Get config data from SettingsService
-           final AppConfig configData = await _settingsService.exportConfiguration();
-           // 2. Serialize to JSON
-           final String configJson = jsonEncode(configData.toJson());
-           // 3. Write to a temporary file
-           final tempDir = await getTemporaryDirectory();
-           final filePath = p.join(tempDir.path, 'holodex_notifier_config.json');
-           final file = File(filePath);
-           await file.writeAsString(configJson);
-           _loggingService.debug('AppController: Config saved to temporary file: $filePath');
+  // --- Export Configuration ---
+  Future<bool> exportConfiguration() async {
+    _loggingService.info('AppController: Exporting configuration...');
+    try {
+      // 1. Get config data from SettingsService
+      final AppConfig configData = await _settingsService.exportConfiguration();
+      // 2. Serialize to JSON
+      final String configJson = jsonEncode(configData.toJson());
+      // 3. Write to a temporary file
+      final tempDir = await getTemporaryDirectory();
+      final filePath = p.join(tempDir.path, 'holodex_notifier_config.json');
+      final file = File(filePath);
+      await file.writeAsString(configJson);
+      _loggingService.debug('AppController: Config saved to temporary file: $filePath');
 
-           // 4. Share the file
-           final result = await Share.shareXFiles(
-               [XFile(filePath)],
-               text: 'Holodex Notifier Configuration',
-               subject: 'HolodexNotifier_Config', // Subject for email sharing
-           );
+      // 4. Share the file
+      final result = await Share.shareXFiles(
+        [XFile(filePath)],
+        text: 'Holodex Notifier Configuration',
+        subject: 'HolodexNotifier_Config', // Subject for email sharing
+      );
 
-           // 5. Clean up temp file (optional, temp dir is usually cleared by OS)
-           // await file.delete();
+      // 5. Clean up temp file (optional, temp dir is usually cleared by OS)
+      // await file.delete();
 
-           if (result.status == ShareResultStatus.success) {
-               _loggingService.info('AppController: Configuration exported and shared successfully.');
-               return true;
-           } else {
-                _loggingService.warning('AppController: Configuration export sharing status: ${result.status}');
-               return false; // Indicate sharing wasn't explicitly successful
-           }
-
-      } catch (e, s) {
-           _loggingService.error('AppController: Failed to export configuration', e, s);
-           return false;
+      if (result.status == ShareResultStatus.success) {
+        _loggingService.info('AppController: Configuration exported and shared successfully.');
+        return true;
+      } else {
+        _loggingService.warning('AppController: Configuration export sharing status: ${result.status}');
+        return false; // Indicate sharing wasn't explicitly successful
       }
-   }
+    } catch (e, s) {
+      _loggingService.error('AppController: Failed to export configuration', e, s);
+      return false;
+    }
+  }
 
-   // --- Import Configuration ---
-   Future<bool> importConfiguration() async {
-       _loggingService.info('AppController: Starting configuration import...');
-       try {
-           // 1. Pick file using file_picker
-           FilePickerResult? result = await FilePicker.platform.pickFiles(
-              type: FileType.custom,
-              allowedExtensions: ['json'], // Allow only JSON files
-           );
+  // --- Import Configuration ---
+  Future<bool> importConfiguration() async {
+    _loggingService.info('AppController: Starting configuration import...');
+    try {
+      // 1. Pick file using file_picker
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'], // Allow only JSON files
+      );
 
-           if (result != null && result.files.single.path != null) {
-               final filePath = result.files.single.path!;
-                _loggingService.debug('AppController: File picked for import: $filePath');
-               final file = File(filePath);
-               // 2. Read file content
-               final String fileContent = await file.readAsString();
-               // 3. Deserialize JSON
-               final Map<String, dynamic> jsonMap = jsonDecode(fileContent);
-               final AppConfig importedConfig = AppConfig.fromJson(jsonMap);
-                _loggingService.debug('AppController: Configuration JSON parsed successfully.');
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        _loggingService.debug('AppController: File picked for import: $filePath');
+        final file = File(filePath);
+        // 2. Read file content
+        final String fileContent = await file.readAsString();
+        // 3. Deserialize JSON
+        final Map<String, dynamic> jsonMap = jsonDecode(fileContent);
+        final AppConfig importedConfig = AppConfig.fromJson(jsonMap);
+        _loggingService.debug('AppController: Configuration JSON parsed successfully.');
 
-               // 4. Apply configuration via SettingsService
-               final bool success = await _settingsService.importConfiguration(importedConfig);
+        // 4. Apply configuration via SettingsService
+        final bool success = await _settingsService.importConfiguration(importedConfig);
 
-               if(success) {
-                  _loggingService.info('AppController: Configuration imported and applied successfully.');
-                  // 5. Refresh relevant providers
-                   await _refreshStateAfterImport();
-                   _loggingService.debug('AppController: UI State refreshed after import.');
-                   return true;
-               } else {
-                   _loggingService.error('AppController: SettingsService reported failure during import application.');
-                   return false;
-               }
+        if (success) {
+          _loggingService.info('AppController: Configuration imported and applied successfully.');
+          // 5. Refresh relevant providers
+          await _refreshStateAfterImport();
+          _loggingService.debug('AppController: UI State refreshed after import.');
+          return true;
+        } else {
+          _loggingService.error('AppController: SettingsService reported failure during import application.');
+          return false;
+        }
+      } else {
+        // User canceled the picker
+        _loggingService.info('AppController: File import canceled by user.');
+        return false; // Indicate cancellation, not error
+      }
+    } catch (e, s) {
+      _loggingService.error('AppController: Failed to import configuration', e, s);
+      return false;
+    }
+  }
 
-           } else {
-               // User canceled the picker
-                _loggingService.info('AppController: File import canceled by user.');
-               return false; // Indicate cancellation, not error
-           }
-       } catch (e, s) {
-           _loggingService.error('AppController: Failed to import configuration', e, s);
-           return false;
-       }
-   }
-   
-    // Helper to refresh providers after import
-   Future<void> _refreshStateAfterImport() async {
-      // Reload channel list directly from storage via its notifier
-      await _ref.read(channelListProvider.notifier).reloadState();
-      
-       // Refetch individual settings for StateProviders
-      final newFreq = await _settingsService.getPollFrequency();
-      final newGroup = await _settingsService.getNotificationGrouping();
-      final newDelay = await _settingsService.getDelayNewMedia();
-      _ref.read(pollFrequencyProvider.notifier).state = newFreq;
-      _ref.read(notificationGroupingProvider.notifier).state = newGroup;
-      _ref.read(delayNewMediaProvider.notifier).state = newDelay;
-      
-       // Refresh API Key notifier (although it shouldn't change on import)
-       // ignore: unused_result
-       _ref.refresh(apiKeyProvider);
+  // Helper to refresh providers after import
+  Future<void> _refreshStateAfterImport() async {
+    // Reload channel list directly from storage via its notifier
+    await _ref.read(channelListProvider.notifier).reloadState();
 
-       // Notify background service of potential poll frequency change
-       await updateGlobalSetting('pollFrequency', newFreq);
-   }
+    // Refetch individual settings for StateProviders
+    final newFreq = await _settingsService.getPollFrequency();
+    final newGroup = await _settingsService.getNotificationGrouping();
+    final newDelay = await _settingsService.getDelayNewMedia();
+    final newReminderLead = await _settingsService.getReminderLeadTime();
+    _ref.read(pollFrequencyProvider.notifier).state = newFreq;
+    _ref.read(notificationGroupingProvider.notifier).state = newGroup;
+    _ref.read(delayNewMediaProvider.notifier).state = newDelay;
+    _ref.read(reminderLeadTimeProvider.notifier).state = newReminderLead;
+
+    // Refresh API Key notifier (although it shouldn't change on import)
+    // ignore: unused_result
+    _ref.refresh(apiKeyProvider);
+
+    // Notify background service of potential poll frequency change
+    await updateGlobalSetting('pollFrequency', newFreq);
+    await updateGlobalSetting('reminderLeadTime', newReminderLead);
+  }
 }

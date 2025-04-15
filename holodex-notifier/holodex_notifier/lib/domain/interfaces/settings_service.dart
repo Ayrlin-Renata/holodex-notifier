@@ -26,6 +26,8 @@ abstract class ISettingsService {
 
   /// Sets whether new media notifications should be delayed until scheduled time.
   Future<void> setDelayNewMedia(bool enabled);
+  Future<Duration> getReminderLeadTime();
+  Future<void> setReminderLeadTime(Duration leadTime);
 
   /// Gets the timestamp of the last successful background poll.
   Future<DateTime?> getLastPollTime();

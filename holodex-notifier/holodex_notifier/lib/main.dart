@@ -190,7 +190,7 @@ Future<void> main() async {
 
     logger.info("Waiting for Background Service FutureProvider...");
     // Get the instance after awaiting
-    final backgroundService = await container.read(backgroundServiceFutureProvider.future); 
+    final backgroundService = await container.read(backgroundServiceFutureProvider.future);
     logger.info("Background Service resolved.");
 
     logger.info("All core async services initialized.");
@@ -209,81 +209,14 @@ Future<void> main() async {
     await settingsService.setMainServicesReady(true);
     logger.info("Main Services Readiness Flag SET to TRUE.");
 
-    // ############## CHANGE 4: Added listeners for invoke calls (Optional fallback) ##############
-    // These remain commented out unless the direct-call approach from the background fails.
-    /*
-    bgService.on('showNotification').listen((event) async {
-      // Null check for notificationService instance AND event data
-      if (event == null || notificationService == null) return;
-      try {
-        // Assuming event is Map<String, dynamic>
-        if (event is Map<String, dynamic>) {
-           final instruction = NotificationInstruction.fromJson(event); // Need fromJson in model
-           await notificationService.showNotification(instruction);
-           logger?.info("[Main Isolate Listener] Handled 'showNotification' invoke.");
-        } else {
-           logger?.warning("[Main Isolate Listener] Received 'showNotification' invoke with invalid data type: ${event.runtimeType}");
-        }
-      } catch (e, s) {
-        logger?.error("[Main Isolate Listener] Error handling 'showNotification' invoke.", e, s);
-      }
-    });
-
-    bgService.on('scheduleNotification').listen((event) async {
-       // Null check for notificationService instance AND event data
-      if (event == null || notificationService == null || event is! Map<String, dynamic>) return;
-      try {
-        // Safely parse arguments from event map
-        final String? videoId = event['videoId'] as String?;
-        final String? scheduledTimeStr = event['scheduledTime'] as String?;
-        final String? payload = event['payload'] as String?;
-        final String? title = event['title'] as String?;
-        final String? channelName = event['channelName'] as String?;
-
-        if (videoId == null || scheduledTimeStr == null || payload == null || title == null || channelName == null) {
-           logger?.warning("[Main Isolate Listener] Invalid arguments for 'scheduleNotification' invoke: $event");
-          return;
-        }
-        final DateTime? scheduledTime = DateTime.tryParse(scheduledTimeStr);
-        if (scheduledTime == null) {
-            logger?.warning("[Main Isolate Listener] Invalid scheduledTime format for 'scheduleNotification' invoke: $scheduledTimeStr");
-            return;
-        }
-
-        final int? notificationId = await notificationService.scheduleNotification(
-          videoId: videoId,
-          scheduledTime: scheduledTime,
-          payload: payload,
-          title: title,
-          channelName: channelName,
-        );
-        logger?.info("[Main Isolate Listener] Handled 'scheduleNotification' invoke. Result ID: $notificationId");
-        // Returning ID to background is complex with invoke, background should generate predictable IDs itself.
-      } catch (e, s) {
-        logger?.error("[Main Isolate Listener] Error handling 'scheduleNotification' invoke.", e, s);
-      }
-    });
-
-    bgService.on('cancelNotification').listen((event) async {
-       // Null check for notificationService instance AND event data
-      if (event == null || notificationService == null || event is! int) return;
-      try {
-        final int notificationId = event;
-        await notificationService.cancelScheduledNotification(notificationId);
-        logger?.info("[Main Isolate Listener] Handled 'cancelNotification' invoke for ID: $notificationId");
-      } catch (e, s) {
-        logger?.error("[Main Isolate Listener] Error handling 'cancelNotification' invoke.", e, s);
-      }
-    });
-    */
-    // ############## END CHANGE 4 ##############
-
     // --- Step 6: Load Initial UI State ---
     logger.info("Loading initial state values for UI overrides...");
     // Null Assertion OK: settingsService is guaranteed non-null here
     final initialPollFrequency = await settingsService.getPollFrequency();
     final initialGrouping = await settingsService.getNotificationGrouping();
     final initialDelay = await settingsService.getDelayNewMedia();
+    final initialReminderLeadTime = await settingsService.getReminderLeadTime(); // {{ Load reminder lead time }}
+
     logger.info("Initial state values loaded.");
 
     // --- Step 7: Run the App ---
@@ -296,6 +229,7 @@ Future<void> main() async {
             pollFrequencyProvider.overrideWith((ref) => initialPollFrequency),
             notificationGroupingProvider.overrideWith((ref) => initialGrouping),
             delayNewMediaProvider.overrideWith((ref) => initialDelay),
+            reminderLeadTimeProvider.overrideWith((ref) => initialReminderLeadTime),
           ],
           child: const MainApp(),
         ),

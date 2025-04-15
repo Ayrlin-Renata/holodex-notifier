@@ -51,6 +51,10 @@ class LocalNotificationService implements INotificationService {
   static const String scheduledChannelName = 'Scheduled Live Streams';
   static const String scheduledChannelDesc = 'Notifications for when streams are about to go live';
 
+  static const String reminderChannelId = 'holodex_notifier_reminders';
+  static const String reminderChannelName = 'Upcoming Stream Reminders';
+  static const String reminderChannelDesc = 'Reminders for streams that are due soon';
+
   @override
   Stream<String?> get notificationTapStream => _notificationTapController.stream;
 
@@ -199,12 +203,21 @@ class LocalNotificationService implements INotificationService {
       importance: Importance.high, // Might be lower than immediate alerts
       playSound: true,
     );
+    const AndroidNotificationChannel reminderChannel = AndroidNotificationChannel(
+      reminderChannelId,
+      reminderChannelName,
+      description: reminderChannelDesc,
+      importance: Importance.defaultImportance, // Reminders might be less urgent than Live
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('notification_sound'), // Optional custom sound for reminders
+    );
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
     await androidImplementation?.createNotificationChannel(defaultChannel);
     await androidImplementation?.createNotificationChannel(scheduledChannel);
+    await androidImplementation?.createNotificationChannel(reminderChannel);
     print("Android Notification Channels Created.");
   }
 
@@ -233,17 +246,25 @@ class LocalNotificationService implements INotificationService {
       }
     }
 
+    // Choose channel based on type
+    final String channelId = _getChannelIdForInstruction(instruction);
+    final String channelName = _getChannelNameForInstruction(instruction);
+    final String channelDesc = _getChannelDescForInstruction(instruction);
+
     // --- Android Details ---
-    // TODO: Add specific icons per type if desired
     final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      defaultChannelId, // Use the appropriate channel ID based on type if needed
-      defaultChannelName,
-      channelDescription: defaultChannelDesc,
-      importance: Importance.max,
-      priority: Priority.high,
+      channelId, // Use dynamic channel ID
+      channelName, // Use dynamic channel name
+      channelDescription: channelDesc, // Use dynamic channel description
+      importance:
+          channelId == defaultChannelId
+              ? Importance.max
+              : (channelId == scheduledChannelId ? Importance.high : Importance.defaultImportance), // Adjust importance based on channel
+      priority:
+          channelId == defaultChannelId
+              ? Priority.high
+              : (channelId == scheduledChannelId ? Priority.defaultPriority : Priority.low), // Adjust priority
       largeIcon: largeIcon,
-      // TODO: Consider adding style information (BigTextStyle for longer bodies)
-      // Ticker text is optional (shows briefly in status bar)
       ticker: title,
     );
 
@@ -282,20 +303,32 @@ class LocalNotificationService implements INotificationService {
     required String payload, // Expecting videoId here usually
     required String title, // Receive title directly
     required String channelName, // Receive channel name directly
+    required NotificationEventType eventType,
   }) async {
-    print("Scheduling notification for videoId: $videoId at $scheduledTime");
+    print("Scheduling $eventType notification for videoId: $videoId at $scheduledTime");
     try {
-      // Use passed-in title and channel name
-      final String notificationTitle = "$channelName is scheduled to go live!";
-      final String notificationBody = title; // Use the passed video title
+      final bool isReminder = eventType == NotificationEventType.reminder;
+      // Format title/body based on type
+      final String notificationTitle =
+          isReminder
+              ? "$channelName is starting soon!" // Reminder title
+              : "$channelName is scheduled to go live!"; // Live notification title
+      final String notificationBody = title; // Use the video title as body for both
+
+      // Use the correct channel ID based on whether it's a reminder or live schedule
+      final String channelId = isReminder ? reminderChannelId : scheduledChannelId;
+      final String channelNameForDetails = isReminder ? reminderChannelName : scheduledChannelName;
+      final String channelDescForDetails = isReminder ? reminderChannelDesc : scheduledChannelDesc;
+      final Importance importance = isReminder ? Importance.defaultImportance : Importance.high;
+      final Priority priority = isReminder ? Priority.defaultPriority : Priority.high;
 
       // --- Prepare Notification Details ---
       AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        scheduledChannelId, // Use the specific channel for scheduled notifications
-        scheduledChannelName,
-        channelDescription: scheduledChannelDesc,
-        importance: Importance.high,
-        priority: Priority.high,
+        channelId, // Use the specific channel for scheduled notifications
+        channelNameForDetails,
+        channelDescription: channelDescForDetails,
+        importance: importance,
+        priority: priority,
         ticker: title,
       );
       const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true);
@@ -306,7 +339,7 @@ class LocalNotificationService implements INotificationService {
 
       // --- Generate ID ---
       // Use a predictable ID for scheduled notifications based on videoId for cancellation
-      final int notificationId = _generateScheduledNotificationId(videoId);
+      final int notificationId = isReminder ? _generateReminderNotificationId(videoId) : _generateScheduledNotificationId(videoId);
 
       // --- Schedule ---
       await _flutterLocalNotificationsPlugin.zonedSchedule(
@@ -348,11 +381,13 @@ class LocalNotificationService implements INotificationService {
     switch (instruction.eventType) {
       case NotificationEventType.newMedia:
       case NotificationEventType.update:
-        return instruction.channelName; // Channel name as title
+        return instruction.channelName;
       case NotificationEventType.live:
         return "${instruction.channelName} is Live!";
       case NotificationEventType.mention:
         return "${instruction.channelName} mentioned ${instruction.mentionTargetChannelName ?? 'someone'}";
+      case NotificationEventType.reminder:
+        return "${instruction.channelName} starting soon!"; // Title for immediate Reminder dispatch (if needed, usually scheduled)
     }
   }
 
@@ -361,9 +396,42 @@ class LocalNotificationService implements INotificationService {
       case NotificationEventType.newMedia:
       case NotificationEventType.update:
       case NotificationEventType.live:
-        return instruction.videoTitle; // Video title as body
+      case NotificationEventType.reminder: // Use video title for reminder body too
+        return instruction.videoTitle;
       case NotificationEventType.mention:
-        return "${instruction.videoTitle} (Mention)"; // Clarify it's a mention
+        return "${instruction.videoTitle} (Mention)";
+    }
+  }
+
+  // {{ Add helpers to get channel details based on type }}
+  String _getChannelIdForInstruction(NotificationInstruction instruction) {
+    switch (instruction.eventType) {
+      case NotificationEventType.reminder:
+        return reminderChannelId;
+      case NotificationEventType.live: // Treat scheduled live similar to immediate live for channel?
+      case NotificationEventType.newMedia:
+      case NotificationEventType.update:
+      case NotificationEventType.mention:
+      default:
+        return defaultChannelId;
+    }
+  }
+
+  String _getChannelNameForInstruction(NotificationInstruction instruction) {
+    switch (instruction.eventType) {
+      case NotificationEventType.reminder:
+        return reminderChannelName;
+      default:
+        return defaultChannelName;
+    }
+  }
+
+  String _getChannelDescForInstruction(NotificationInstruction instruction) {
+    switch (instruction.eventType) {
+      case NotificationEventType.reminder:
+        return reminderChannelDesc;
+      default:
+        return defaultChannelDesc;
     }
   }
 
@@ -388,5 +456,9 @@ class LocalNotificationService implements INotificationService {
   int _generateScheduledNotificationId(String videoId) {
     // Use a different prefix for scheduled IDs
     return _generateConsistentId("scheduled_$videoId");
+  }
+
+  int _generateReminderNotificationId(String videoId) {
+    return _generateConsistentId("scheduled_reminder_$videoId");
   }
 }

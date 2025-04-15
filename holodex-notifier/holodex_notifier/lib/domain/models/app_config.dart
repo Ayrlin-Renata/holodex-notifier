@@ -12,7 +12,8 @@ class AppConfig with _$AppConfig {
     required int pollFrequencyMinutes,
     required bool notificationGrouping,
     required bool delayNewMedia,
-    // Include channel subscriptions
+    required int reminderLeadTimeMinutes,
+
     required List<ChannelSubscriptionSetting> channelSubscriptions,
     // DO NOT include API Key or other sensitive/runtime data like lastPollTime
     // Add version if needed for future compatibility
