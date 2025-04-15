@@ -18,6 +18,7 @@ import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:holodex_notifier/domain/models/video_full.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart'; // Import database for CachedVideo
+import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
 import 'package:holodex_notifier/main.dart' hide ErrorApp, MainApp, appControllerProvider; // Hide specific exports if needed
 import 'package:holodex_notifier/main.dart' as main_providers show isolateContextProvider; // *** Import with prefix ***
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -210,12 +211,12 @@ Future<void> onStart(ServiceInstance service) async {
         logger.debug("BG Isolate: Received poll frequency update, but value ($value min) is unchanged.");
       }
     } else if (key == 'reminderLeadTime' && value is int) {
-        // No immediate action needed in the background timer itself.
-        // The new lead time will be read from settingsService
-        // at the beginning of the *next* _executePollCycle.
-        logger.info("BG Isolate: Received reminderLeadTime update ($value min). Value will be used on next poll cycle.");
-        // Optionally, trigger an immediate poll if desired, but usually unnecessary:
-        // service.invoke('triggerPoll');
+      // No immediate action needed in the background timer itself.
+      // The new lead time will be read from settingsService
+      // at the beginning of the *next* _executePollCycle.
+      logger.info("BG Isolate: Received reminderLeadTime update ($value min). Value will be used on next poll cycle.");
+      // Optionally, trigger an immediate poll if desired, but usually unnecessary:
+      // service.invoke('triggerPoll');
     } else if (key == 'apiKey') {
       // No immediate action needed, Dio interceptor gets it on next request.
       logger.debug("BG Isolate: Received API Key update notification. No background action needed.");
@@ -527,17 +528,23 @@ Future<VideoProcessingResult> _processVideoUpdate(
   final cacheService = container.read(cacheServiceProvider);
   // Resolve NotificationService synchronously (relying on main isolate init)
 
-  //final notificationService = container.read(notificationServiceProvider);
   logger.debug("[_processVideoUpdate] ($videoId) Awaiting notificationServiceFutureProvider...");
   late final INotificationService notificationService;
   try {
     notificationService = await container.read(notificationServiceFutureProvider.future);
+    // Ensure the config is loaded for this specific instance
+    // Although the provider tries, let's be explicit here in the background workflow
+    if (notificationService is LocalNotificationService) {
+      // Add a check inside _loadFormatConfig or have a separate isLoaded flag
+      // For now, just call it. If it uses settingsService, it should be quick if already loaded.
+      await notificationService.loadFormatConfig(); // Call the public load method
+      logger.debug("[_processVideoUpdate] ($videoId) Explicitly ensured format config load.");
+    }
     logger.debug("[_processVideoUpdate] ($videoId) notificationServiceFutureProvider resolved successfully.");
   } catch (e, s) {
-    logger.fatal("[_processVideoUpdate] ($videoId) FAILED to resolve notificationServiceFutureProvider.", e, s);
+    logger.fatal("[_processVideoUpdate] ($videoId) FAILED to resolve or load config for notificationServiceFutureProvider.", e, s);
     rethrow; // Propagate the error
   }
-
   // Resolve SettingsService synchronously
   final settingsService = container.read(settingsServiceProvider);
   logger.debug("[_processVideoUpdate] ($videoId) Starting processing...");
@@ -660,6 +667,7 @@ Future<VideoProcessingResult> _processVideoUpdate(
     startScheduled: Value(fetchedVideo.startScheduled?.toIso8601String()),
     startActual: Value(fetchedVideo.startActual?.toIso8601String()),
     availableAt: Value(fetchedVideo.availableAt.toIso8601String()),
+    videoType: Value(fetchedVideo.type),
     certainty: Value(fetchedVideo.certainty),
     mentionedChannelIds: Value(fetchedVideo.mentions?.map((m) => m.id).whereType<String>().toList() ?? []),
     videoTitle: Value(fetchedVideo.title),
@@ -726,12 +734,15 @@ class _ProcessingState {
       becameCertain =
           !(currentCacheData != null && (currentCacheData.certainty == 'certain' || currentCacheData.certainty == null)) &&
           (fetchedVideoData.certainty == 'certain' || fetchedVideoData.certainty == null), // Calculate derived state last
-                // Note: This check happens BEFORE the new reminder time is potentially calculated and stored in mutable state.
+      // Note: This check happens BEFORE the new reminder time is potentially calculated and stored in mutable state.
       // It relies on the *previous* cycle's `scheduledReminderTime` from the cache.
-      reminderTimeChanged = currentCacheData?.scheduledReminderTime != null && fetchedVideoData.startScheduled != null
-          && currentCacheData!.startScheduled != fetchedVideoData.startScheduled?.toIso8601String() // Keep existing logic
-
-          {
+      reminderTimeChanged =
+          currentCacheData?.scheduledReminderTime != null &&
+          fetchedVideoData.startScheduled != null &&
+          currentCacheData!.startScheduled !=
+              fetchedVideoData.startScheduled
+                  ?.toIso8601String() // Keep existing logic
+                  {
     // Initialize mutable state from cache
     scheduledLiveNotificationId = currentCacheData?.scheduledLiveNotificationId;
     isPendingNewMedia = currentCacheData?.isPendingNewMediaNotification ?? false;
@@ -750,7 +761,6 @@ class _ProcessingState {
     return Set<String>.from(a).containsAll(b);
   }
 }
-
 
 // --- Event Logic Helpers ---
 Future<void> _handleReminderScheduling({
@@ -773,7 +783,9 @@ Future<void> _handleReminderScheduling({
   if (!channelSettings.notifyLive || reminderLeadTime <= Duration.zero || fetchedVideo.status != 'upcoming' || fetchedVideo.startScheduled == null) {
     // Conditions not met, ensure any existing reminder is cancelled
     if (processingState.scheduledReminderNotificationId != null) {
-      logger.info('[EventLogic] ($videoId) Reminder conditions no longer met (NotifyLive=${channelSettings.notifyLive}, LeadTime=${reminderLeadTime.inMinutes}, Status=${fetchedVideo.status}, StartSched=${fetchedVideo.startScheduled}). Cancelling existing reminder ID: ${processingState.scheduledReminderNotificationId}.');
+      logger.info(
+        '[EventLogic] ($videoId) Reminder conditions no longer met (NotifyLive=${channelSettings.notifyLive}, LeadTime=${reminderLeadTime.inMinutes}, Status=${fetchedVideo.status}, StartSched=${fetchedVideo.startScheduled}). Cancelling existing reminder ID: ${processingState.scheduledReminderNotificationId}.',
+      );
       cancellations.add(processingState.scheduledReminderNotificationId!);
       processingState.scheduledReminderNotificationId = null;
       processingState.scheduledReminderTime = null;
@@ -792,10 +804,12 @@ Future<void> _handleReminderScheduling({
     logger.debug('[EventLogic] ($videoId) Calculated reminder time ($targetReminderTime) is in the past. Skipping scheduling.');
     // Also cancel if it was scheduled but now the time is past
     if (processingState.scheduledReminderNotificationId != null) {
-       logger.info('[EventLogic] ($videoId) Calculated reminder time is past, cancelling existing reminder ID: ${processingState.scheduledReminderNotificationId}.');
-       cancellations.add(processingState.scheduledReminderNotificationId!);
-       processingState.scheduledReminderNotificationId = null;
-       processingState.scheduledReminderTime = null;
+      logger.info(
+        '[EventLogic] ($videoId) Calculated reminder time is past, cancelling existing reminder ID: ${processingState.scheduledReminderNotificationId}.',
+      );
+      cancellations.add(processingState.scheduledReminderNotificationId!);
+      processingState.scheduledReminderNotificationId = null;
+      processingState.scheduledReminderTime = null;
     }
     return;
   }
@@ -805,49 +819,49 @@ Future<void> _handleReminderScheduling({
   final bool isCurrentlyScheduled = processingState.scheduledReminderNotificationId != null;
   // Check if the calculated reminder time is significantly different from the previously stored one
   // (e.g., more than a minute difference to avoid rescheduling for minor fluctuations)
-  final bool reminderTimeSignificantlyChanged = processingState.scheduledReminderTime == null ||
-                                                targetReminderTime.difference(processingState.scheduledReminderTime!).abs() > const Duration(minutes: 1);
+  final bool reminderTimeSignificantlyChanged =
+      processingState.scheduledReminderTime == null ||
+      targetReminderTime.difference(processingState.scheduledReminderTime!).abs() > const Duration(minutes: 1);
 
   // Schedule/Reschedule conditions:
   // 1. Not currently scheduled OR
   // 2. The calculated time has changed significantly (due to lead time change or startScheduled change)
   if (!isCurrentlyScheduled || reminderTimeSignificantlyChanged) {
-      logger.info('[EventLogic] ($videoId) Needs Reminder Scheduling/Rescheduling (Current: $isCurrentlyScheduled, Changed: $reminderTimeSignificantlyChanged)');
+    logger.info(
+      '[EventLogic] ($videoId) Needs Reminder Scheduling/Rescheduling (Current: $isCurrentlyScheduled, Changed: $reminderTimeSignificantlyChanged)',
+    );
 
-      // If rescheduling, cancel the old one first
-      if (isCurrentlyScheduled) {
-        logger.debug('[EventLogic] ($videoId) Adding previous reminder ID ${processingState.scheduledReminderNotificationId} to cancellations.');
-        cancellations.add(processingState.scheduledReminderNotificationId!);
-        processingState.scheduledReminderNotificationId = null; // Assume cancellation succeeds
+    // If rescheduling, cancel the old one first
+    if (isCurrentlyScheduled) {
+      logger.debug('[EventLogic] ($videoId) Adding previous reminder ID ${processingState.scheduledReminderNotificationId} to cancellations.');
+      cancellations.add(processingState.scheduledReminderNotificationId!);
+      processingState.scheduledReminderNotificationId = null; // Assume cancellation succeeds
+      processingState.scheduledReminderTime = null;
+    }
+    try {
+      final instruction = _createNotificationInstruction(fetchedVideo, NotificationEventType.reminder);
+      final newId = await notificationService.scheduleNotification(
+        instruction: instruction,
+        scheduledTime: targetReminderTime, // Use calculated reminder time
+      );
+      if (newId != null) {
+        logger.info('[EventLogic] ($videoId) Successfully scheduled/rescheduled REMINDER with ID: $newId at $targetReminderTime.');
+        processingState.scheduledReminderNotificationId = newId; // Update state
+        processingState.scheduledReminderTime = targetReminderTime; // Store the calculated time
+      } else {
+        logger.warning('[EventLogic] ($videoId) Reminder scheduling returned null ID.');
+        processingState.scheduledReminderNotificationId = null;
         processingState.scheduledReminderTime = null;
       }
-      try {
-        final newId = await notificationService.scheduleNotification(
-          videoId: videoId,
-          scheduledTime: targetReminderTime, // Use calculated reminder time
-          payload: videoId,
-          title: fetchedVideo.title,
-          channelName: fetchedVideo.channel.name,
-          eventType: NotificationEventType.reminder, // Specify type
-        );
-        if (newId != null) {
-          logger.info('[EventLogic] ($videoId) Successfully scheduled/rescheduled REMINDER with ID: $newId at $targetReminderTime.');
-          processingState.scheduledReminderNotificationId = newId; // Update state
-          processingState.scheduledReminderTime = targetReminderTime; // Store the calculated time
-        } else {
-          logger.warning('[EventLogic] ($videoId) Reminder scheduling returned null ID.');
-          processingState.scheduledReminderNotificationId = null;
-           processingState.scheduledReminderTime = null;
-        }
-      } catch (e, s) {
-        logger.error('[EventLogic] ($videoId) Failed to schedule reminder notification.', e, s);
-        processingState.scheduledReminderNotificationId = null; // Ensure null on error
-         processingState.scheduledReminderTime = null;
-      }
+    } catch (e, s) {
+      logger.error('[EventLogic] ($videoId) Failed to schedule reminder notification.', e, s);
+      processingState.scheduledReminderNotificationId = null; // Ensure null on error
+      processingState.scheduledReminderTime = null;
+    }
   } else {
-     logger.debug('[EventLogic] ($videoId) Reminder already correctly scheduled (ID: ${processingState.scheduledReminderNotificationId}). No action.');
-     // Ensure stored time is kept if no reschedule happens
-     processingState.scheduledReminderTime = processingState.scheduledReminderTime ?? targetReminderTime;
+    logger.debug('[EventLogic] ($videoId) Reminder already correctly scheduled (ID: ${processingState.scheduledReminderNotificationId}). No action.');
+    // Ensure stored time is kept if no reschedule happens
+    processingState.scheduledReminderTime = processingState.scheduledReminderTime ?? targetReminderTime;
   }
 }
 
@@ -882,14 +896,10 @@ Future<void> _handleLiveScheduling({
         processingState.scheduledLiveNotificationId = null; // Assume cancellation will succeed
       }
       try {
-        // CALL METHOD ON THE PASSED INSTANCE
+        final instruction = _createNotificationInstruction(fetchedVideo, NotificationEventType.live);
         final newId = await notificationService.scheduleNotification(
-          videoId: videoId,
-          scheduledTime: scheduledTime, // Null checked by shouldBeScheduled logic
-          payload: videoId, // Using videoId as payload
-          title: fetchedVideo.title,
-          channelName: fetchedVideo.channel.name,
-          eventType: NotificationEventType.live,
+          instruction: instruction,
+          scheduledTime: scheduledTime!, // Null checked by shouldBeScheduled logic
         );
         if (newId != null) {
           logger.info('[EventLogic] ($videoId) Successfully scheduled/rescheduled with ID: $newId.');
@@ -1029,12 +1039,16 @@ Future<void> _handleLiveEvent({
     processingState.lastLiveNotificationSentTime = currentSystemTime; // Update last sent time
 
     if (processingState.scheduledLiveNotificationId != null) {
-      logger.debug('[EventLogic] ($videoId) Cancelling scheduled LIVE notification ID ${processingState.scheduledLiveNotificationId} due to Live dispatch.');
+      logger.debug(
+        '[EventLogic] ($videoId) Cancelling scheduled LIVE notification ID ${processingState.scheduledLiveNotificationId} due to Live dispatch.',
+      );
       cancellations.add(processingState.scheduledLiveNotificationId!);
       processingState.scheduledLiveNotificationId = null;
     }
-     if (processingState.scheduledReminderNotificationId != null) {
-      logger.debug('[EventLogic] ($videoId) Cancelling scheduled REMINDER notification ID ${processingState.scheduledReminderNotificationId} due to Live dispatch.');
+    if (processingState.scheduledReminderNotificationId != null) {
+      logger.debug(
+        '[EventLogic] ($videoId) Cancelling scheduled REMINDER notification ID ${processingState.scheduledReminderNotificationId} due to Live dispatch.',
+      );
       cancellations.add(processingState.scheduledReminderNotificationId!);
       processingState.scheduledReminderNotificationId = null;
       processingState.scheduledReminderTime = null;
@@ -1143,7 +1157,9 @@ NotificationInstruction _createNotificationInstruction(
     channelId: video.channel.id,
     channelName: video.channel.name,
     videoTitle: video.title,
+    videoType: video.type,
     channelAvatarUrl: video.channel.photo,
+    availableAt: video.availableAt, // {{ ADD availableAt from video }}
     mentionTargetChannelId: mentionTargetId,
     mentionTargetChannelName: mentionTargetName,
   );

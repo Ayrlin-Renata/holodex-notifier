@@ -30,6 +30,8 @@ class BackgroundStatusCard extends HookConsumerWidget {
       data: (status) {
         final nextPollTime = status.lastPollTime?.add(pollFrequency);
         final lastError = status.lastError; // Get error from status object
+        final appController = ref.watch(appControllerProvider); // {{ Get AppController }}
+        final scaffoldMessenger = ScaffoldMessenger.of(context); // {{ Get ScaffoldMessenger }}
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -101,38 +103,54 @@ class BackgroundStatusCard extends HookConsumerWidget {
                     ),
                   ),
                 const SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.sync),
-                    label: const Text('Poll Now'),
-                    onPressed:
-                        !status
-                                .isRunning // Disable if service isn't running
-                            ? null
-                            : () {
-                              // Trigger the background service to poll immediately
-                              logger.info("Invoking manual poll...");
-                              backgroundService.invoke('triggerPoll');
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)));
-
-                              // Refresh the status stream immediately to show "polling" state sooner
-                              // ignore: unused_result
-                              ref.refresh(backgroundServiceStatusStreamProvider);
-
-                              // Refresh data providers after a short delay allowing poll to start processing
-                              Future.delayed(const Duration(seconds: 3), () {
-                                if (context.mounted) {
-                                  logger.debug("Refreshing status/scheduled/channels after 3s delay post manual poll trigger.");
-                                  // ignore: unused_result
-                                  ref.refresh(backgroundServiceStatusStreamProvider);
-                                  ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
-                                  ref.read(channelListProvider.notifier).reloadState(); // Refresh channel list too
-                                }
-                              });
-                            },
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Space buttons
+                  children: [
+                    // Poll Now Button
+                    TextButton.icon(
+                      // Use TextButton for less emphasis
+                      icon: const Icon(Icons.sync, size: 18),
+                      label: const Text('Poll Now'),
+                      onPressed:
+                          !status.isRunning
+                              ? null
+                              : () {
+                                // Existing logic
+                                logger.info("Invoking manual poll...");
+                                backgroundService.invoke('triggerPoll');
+                                scaffoldMessenger.showSnackBar(
+                                  const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)),
+                                );
+                                // ignore: unused_result
+                                ref.refresh(backgroundServiceStatusStreamProvider);
+                                Future.delayed(const Duration(seconds: 3), () {
+                                  if (context.mounted) {
+                                    logger.debug("Refreshing status/scheduled/channels after 3s delay post manual poll trigger.");
+                                    // ignore: unused_result
+                                    ref.refresh(backgroundServiceStatusStreamProvider);
+                                    ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
+                                    ref.read(channelListProvider.notifier).reloadState(); // Refresh channel list too
+                                  }
+                                });
+                              },
+                    ),
+                    // Test Notifications Button
+                    TextButton.icon(
+                      // Use TextButton
+                      icon: const Icon(Icons.science_outlined, size: 18), // Test tube icon
+                      label: const Text('Send Tests'),
+                      onPressed: () async {
+                        // Make async
+                        logger.info("Triggering test notifications...");
+                        // Call the AppController method
+                        await appController.sendTestNotifications();
+                        // Show feedback
+                        scaffoldMessenger.showSnackBar(
+                          const SnackBar(content: Text('Sending test notifications... Check shade.'), duration: Duration(seconds: 3)),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

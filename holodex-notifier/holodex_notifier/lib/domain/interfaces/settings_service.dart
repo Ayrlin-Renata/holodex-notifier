@@ -1,6 +1,7 @@
 // f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\domain\interfaces\settings_service.dart
 import 'package:holodex_notifier/domain/models/app_config.dart';
-import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart'; // Import the model
+import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
+import 'package:holodex_notifier/domain/models/notification_format_config.dart'; // Import the model
 
 /// Defines the contract for managing user settings and application state.
 abstract class ISettingsService {
@@ -73,4 +74,11 @@ abstract class ISettingsService {
   /// Imports and applies the provided configuration.
   /// Returns true on success, false on failure (e.g., validation error).
   Future<bool> importConfiguration(AppConfig config);
+
+  // --- Notification Formatting Configuration --- 
+  /// Gets the user-defined or default notification format configuration.
+  Future<NotificationFormatConfig> getNotificationFormatConfig();
+
+  /// Saves the notification format configuration.
+  Future<void> setNotificationFormatConfig(NotificationFormatConfig config); 
 }

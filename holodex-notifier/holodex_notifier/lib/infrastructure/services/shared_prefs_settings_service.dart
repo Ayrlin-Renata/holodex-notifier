@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:holodex_notifier/domain/models/app_config.dart';
+import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart'; // Import Secure Storage Interface
@@ -19,6 +20,8 @@ const String _keyChannelSubscriptions = 'settings_channelSubscriptions';
 const String _apiKeySecureStorageKey = 'holodex_api_key';
 const String _keyMainServicesReady = 'app_main_services_ready'; // Key for readiness flag
 const String _keyIsFirstLaunch = 'app_is_first_launch'; // Key for first launch flag
+const String _keyNotificationFormatConfig = 'settings_notificationFormatConfig'; 
+
 
 class SharedPrefsSettingsService implements ISettingsService {
   // Dependencies
@@ -284,6 +287,34 @@ class SharedPrefsSettingsService implements ISettingsService {
     } catch (e) {
       print("[SharedPrefsSettingsService] Config Import Error during apply: $e");
       return false;
+    }
+  }
+
+    @override
+  Future<NotificationFormatConfig> getNotificationFormatConfig() async {
+    await _ensureFreshPrefs();
+    final String? jsonString = _prefs.getString(_keyNotificationFormatConfig);
+    if (jsonString != null) {
+      try {
+        final jsonMap = jsonDecode(jsonString);
+        return NotificationFormatConfig.fromJson(jsonMap);
+      } catch (e) {
+        print("Error decoding NotificationFormatConfig JSON: $e. Returning default.");
+        // Fall through to return default
+      }
+    }
+    // Return default if not found or decoding failed
+    return NotificationFormatConfig.defaultConfig();
+  }
+
+  @override
+  Future<void> setNotificationFormatConfig(NotificationFormatConfig config) async {
+    try {
+      final jsonString = jsonEncode(config.toJson());
+      await _prefs.setString(_keyNotificationFormatConfig, jsonString);
+    } catch (e) {
+      print("Error encoding NotificationFormatConfig JSON: $e");
+      // Decide how to handle error (e.g., rethrow?)
     }
   }
 }

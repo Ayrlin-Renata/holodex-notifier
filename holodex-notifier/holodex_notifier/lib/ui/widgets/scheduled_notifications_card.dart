@@ -15,6 +15,27 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
   const ScheduledNotificationsCard({super.key});
   static const int _initialItemLimit = 16;
 
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
+  }
+
+  Widget _buildDateHeader(DateTime date, ThemeData theme) {
+    // Format the date nicely (e.g., Tuesday, April 15)
+    final String formattedDate = DateFormat('EEEE, MMMM d').format(date);
+    return Padding(
+      // Add padding above the header to separate it from the previous item/card edge
+      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4.0, right: 4.0),
+      child: Text(
+        formattedDate,
+        style: theme.textTheme.titleSmall?.copyWith(
+          // Use titleSmall or similar
+          color: theme.colorScheme.secondary, // Use an accent color
+          fontWeight: FontWeight.w600, // Slightly bolder
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -55,7 +76,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
           }
         }
         // Determine how many items to show (Show All/Fewer logic)
-         final itemCount = isExpanded.value ? filteredItems.length : min(filteredItems.length, _initialItemLimit);
+        final itemCount = isExpanded.value ? filteredItems.length : min(filteredItems.length, _initialItemLimit);
 
         return Column(
           children: [
@@ -64,69 +85,84 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: itemCount,
               itemBuilder: (context, index) {
-                // {{ Get the ScheduledNotificationItem }}
                 final item = filteredItems[index];
-                // {{ Access video data and item-specific properties }}
                 final videoData = item.videoData;
-                final bool isReminder = item.type == NotificationEventType.reminder;
-                final DateTime scheduledTime = item.scheduledTime; // Use the item's time
-                final int? notificationId = item.notificationId; // Use the getter
+                final int? notificationId = item.notificationId;
+                final String displayTitle = item.formattedTitle;
+                final String displayBody = item.formattedBody;
 
-                final String prefix = isReminder ? 'Reminder for:' : 'Scheduled:';
-                final String timeString = DateFormat.yMd().add_jm().format(scheduledTime.toLocal());
+                bool showHeader = false;
+                if (index == 0) {
+                  // Always show header for the first item
+                  showHeader = true;
+                } else {
+                  // Show header if the date is different from the previous item
+                  final previousItem = filteredItems[index - 1];
+                  if (!_isSameDay(item.scheduledTime.toLocal(), previousItem.scheduledTime.toLocal())) {
+                    showHeader = true;
+                  }
+                }
 
-                return ListTile(
+                final listTile = ListTile(
                   leading: CircleAvatar(
                     radius: 24,
                     backgroundColor: theme.colorScheme.secondaryContainer,
                     backgroundImage: videoData.channelAvatarUrl != null ? CachedNetworkImageProvider(videoData.channelAvatarUrl!) : null,
                     child: videoData.channelAvatarUrl == null ? const Icon(Icons.person_outline, size: 20) : null,
                   ),
-                  // {{ Use data from videoData }}
-                  title: Text(videoData.channelName, style: theme.textTheme.titleSmall),
+                  // {{ Use the formatted fields for display }}
+                  title: Text(displayTitle, style: theme.textTheme.titleSmall),
                   subtitle: Text(
-                    "${videoData.videoTitle}\n$prefix $timeString", // Use prefix and calculated timeString
+                    displayBody,
                     style: theme.textTheme.bodySmall,
-                    maxLines: 3,
+                    maxLines: 2, // Allow more lines for body
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: notificationId != null
-                      ? IconButton(
-                          icon: Icon(Icons.cancel_outlined, color: theme.colorScheme.error),
-                          tooltip: 'Cancel Scheduled ${isReminder ? 'Reminder' : 'Live'}', // Dynamic tooltip
-                          onPressed: () async {
-                            if (!context.mounted) return;
-                            try {
-                              logger.info(
-                                "Attempting to cancel scheduled ${item.type.name} ID: $notificationId for video: ${videoData.videoId}",
-                              );
-                              await notificationService.cancelScheduledNotification(notificationId);
+                  trailing:
+                      notificationId != null
+                          ? IconButton(
+                            icon: Icon(Icons.cancel_outlined, color: theme.colorScheme.error),
+                            tooltip: 'Cancel Scheduled ${item.type == NotificationEventType.reminder ? 'Reminder' : 'Live'}', // Dynamic tooltip
+                            onPressed: () async {
+                              if (!context.mounted) return;
+                              try {
+                                logger.info("Attempting to cancel scheduled ${item.type.name} ID: $notificationId for video: ${videoData.videoId}");
+                                await notificationService.cancelScheduledNotification(notificationId);
 
-                              // Update cache to remove the specific ID based on type
-                              if (item.type == NotificationEventType.reminder) {
-                                await cacheService.updateScheduledReminderNotificationId(videoData.videoId, null);
-                                await cacheService.updateScheduledReminderTime(videoData.videoId, null);
-                              } else { // Must be live
-                                await cacheService.updateScheduledNotificationId(videoData.videoId, null);
+                                // Update cache to remove the specific ID based on type
+                                if (item.type == NotificationEventType.reminder) {
+                                  await cacheService.updateScheduledReminderNotificationId(videoData.videoId, null);
+                                  await cacheService.updateScheduledReminderTime(videoData.videoId, null);
+                                } else {
+                                  // Must be live
+                                  await cacheService.updateScheduledNotificationId(videoData.videoId, null);
+                                }
+                                logger.debug("Cache updated to remove scheduled ID.");
+                                if (!context.mounted) return;
+                                scaffoldMessenger.showSnackBar(
+                                  const SnackBar(content: Text('Scheduled notification cancelled.'), duration: Duration(seconds: 2)),
+                                );
+                                // Refresh BASE provider manually after successful cancel
+                                ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
+                              } catch (e, s) {
+                                logger.error("Error cancelling notification ID: $notificationId", e, s);
+                                if (!context.mounted) return;
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: theme.colorScheme.error),
+                                );
                               }
-                              logger.debug("Cache updated to remove scheduled ID.");
-                              if (!context.mounted) return;
-                               scaffoldMessenger.showSnackBar(
-                                const SnackBar(content: Text('Scheduled notification cancelled.'), duration: Duration(seconds: 2)),
-                              );
-                              // Refresh BASE provider manually after successful cancel
-                              ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
-                            } catch (e, s) {
-                              logger.error("Error cancelling notification ID: $notificationId", e, s);
-                              if (!context.mounted) return;
-                               scaffoldMessenger.showSnackBar(
-                                SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: theme.colorScheme.error),
-                              );
-                            }
-                          },
-                        )
-                      : null,
+                            },
+                          )
+                          : null,
                   dense: true,
+                );
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showHeader) _buildDateHeader(item.scheduledTime.toLocal(), theme),
+                    listTile, // Always include the ListTile
+                  ],
                 );
               },
             ),

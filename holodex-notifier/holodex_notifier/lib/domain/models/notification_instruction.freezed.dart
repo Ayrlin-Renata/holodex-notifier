@@ -21,11 +21,12 @@ mixin _$NotificationInstruction {
   String get channelId => throw _privateConstructorUsedError;
   String get channelName => throw _privateConstructorUsedError;
   String get videoTitle => throw _privateConstructorUsedError;
-  String? get channelAvatarUrl =>
-      throw _privateConstructorUsedError; // Optional for notification display
+  String? get videoType => throw _privateConstructorUsedError;
+  String? get channelAvatarUrl => throw _privateConstructorUsedError;
+  DateTime get availableAt =>
+      throw _privateConstructorUsedError; // {{ ADD required availableAt }}
 // Fields specific to certain types (optional)
-  String? get mentionTargetChannelId =>
-      throw _privateConstructorUsedError; // For Mention event
+  String? get mentionTargetChannelId => throw _privateConstructorUsedError;
   String? get mentionTargetChannelName => throw _privateConstructorUsedError;
 
   /// Create a copy of NotificationInstruction
@@ -47,7 +48,9 @@ abstract class $NotificationInstructionCopyWith<$Res> {
       String channelId,
       String channelName,
       String videoTitle,
+      String? videoType,
       String? channelAvatarUrl,
+      DateTime availableAt,
       String? mentionTargetChannelId,
       String? mentionTargetChannelName});
 }
@@ -73,7 +76,9 @@ class _$NotificationInstructionCopyWithImpl<$Res,
     Object? channelId = null,
     Object? channelName = null,
     Object? videoTitle = null,
+    Object? videoType = freezed,
     Object? channelAvatarUrl = freezed,
+    Object? availableAt = null,
     Object? mentionTargetChannelId = freezed,
     Object? mentionTargetChannelName = freezed,
   }) {
@@ -98,10 +103,18 @@ class _$NotificationInstructionCopyWithImpl<$Res,
           ? _value.videoTitle
           : videoTitle // ignore: cast_nullable_to_non_nullable
               as String,
+      videoType: freezed == videoType
+          ? _value.videoType
+          : videoType // ignore: cast_nullable_to_non_nullable
+              as String?,
       channelAvatarUrl: freezed == channelAvatarUrl
           ? _value.channelAvatarUrl
           : channelAvatarUrl // ignore: cast_nullable_to_non_nullable
               as String?,
+      availableAt: null == availableAt
+          ? _value.availableAt
+          : availableAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
       mentionTargetChannelId: freezed == mentionTargetChannelId
           ? _value.mentionTargetChannelId
           : mentionTargetChannelId // ignore: cast_nullable_to_non_nullable
@@ -129,7 +142,9 @@ abstract class _$$NotificationInstructionImplCopyWith<$Res>
       String channelId,
       String channelName,
       String videoTitle,
+      String? videoType,
       String? channelAvatarUrl,
+      DateTime availableAt,
       String? mentionTargetChannelId,
       String? mentionTargetChannelName});
 }
@@ -154,7 +169,9 @@ class __$$NotificationInstructionImplCopyWithImpl<$Res>
     Object? channelId = null,
     Object? channelName = null,
     Object? videoTitle = null,
+    Object? videoType = freezed,
     Object? channelAvatarUrl = freezed,
+    Object? availableAt = null,
     Object? mentionTargetChannelId = freezed,
     Object? mentionTargetChannelName = freezed,
   }) {
@@ -179,10 +196,18 @@ class __$$NotificationInstructionImplCopyWithImpl<$Res>
           ? _value.videoTitle
           : videoTitle // ignore: cast_nullable_to_non_nullable
               as String,
+      videoType: freezed == videoType
+          ? _value.videoType
+          : videoType // ignore: cast_nullable_to_non_nullable
+              as String?,
       channelAvatarUrl: freezed == channelAvatarUrl
           ? _value.channelAvatarUrl
           : channelAvatarUrl // ignore: cast_nullable_to_non_nullable
               as String?,
+      availableAt: null == availableAt
+          ? _value.availableAt
+          : availableAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
       mentionTargetChannelId: freezed == mentionTargetChannelId
           ? _value.mentionTargetChannelId
           : mentionTargetChannelId // ignore: cast_nullable_to_non_nullable
@@ -204,7 +229,9 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
       required this.channelId,
       required this.channelName,
       required this.videoTitle,
+      this.videoType,
       this.channelAvatarUrl,
+      required this.availableAt,
       this.mentionTargetChannelId,
       this.mentionTargetChannelName});
 
@@ -219,18 +246,21 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
   @override
   final String videoTitle;
   @override
+  final String? videoType;
+  @override
   final String? channelAvatarUrl;
-// Optional for notification display
+  @override
+  final DateTime availableAt;
+// {{ ADD required availableAt }}
 // Fields specific to certain types (optional)
   @override
   final String? mentionTargetChannelId;
-// For Mention event
   @override
   final String? mentionTargetChannelName;
 
   @override
   String toString() {
-    return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, channelAvatarUrl: $channelAvatarUrl, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName)';
+    return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName)';
   }
 
   @override
@@ -247,8 +277,12 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
                 other.channelName == channelName) &&
             (identical(other.videoTitle, videoTitle) ||
                 other.videoTitle == videoTitle) &&
+            (identical(other.videoType, videoType) ||
+                other.videoType == videoType) &&
             (identical(other.channelAvatarUrl, channelAvatarUrl) ||
                 other.channelAvatarUrl == channelAvatarUrl) &&
+            (identical(other.availableAt, availableAt) ||
+                other.availableAt == availableAt) &&
             (identical(other.mentionTargetChannelId, mentionTargetChannelId) ||
                 other.mentionTargetChannelId == mentionTargetChannelId) &&
             (identical(
@@ -264,7 +298,9 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
       channelId,
       channelName,
       videoTitle,
+      videoType,
       channelAvatarUrl,
+      availableAt,
       mentionTargetChannelId,
       mentionTargetChannelName);
 
@@ -285,7 +321,9 @@ abstract class _NotificationInstruction implements NotificationInstruction {
       required final String channelId,
       required final String channelName,
       required final String videoTitle,
+      final String? videoType,
       final String? channelAvatarUrl,
+      required final DateTime availableAt,
       final String? mentionTargetChannelId,
       final String? mentionTargetChannelName}) = _$NotificationInstructionImpl;
 
@@ -300,10 +338,14 @@ abstract class _NotificationInstruction implements NotificationInstruction {
   @override
   String get videoTitle;
   @override
-  String? get channelAvatarUrl; // Optional for notification display
+  String? get videoType;
+  @override
+  String? get channelAvatarUrl;
+  @override
+  DateTime get availableAt; // {{ ADD required availableAt }}
 // Fields specific to certain types (optional)
   @override
-  String? get mentionTargetChannelId; // For Mention event
+  String? get mentionTargetChannelId;
   @override
   String? get mentionTargetChannelName;
 

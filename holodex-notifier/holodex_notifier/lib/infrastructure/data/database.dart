@@ -54,6 +54,7 @@ class CachedVideos extends Table {
   TextColumn? get startScheduled => text().named('start_scheduled').nullable()();
   TextColumn? get startActual => text().named('start_actual').nullable()();
   TextColumn get availableAt => text().named('available_at')();
+  TextColumn? get videoType => text().named('video_type').nullable()(); // Added video type
   TextColumn? get certainty => text().named('certainty').nullable()();
   TextColumn get mentionedChannelIds => text().named('mentioned_channel_ids').map(const StringListConverter()).withDefault(const Constant('[]'))();
   TextColumn get videoTitle => text().named('video_title').withDefault(const Constant('Unknown Title'))();
@@ -174,10 +175,12 @@ class AppDatabase extends _$AppDatabase {
           ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull())
           ..orderBy([
             // Order by reminder time if it exists, otherwise by live schedule time
-            (t) => OrderingTerm.asc(CustomExpression<int>(
-                 "CASE WHEN scheduled_reminder_notification_id IS NOT NULL THEN scheduled_reminder_time ELSE CAST(strftime('%s', start_scheduled) * 1000 AS INTEGER) END",
-                 precedence: Precedence.primary, // Needed for CASE WHEN
-               ))
+            (t) => OrderingTerm.asc(
+              CustomExpression<int>(
+                "CASE WHEN scheduled_reminder_notification_id IS NOT NULL THEN scheduled_reminder_time ELSE CAST(strftime('%s', start_scheduled) * 1000 AS INTEGER) END",
+                precedence: Precedence.primary, // Needed for CASE WHEN
+              ),
+            ),
           ]))
         .get();
   }
@@ -186,11 +189,13 @@ class AppDatabase extends _$AppDatabase {
     return (select(cachedVideos)
           ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull())
           ..orderBy([
-             // Order by reminder time if it exists, otherwise by live schedule time
-            (t) => OrderingTerm.asc(CustomExpression<int>(
-                 "CASE WHEN scheduled_reminder_notification_id IS NOT NULL THEN scheduled_reminder_time ELSE CAST(strftime('%s', start_scheduled) * 1000 AS INTEGER) END",
-                  precedence: Precedence.primary, // Needed for CASE WHEN
-               ))
+            // Order by reminder time if it exists, otherwise by live schedule time
+            (t) => OrderingTerm.asc(
+              CustomExpression<int>(
+                "CASE WHEN scheduled_reminder_notification_id IS NOT NULL THEN scheduled_reminder_time ELSE CAST(strftime('%s', start_scheduled) * 1000 AS INTEGER) END",
+                precedence: Precedence.primary, // Needed for CASE WHEN
+              ),
+            ),
           ]))
         .watch();
   }
@@ -199,8 +204,9 @@ class AppDatabase extends _$AppDatabase {
     return (select(cachedVideos)..where((tbl) => tbl.scheduledReminderNotificationId.isNotNull())).get();
   }
 
-    Future<void> updateScheduledReminderNotificationIdInternal(String id, int? notificationId) {
-    return (update(cachedVideos)..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledReminderNotificationId: Value(notificationId)));
+  Future<void> updateScheduledReminderNotificationIdInternal(String id, int? notificationId) {
+    return (update(cachedVideos)
+      ..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledReminderNotificationId: Value(notificationId)));
   }
 
   Future<void> updateScheduledReminderTimeInternal(String id, DateTime? time) {

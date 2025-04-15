@@ -1,18 +1,18 @@
-import 'package:holodex_notifier/domain/models/notification_instruction.dart'; // Import the instruction model
+// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\domain\interfaces\notification_service.dart
+import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 
 abstract class INotificationService {
   Future<void> initialize();
 
-  // Use the specific instruction type
+  /// Shows an immediate notification based on the instruction.
   Future<void> showNotification(NotificationInstruction instruction);
 
+  /// Schedules a future notification.
+  /// Formatting (title/body) happens inside the implementation based on the instruction.
+  /// Returns the platform notification ID if successful, null otherwise.
   Future<int?> scheduleNotification({
-    required String videoId,
-    required DateTime scheduledTime,
-    required String payload,
-    required String title,
-    required String channelName,
-    required NotificationEventType eventType,
+    required NotificationInstruction instruction, // Use the instruction model
+    required DateTime scheduledTime, // Specific time to show the notification
   });
 
   Future<void> cancelScheduledNotification(int notificationId);

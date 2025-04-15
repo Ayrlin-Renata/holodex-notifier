@@ -18,6 +18,7 @@ import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart'; // {{ Import path_provider }}
 import 'package:share_plus/share_plus.dart'; // {{ Import share_plus }}
 import 'package:path/path.dart' as p; // Path manipulation
@@ -172,7 +173,7 @@ class AppController {
       List<CachedVideo> channelScheduledRemindersToCancel = [];
       try {
         if (_cacheService is DriftCacheService) {
-          final allReminders = await (_cacheService as DriftCacheService).getVideosWithScheduledReminders();
+          final allReminders = await (_cacheService).getVideosWithScheduledReminders();
           channelScheduledRemindersToCancel =
               allReminders.where((v) => v.channelId == channelId && v.scheduledReminderNotificationId != null).toList();
         } else {
@@ -218,9 +219,9 @@ class AppController {
           // Update cache entry ONLY AFTER successful cancellation - needs specific method
           // Assume DriftCacheService has `updateScheduledReminderNotificationId`
           if (_cacheService is DriftCacheService) {
-            await (_cacheService as DriftCacheService).updateScheduledReminderNotificationId(video.videoId, null);
+            await (_cacheService).updateScheduledReminderNotificationId(video.videoId, null);
             // Also clear the reminder time? Yes. Needs `updateScheduledReminderTime`
-            await (_cacheService as DriftCacheService).updateScheduledReminderTime(video.videoId, null);
+            await (_cacheService).updateScheduledReminderTime(video.videoId, null);
             _loggingService.debug('AppController: Successfully cancelled REMINDER and updated cache for video ${video.videoId}.');
           } else {
             _loggingService.warning("AppController: Cannot update reminder cache for ${video.videoId}, CacheService not DriftCacheService.");
@@ -273,13 +274,20 @@ class AppController {
         if (video.scheduledLiveNotificationId == null) {
           _loggingService.debug('AppController: Attempting to schedule missing LIVE notification for video ${video.videoId}');
           try {
-            final newId = await _notificationService.scheduleNotification(
+            // Create instruction
+            final instruction = NotificationInstruction(
               videoId: video.videoId,
-              scheduledTime: scheduledTime, // Live notification at scheduled time
-              payload: video.videoId,
-              title: video.videoTitle,
+              eventType: NotificationEventType.live,
+              channelId: video.channelId,
               channelName: video.channelName,
-              eventType: NotificationEventType.live, // Type is LIVE
+              videoTitle: video.videoTitle,
+              channelAvatarUrl: video.channelAvatarUrl,
+              availableAt: DateTime.parse(video.availableAt),
+            );
+            // Call with new signature
+            final newId = await _notificationService.scheduleNotification(
+              instruction: instruction,
+              scheduledTime: scheduledTime, // Live notification at scheduled time
             );
             if (newId != null) {
               await _cacheService.updateScheduledNotificationId(video.videoId, newId);
@@ -310,19 +318,26 @@ class AppController {
               'AppController: Attempting to schedule missing REMINDER notification for video ${video.videoId} at $calculatedReminderTime',
             );
             try {
-              final newId = await _notificationService.scheduleNotification(
+              // Create instruction
+              final instruction = NotificationInstruction(
                 videoId: video.videoId,
-                scheduledTime: calculatedReminderTime, // Reminder notification at calculated time
-                payload: video.videoId,
-                title: video.videoTitle,
+                eventType: NotificationEventType.reminder,
+                channelId: video.channelId,
                 channelName: video.channelName,
-                eventType: NotificationEventType.reminder, // Type is REMINDER
+                videoTitle: video.videoTitle,
+                channelAvatarUrl: video.channelAvatarUrl,
+                availableAt: DateTime.parse(video.availableAt),
+              );
+              // Call with new signature
+              final newId = await _notificationService.scheduleNotification(
+                instruction: instruction,
+                scheduledTime: calculatedReminderTime, // Reminder notification at calculated time
               );
               if (newId != null) {
                 // Assume DriftCacheService has these methods
                 if (_cacheService is DriftCacheService) {
-                  await (_cacheService as DriftCacheService).updateScheduledReminderNotificationId(video.videoId, newId);
-                  await (_cacheService as DriftCacheService).updateScheduledReminderTime(video.videoId, calculatedReminderTime);
+                  await (_cacheService).updateScheduledReminderNotificationId(video.videoId, newId);
+                  await (_cacheService).updateScheduledReminderTime(video.videoId, calculatedReminderTime);
                   scheduledReminderCount++;
                 } else {
                   _loggingService.warning("AppController: Cannot update reminder cache post-schedule, CacheService not DriftCacheService.");
@@ -349,8 +364,8 @@ class AppController {
             _loggingService.info('AppController: Cancelling existing REMINDER for ${video.videoId} as setting is now disabled.');
             await _notificationService.cancelScheduledNotification(video.scheduledReminderNotificationId!);
             if (_cacheService is DriftCacheService) {
-              await (_cacheService as DriftCacheService).updateScheduledReminderNotificationId(video.videoId, null);
-              await (_cacheService as DriftCacheService).updateScheduledReminderTime(video.videoId, null);
+              await (_cacheService).updateScheduledReminderNotificationId(video.videoId, null);
+              await (_cacheService).updateScheduledReminderTime(video.videoId, null);
             }
           }
         }
@@ -388,7 +403,7 @@ class AppController {
             break;
           case 'pollFrequency':
             // {{ Use .update() method for state change }}
-             _ref.read(pollFrequencyProvider.notifier).update((_) => value as Duration);
+            _ref.read(pollFrequencyProvider.notifier).update((_) => value as Duration);
             break;
           case 'reminderLeadTime':
             // {{ Use .update() method for state change }}
@@ -476,7 +491,7 @@ class AppController {
       }
     }
     _loggingService.info("AppController: Finished re-evaluating reminders for all channels.");
-    // Ignore: unused_result // ignore is needed because the ref is mutated
+    // ignore: unused_result
     _ref.refresh(scheduledNotificationsProvider); // Refresh UI list
   }
 
@@ -596,5 +611,87 @@ class AppController {
     // Notify background service of potential poll frequency change
     await updateGlobalSetting('pollFrequency', newFreq);
     await updateGlobalSetting('reminderLeadTime', newReminderLead);
+  }
+
+    Future<void> sendTestNotifications() async {
+    _loggingService.info("AppController: Sending test notifications...");
+    final DateTime now = DateTime.now();
+    const String testChannelId = 'UCtestChannel';
+    const String testChannelName = 'Test Channel';
+    const String testAvatarUrl =
+        'https://yt3.googleusercontent.com/ytc/AIdro_nb5QnwxQzM8drdXb1WgsHr6O5O5w7zF9Gf9w=s176-c-k-c0x00ffffff-no-rj'; // Example URL
+
+    final List<Future<void>> dispatchFutures = [];
+
+    for (final type in NotificationEventType.values) {
+      // Use unique IDs for testing to avoid potential conflicts if video IDs were reused
+      final testVideoId = 'test-${type.name}-${now.millisecondsSinceEpoch}';
+      String testVideoTitle;
+      String? testVideoType;
+      String exampleTime = DateFormat.jm().format(now.toLocal());
+      String exampleDate = DateFormat('yyyy-MM-dd').format(now.toLocal());
+      String exampleRelTime = 'in 1 min';
+
+      switch (type) {
+        case NotificationEventType.newMedia:
+          testVideoTitle = 'This is a test New Media body. Relative: {relativeTime}';
+          testVideoType = 'stream';
+          break;
+        case NotificationEventType.mention:
+          testVideoTitle = 'This is a test Mention body. YMD: {mediaDateYMD}';
+          testVideoType = 'clip';
+          break;
+        case NotificationEventType.live:
+          testVideoTitle = 'This is a test LIVE notification body. Time: {mediaTime}';
+          testVideoType = 'stream';
+          break;
+        case NotificationEventType.reminder:
+          testVideoTitle = 'This is a test Reminder body. Date: {mediaDateAsia}';
+          testVideoType = 'video';
+          // For reminder test, pass a future time to simulate 'in X'
+          exampleTime = DateFormat.jm().format(now.add(const Duration(minutes: 1)).toLocal()); // Time 1 min from now
+          exampleRelTime = 'in 1 min'; // Hardcode relative for test
+          break;
+        case NotificationEventType.update:
+          testVideoTitle = 'This is a test Update body. MDY: {mediaDateMDY}';
+          testVideoType = 'placeholder';
+          break;
+      }
+
+      final instruction = NotificationInstruction(
+        videoId: testVideoId,
+        eventType: type,
+        channelId: testChannelId,
+        channelName: testChannelName,
+        videoTitle: testVideoTitle,
+        videoType: testVideoType,
+        channelAvatarUrl: testAvatarUrl,
+        availableAt: now, // Use current time for availableAt
+      );
+
+      // Special handling for reminder test formatting placeholders
+      if (type == NotificationEventType.reminder) {
+        // For the test, we need to simulate formatting that expects a scheduledTime
+        // We can manually replace placeholders here for the test body.
+        instruction.copyWith(
+          videoTitle: testVideoTitle.replaceAll('{relativeTime}', exampleRelTime),
+        );
+        // Note: The title template might also use {relativeTime} or {mediaTime}
+        // which won't be perfectly replaced by the service formatter for an immediate
+        // call, but this tests the body at least. A full test would involve scheduling.
+      }
+
+      // Add the dispatch call to a list of futures
+      dispatchFutures.add(
+        _notificationService.showNotification(instruction).catchError((e, s) {
+          _loggingService.error("Error sending test notification type $type", e, s);
+          // Don't rethrow, try sending others
+        }),
+      );
+    }
+
+    // Wait for all dispatch calls to attempt completion
+    await Future.wait(dispatchFutures);
+    _loggingService.info("AppController: Test notification dispatch attempted for all types.");
   }
 }

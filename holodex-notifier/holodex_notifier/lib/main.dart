@@ -94,11 +94,11 @@ final settingsServiceFutureProvider = FutureProvider<ISettingsService>((ref) asy
 
 final notificationServiceFutureProvider = FutureProvider<INotificationService>((ref) async {
   final log = ref.watch(loggingServiceProvider);
-  final service = LocalNotificationService(); // Create instance
+  final settingsService = ref.watch(settingsServiceProvider); // Get settings service via sync provider
 
-  // --- Read the isolate context provider ---
+  final service = LocalNotificationService(log, settingsService);
+
   final isolateContext = ref.watch(isolateContextProvider);
-  // --- End context read ---
 
   log.info("Resolving Notification Service Provider (Isolate Context: $isolateContext)");
 

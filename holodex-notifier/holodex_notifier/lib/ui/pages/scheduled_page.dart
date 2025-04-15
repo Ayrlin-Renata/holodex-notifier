@@ -45,8 +45,7 @@ class ScheduledPage extends ConsumerWidget {
         children: [
           isFirstLaunchAsync.when(
             data: (isFirstLaunchValue) {
-              final bool shouldShowInfo =
-                  isFirstLaunchValue || (apiKeyAsync.hasValue && (apiKeyAsync.valueOrNull == null || apiKeyAsync.valueOrNull!.isEmpty));
+              final bool shouldShowInfo = isFirstLaunchValue;
 
               if (shouldShowInfo) {
                 return _buildFirstInstallInfo(context, ref, isFirstLaunchValue);
@@ -99,15 +98,15 @@ class ScheduledPage extends ConsumerWidget {
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onTertiaryContainer),
             ),
             // {{ Use the passed bool here }}
-            if (isActuallyFirstLaunch)
+             if (isActuallyFirstLaunch)
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   child: Text('Dismiss', style: TextStyle(color: theme.colorScheme.onTertiaryContainer)),
                   onPressed: () async {
+                    // {{ Persist the setting change }}
                     await ref.read(settingsServiceProvider).setIsFirstLaunch(false);
-                    // ignore: unused_result
-                    ref.refresh(isFirstLaunchProvider); // Refresh provider to hide notice
+                    ref.invalidate(isFirstLaunchProvider); // Use invalidate to force re-fetch
                   },
                 ),
               ),

@@ -18,13 +18,14 @@ class NotificationInstruction with _$NotificationInstruction {
     required String channelId,
     required String channelName,
     required String videoTitle,
-    String? channelAvatarUrl, // Optional for notification display
+    String? videoType,
+    String? channelAvatarUrl,
+    required DateTime availableAt, // {{ ADD required availableAt }}
 
     // Fields specific to certain types (optional)
-    String? mentionTargetChannelId, // For Mention event
-    String? mentionTargetChannelName, // For Mention event
+    String? mentionTargetChannelId,
+    String? mentionTargetChannelName,
 
   }) = _NotificationInstruction;
 
-  // Note: No fromJson/toJson needed unless you plan to serialize these instructions themselves.
 }

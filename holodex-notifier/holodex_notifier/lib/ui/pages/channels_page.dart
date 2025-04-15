@@ -4,7 +4,7 @@ import 'package:holodex_notifier/application/state/channel_providers.dart'; // I
 import 'package:holodex_notifier/main.dart'; // Import loggingServiceProvider
 import 'package:holodex_notifier/ui/widgets/channel_management_card.dart'; // Import the refactored card content
 import 'package:flutter_background_service/flutter_background_service.dart'; // {{ Import background service }}
-import 'package:holodex_notifier/application/state/background_service_state.dart'; // For background status
+// For background status
 
 // This page displays channel management features and supports pull-to-refresh.
 class ChannelsPage extends ConsumerWidget {
