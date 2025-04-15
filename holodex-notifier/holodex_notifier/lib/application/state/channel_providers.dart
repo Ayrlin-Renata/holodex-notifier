@@ -126,8 +126,9 @@ class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>
     _saveState(); // Call save helper
   }
 
-  void updateChannelSettings(String channelId, {bool? newMedia, bool? mentions, bool? live, bool? updates}) {
-    _logger.debug("ChannelListNotifier: Updating settings for $channelId (New:$newMedia, Mention:$mentions, Live:$live, Update:$updates)");
+  void updateChannelSettings(String channelId, {bool? newMedia, bool? mentions, bool? live, bool? updates, bool? membersOnly, bool? clips}) {
+    _logger.info("ChannelListNotifier: Updating settings for $channelId (New:$newMedia, Mention:$mentions, Live:$live, Update:$updates, Members:$membersOnly, Clips:$clips)");
+
     final index = state.indexWhere((c) => c.channelId == channelId);
     if (index == -1) return;
 
@@ -137,6 +138,8 @@ class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>
       notifyMentions: mentions ?? currentSetting.notifyMentions,
       notifyLive: live ?? currentSetting.notifyLive,
       notifyUpdates: updates ?? currentSetting.notifyUpdates,
+      notifyMembersOnly: membersOnly ?? currentSetting.notifyMembersOnly,
+      notifyClips: clips ?? currentSetting.notifyClips,
     );
 
     final newState = List<ChannelSubscriptionSetting>.from(state);
@@ -171,10 +174,14 @@ class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>
     final globalMentions = _ref.read(globalMentionsDefaultProvider);
     final globalLive = _ref.read(globalLiveDefaultProvider);
     final globalUpdate = _ref.read(globalUpdateDefaultProvider);
+        final globalMembersOnly = _ref.read(globalMembersOnlyDefaultProvider);
+    final globalClips = _ref.read(globalClipsDefaultProvider);
 
     state = [
       for (final channel in state)
-        channel.copyWith(notifyNewMedia: globalNewMedia, notifyMentions: globalMentions, notifyLive: globalLive, notifyUpdates: globalUpdate),
+        channel.copyWith(notifyNewMedia: globalNewMedia, notifyMentions: globalMentions, notifyLive: globalLive, notifyUpdates: globalUpdate,
+          notifyMembersOnly: globalMembersOnly,
+          notifyClips: globalClips,),
     ];
     _saveState(); // Call save helper
   }
@@ -207,23 +214,25 @@ final debouncedChannelSearchProvider = FutureProvider.autoDispose<List<Channel>>
   (ref) async {
     final query = ref.watch(channelSearchQueryProvider);
     // --- Watch the AsyncValue ---
-    final apiKeyAsyncValue = ref.watch(apiKeyProvider); 
+    final apiKeyAsyncValue = ref.watch(apiKeyProvider);
     final apiService = ref.watch(apiServiceProvider);
     final logger = ref.watch(loggingServiceProvider);
 
     // --- Extract the key value ---
-    final String? apiKey = apiKeyAsyncValue.valueOrNull; 
+    final String? apiKey = apiKeyAsyncValue.valueOrNull;
 
-    logger.debug('[Debounced Search] Triggered. Query: "$query", API Key State: isLoading=${apiKeyAsyncValue.isLoading}, hasError=${apiKeyAsyncValue.hasError}, Key Set: ${apiKey != null && apiKey.isNotEmpty}');
+    logger.debug(
+      '[Debounced Search] Triggered. Query: "$query", API Key State: isLoading=${apiKeyAsyncValue.isLoading}, hasError=${apiKeyAsyncValue.hasError}, Key Set: ${apiKey != null && apiKey.isNotEmpty}',
+    );
 
     // --- Handle loading/error states from apiKeyProvider ---
     if (apiKeyAsyncValue.isLoading) {
-        logger.debug('[Debounced Search] API Key is loading. Returning empty list for now.');
-        return []; // Or throw a specific loading error if preferred
+      logger.debug('[Debounced Search] API Key is loading. Returning empty list for now.');
+      return []; // Or throw a specific loading error if preferred
     }
     if (apiKeyAsyncValue.hasError) {
-       logger.error('[Debounced Search] API Key provider has error: ${apiKeyAsyncValue.error}. Throwing exception.');
-       throw ApiKeyRequiredException('Failed to load API Key setting. Please check Settings.');
+      logger.error('[Debounced Search] API Key provider has error: ${apiKeyAsyncValue.error}. Throwing exception.');
+      throw ApiKeyRequiredException('Failed to load API Key setting. Please check Settings.');
     }
     // --- End Handle loading/error ---
 
@@ -246,7 +255,9 @@ final debouncedChannelSearchProvider = FutureProvider.autoDispose<List<Channel>>
     // Staleness check for query
     final currentQuery = ref.read(channelSearchQueryProvider);
     if (query != currentQuery) {
-      logger.debug('[Debounced Search] Stale query detected ("$query" vs "$currentQuery"). Proceeding with old query result (will be replaced by new one soon).');
+      logger.debug(
+        '[Debounced Search] Stale query detected ("$query" vs "$currentQuery"). Proceeding with old query result (will be replaced by new one soon).',
+      );
       // Let it complete, new query will trigger another run
     }
 
@@ -262,11 +273,10 @@ final debouncedChannelSearchProvider = FutureProvider.autoDispose<List<Channel>>
     final currentApiKey = currentApiKeyAsyncValue.valueOrNull;
 
     if (currentApiKey == null || currentApiKey.isEmpty) {
-        logger.warning('[Debounced Search] API Key missing or empty after debounce. Throwing ApiKeyRequiredException.');
-        throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
+      logger.warning('[Debounced Search] API Key missing or empty after debounce. Throwing ApiKeyRequiredException.');
+      throw ApiKeyRequiredException('Please enter your Holodex API Key in the settings first.');
     }
     // --- End Check API Key value ---
-
 
     logger.info('[Debounced Search] Executing search for channel: "$currentQuery"');
     try {

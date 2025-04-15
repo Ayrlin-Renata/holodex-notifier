@@ -23,7 +23,6 @@ class ScheduledPage extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async {
         logger.info("ScheduledPage: Pull-to-refresh triggered.");
-        final scheduledRefreshFuture = ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
 
         // Check if service is running before invoking
         // Read the stream provider's latest value if available, otherwise check service directly
@@ -36,6 +35,11 @@ class ScheduledPage extends ConsumerWidget {
         } else {
           logger.warning("ScheduledPage: Background service not running, manual poll not triggered from refresh.");
         }
+        logger.trace("Waiting 6 extra seconds for poll to complete...");
+        await Future.delayed(Duration(seconds: 6), () {
+          logger.trace("Waited 6 extra seconds for poll to complete.");
+        });
+        final scheduledRefreshFuture = ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
 
         await scheduledRefreshFuture;
         logger.info("ScheduledPage: Refresh action completed.");
@@ -98,7 +102,7 @@ class ScheduledPage extends ConsumerWidget {
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onTertiaryContainer),
             ),
             // {{ Use the passed bool here }}
-             if (isActuallyFirstLaunch)
+            if (isActuallyFirstLaunch)
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -164,7 +168,7 @@ class ScheduledPage extends ConsumerWidget {
                 ),
               ],
             ),
-           // Channel Filter
+            // Channel Filter
             if (subscribedChannels.isNotEmpty) ...[
               const SizedBox(height: 8),
               // {{ Change DropdownButton type to String? }}

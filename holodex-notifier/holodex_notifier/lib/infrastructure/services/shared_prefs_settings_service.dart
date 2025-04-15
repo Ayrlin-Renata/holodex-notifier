@@ -267,7 +267,6 @@ class SharedPrefsSettingsService implements ISettingsService {
 
   @override
   Future<bool> importConfiguration(AppConfig config) async {
-    // ... (validation) ...
 
     print("[SharedPrefsSettingsService] Importing configuration version ${config.version}...");
     try {

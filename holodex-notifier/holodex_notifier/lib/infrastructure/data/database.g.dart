@@ -23,6 +23,12 @@ class $CachedVideosTable extends CachedVideos
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('Unknown'));
+  static const VerificationMeta _topicIdMeta =
+      const VerificationMeta('topicId');
+  @override
+  late final GeneratedColumn<String> topicId = GeneratedColumn<String>(
+      'topic_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -138,6 +144,7 @@ class $CachedVideosTable extends CachedVideos
   List<GeneratedColumn> get $columns => [
         videoId,
         channelId,
+        topicId,
         status,
         startScheduled,
         startActual,
@@ -174,6 +181,10 @@ class $CachedVideosTable extends CachedVideos
     if (data.containsKey('channel_id')) {
       context.handle(_channelIdMeta,
           channelId.isAcceptableOrUnknown(data['channel_id']!, _channelIdMeta));
+    }
+    if (data.containsKey('topic_id')) {
+      context.handle(_topicIdMeta,
+          topicId.isAcceptableOrUnknown(data['topic_id']!, _topicIdMeta));
     }
     if (data.containsKey('status')) {
       context.handle(_statusMeta,
@@ -284,6 +295,8 @@ class $CachedVideosTable extends CachedVideos
           .read(DriftSqlType.string, data['${effectivePrefix}video_id'])!,
       channelId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}channel_id'])!,
+      topicId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}topic_id']),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       startScheduled: attachedDatabase.typeMapping
@@ -336,6 +349,7 @@ class $CachedVideosTable extends CachedVideos
 class CachedVideo extends DataClass implements Insertable<CachedVideo> {
   final String videoId;
   final String channelId;
+  final String? topicId;
   final String status;
   final String? startScheduled;
   final String? startActual;
@@ -355,6 +369,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
   const CachedVideo(
       {required this.videoId,
       required this.channelId,
+      this.topicId,
       required this.status,
       this.startScheduled,
       this.startActual,
@@ -376,6 +391,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     final map = <String, Expression>{};
     map['video_id'] = Variable<String>(videoId);
     map['channel_id'] = Variable<String>(channelId);
+    if (!nullToAbsent || topicId != null) {
+      map['topic_id'] = Variable<String>(topicId);
+    }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || startScheduled != null) {
       map['start_scheduled'] = Variable<String>(startScheduled);
@@ -425,6 +443,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     return CachedVideosCompanion(
       videoId: Value(videoId),
       channelId: Value(channelId),
+      topicId: topicId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(topicId),
       status: Value(status),
       startScheduled: startScheduled == null && nullToAbsent
           ? const Value.absent()
@@ -471,6 +492,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     return CachedVideo(
       videoId: serializer.fromJson<String>(json['videoId']),
       channelId: serializer.fromJson<String>(json['channelId']),
+      topicId: serializer.fromJson<String?>(json['topicId']),
       status: serializer.fromJson<String>(json['status']),
       startScheduled: serializer.fromJson<String?>(json['startScheduled']),
       startActual: serializer.fromJson<String?>(json['startActual']),
@@ -501,6 +523,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     return <String, dynamic>{
       'videoId': serializer.toJson<String>(videoId),
       'channelId': serializer.toJson<String>(channelId),
+      'topicId': serializer.toJson<String?>(topicId),
       'status': serializer.toJson<String>(status),
       'startScheduled': serializer.toJson<String?>(startScheduled),
       'startActual': serializer.toJson<String?>(startActual),
@@ -528,6 +551,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
   CachedVideo copyWith(
           {String? videoId,
           String? channelId,
+          Value<String?> topicId = const Value.absent(),
           String? status,
           Value<String?> startScheduled = const Value.absent(),
           Value<String?> startActual = const Value.absent(),
@@ -547,6 +571,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       CachedVideo(
         videoId: videoId ?? this.videoId,
         channelId: channelId ?? this.channelId,
+        topicId: topicId.present ? topicId.value : this.topicId,
         status: status ?? this.status,
         startScheduled:
             startScheduled.present ? startScheduled.value : this.startScheduled,
@@ -580,6 +605,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     return CachedVideo(
       videoId: data.videoId.present ? data.videoId.value : this.videoId,
       channelId: data.channelId.present ? data.channelId.value : this.channelId,
+      topicId: data.topicId.present ? data.topicId.value : this.topicId,
       status: data.status.present ? data.status.value : this.status,
       startScheduled: data.startScheduled.present
           ? data.startScheduled.value
@@ -627,6 +653,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     return (StringBuffer('CachedVideo(')
           ..write('videoId: $videoId, ')
           ..write('channelId: $channelId, ')
+          ..write('topicId: $topicId, ')
           ..write('status: $status, ')
           ..write('startScheduled: $startScheduled, ')
           ..write('startActual: $startActual, ')
@@ -654,6 +681,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
   int get hashCode => Object.hash(
       videoId,
       channelId,
+      topicId,
       status,
       startScheduled,
       startActual,
@@ -676,6 +704,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       (other is CachedVideo &&
           other.videoId == this.videoId &&
           other.channelId == this.channelId &&
+          other.topicId == this.topicId &&
           other.status == this.status &&
           other.startScheduled == this.startScheduled &&
           other.startActual == this.startActual &&
@@ -701,6 +730,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
 class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   final Value<String> videoId;
   final Value<String> channelId;
+  final Value<String?> topicId;
   final Value<String> status;
   final Value<String?> startScheduled;
   final Value<String?> startActual;
@@ -721,6 +751,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   const CachedVideosCompanion({
     this.videoId = const Value.absent(),
     this.channelId = const Value.absent(),
+    this.topicId = const Value.absent(),
     this.status = const Value.absent(),
     this.startScheduled = const Value.absent(),
     this.startActual = const Value.absent(),
@@ -742,6 +773,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   CachedVideosCompanion.insert({
     required String videoId,
     this.channelId = const Value.absent(),
+    this.topicId = const Value.absent(),
     required String status,
     this.startScheduled = const Value.absent(),
     this.startActual = const Value.absent(),
@@ -766,6 +798,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   static Insertable<CachedVideo> custom({
     Expression<String>? videoId,
     Expression<String>? channelId,
+    Expression<String>? topicId,
     Expression<String>? status,
     Expression<String>? startScheduled,
     Expression<String>? startActual,
@@ -787,6 +820,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     return RawValuesInsertable({
       if (videoId != null) 'video_id': videoId,
       if (channelId != null) 'channel_id': channelId,
+      if (topicId != null) 'topic_id': topicId,
       if (status != null) 'status': status,
       if (startScheduled != null) 'start_scheduled': startScheduled,
       if (startActual != null) 'start_actual': startActual,
@@ -816,6 +850,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   CachedVideosCompanion copyWith(
       {Value<String>? videoId,
       Value<String>? channelId,
+      Value<String?>? topicId,
       Value<String>? status,
       Value<String?>? startScheduled,
       Value<String?>? startActual,
@@ -836,6 +871,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     return CachedVideosCompanion(
       videoId: videoId ?? this.videoId,
       channelId: channelId ?? this.channelId,
+      topicId: topicId ?? this.topicId,
       status: status ?? this.status,
       startScheduled: startScheduled ?? this.startScheduled,
       startActual: startActual ?? this.startActual,
@@ -869,6 +905,9 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     }
     if (channelId.present) {
       map['channel_id'] = Variable<String>(channelId.value);
+    }
+    if (topicId.present) {
+      map['topic_id'] = Variable<String>(topicId.value);
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -936,6 +975,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     return (StringBuffer('CachedVideosCompanion(')
           ..write('videoId: $videoId, ')
           ..write('channelId: $channelId, ')
+          ..write('topicId: $topicId, ')
           ..write('status: $status, ')
           ..write('startScheduled: $startScheduled, ')
           ..write('startActual: $startActual, ')
@@ -976,6 +1016,7 @@ typedef $$CachedVideosTableCreateCompanionBuilder = CachedVideosCompanion
     Function({
   required String videoId,
   Value<String> channelId,
+  Value<String?> topicId,
   required String status,
   Value<String?> startScheduled,
   Value<String?> startActual,
@@ -998,6 +1039,7 @@ typedef $$CachedVideosTableUpdateCompanionBuilder = CachedVideosCompanion
     Function({
   Value<String> videoId,
   Value<String> channelId,
+  Value<String?> topicId,
   Value<String> status,
   Value<String?> startScheduled,
   Value<String?> startActual,
@@ -1036,6 +1078,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<String> videoId = const Value.absent(),
             Value<String> channelId = const Value.absent(),
+            Value<String?> topicId = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<String?> startScheduled = const Value.absent(),
             Value<String?> startActual = const Value.absent(),
@@ -1057,6 +1100,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
               CachedVideosCompanion(
             videoId: videoId,
             channelId: channelId,
+            topicId: topicId,
             status: status,
             startScheduled: startScheduled,
             startActual: startActual,
@@ -1078,6 +1122,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             required String videoId,
             Value<String> channelId = const Value.absent(),
+            Value<String?> topicId = const Value.absent(),
             required String status,
             Value<String?> startScheduled = const Value.absent(),
             Value<String?> startActual = const Value.absent(),
@@ -1099,6 +1144,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
               CachedVideosCompanion.insert(
             videoId: videoId,
             channelId: channelId,
+            topicId: topicId,
             status: status,
             startScheduled: startScheduled,
             startActual: startActual,
@@ -1130,6 +1176,11 @@ class $$CachedVideosTableFilterComposer
 
   ColumnFilters<String> get channelId => $state.composableBuilder(
       column: $state.table.channelId,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get topicId => $state.composableBuilder(
+      column: $state.table.topicId,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -1230,6 +1281,11 @@ class $$CachedVideosTableOrderingComposer
 
   ColumnOrderings<String> get channelId => $state.composableBuilder(
       column: $state.table.channelId,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get topicId => $state.composableBuilder(
+      column: $state.table.topicId,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

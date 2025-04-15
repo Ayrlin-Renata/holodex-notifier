@@ -9,6 +9,8 @@ import 'package:holodex_notifier/domain/interfaces/background_polling_service.da
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
 import 'package:holodex_notifier/domain/interfaces/connectivity_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
+import 'package:holodex_notifier/domain/interfaces/notification_action_handler.dart';
+import 'package:holodex_notifier/domain/interfaces/notification_decision_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
@@ -21,6 +23,8 @@ import 'package:holodex_notifier/infrastructure/services/flutter_secure_storage_
 import 'package:holodex_notifier/infrastructure/services/holodex_api_service.dart';
 import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
 import 'package:holodex_notifier/infrastructure/services/logger_service.dart';
+import 'package:holodex_notifier/infrastructure/services/notification_action_handler.dart';
+import 'package:holodex_notifier/infrastructure/services/notification_decision_service.dart';
 import 'package:holodex_notifier/infrastructure/services/shared_prefs_settings_service.dart';
 import 'package:holodex_notifier/ui/screens/home_screen.dart';
 import 'package:dio/dio.dart';
@@ -145,6 +149,22 @@ final backgroundServiceProvider = Provider<IBackgroundPollingService>((ref) {
   return ref.watch(backgroundServiceFutureProvider).requireValue;
 }, name: 'backgroundServiceProvider');
 
+final notificationDecisionServiceProvider = Provider<INotificationDecisionService>((ref) {
+  // Depends on cache, settings, and logger
+  final cacheService = ref.watch(cacheServiceProvider);
+  final settingsService = ref.watch(settingsServiceProvider);
+  final logger = ref.watch(loggingServiceProvider);
+  return NotificationDecisionService(cacheService, settingsService, logger);
+}, name: 'notificationDecisionServiceProvider');
+
+final notificationActionHandlerProvider = Provider<INotificationActionHandler>((ref) {
+  // Depends on notification service, cache, and logger
+  final notificationService = ref.watch(notificationServiceProvider);
+  final cacheService = ref.watch(cacheServiceProvider);
+  final logger = ref.watch(loggingServiceProvider);
+  return NotificationActionHandler(notificationService, cacheService, logger);
+}, name: 'notificationActionHandlerProvider');
+
 // --- AppController ---
 final appControllerProvider = Provider<AppController>((ref) {
   // Get all required services
@@ -152,9 +172,11 @@ final appControllerProvider = Provider<AppController>((ref) {
   final loggingService = ref.watch(loggingServiceProvider);
   final cacheService = ref.watch(cacheServiceProvider); // Get Cache Service
   final notificationService = ref.watch(notificationServiceProvider); // Get Notification Service
+  final decisionService = ref.watch(notificationDecisionServiceProvider);
+  final actionHandler = ref.watch(notificationActionHandlerProvider);
 
   // Pass them to the constructor
-  return AppController(ref, settingsService, loggingService, cacheService, notificationService);
+  return AppController(ref, settingsService, loggingService, cacheService, notificationService, decisionService, actionHandler);
 }, name: 'appControllerProvider');
 
 // --- Main Function ---

@@ -1,4 +1,3 @@
-// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\infrastructure\services\drift_cache_service.dart
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 
@@ -11,6 +10,11 @@ class DriftCacheService implements ICacheService {
 
   @override
   Future<void> upsertVideo(CachedVideosCompanion video) => _db.upsertVideo(video);
+
+  @override
+  Future<int> updateVideo(String videoId, CachedVideosCompanion partialCompanion) {
+    return (_db.update(_db.cachedVideos)..where((t) => t.videoId.equals(videoId))).write(partialCompanion);
+  }
 
   @override
   Future<void> deleteVideo(String videoId) => _db.deleteVideo(videoId);
@@ -58,4 +62,10 @@ class DriftCacheService implements ICacheService {
 
   @override
   Future<List<CachedVideo>> getVideosWithScheduledReminders() => _db.getVideosWithScheduledRemindersInternal();
+
+  @override
+  Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId) => _db.getMembersOnlyVideosByChannelInternal(channelId);
+
+  @override
+  Future<List<CachedVideo>> getClipVideosByChannel(String channelId) => _db.getClipVideosByChannelInternal(channelId);
 }

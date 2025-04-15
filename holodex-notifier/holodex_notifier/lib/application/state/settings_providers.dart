@@ -25,8 +25,8 @@ final delayNewMediaProvider = StateProvider<bool>((ref) {
 });
 
 final reminderLeadTimeProvider = StateProvider<Duration>((ref) {
-   // Default value, will be overridden by main.dart
-   return Duration.zero;
+  // Default value, will be overridden by main.dart
+  return Duration.zero;
 });
 
 // Define the StateNotifier
@@ -61,11 +61,11 @@ class ApiKeyNotifier extends StateNotifier<AsyncValue<String?>> {
       state = AsyncValue.data(valueToStore);
       _logger.debug("[ApiKeyNotifier] API Key updated successfully in storage and state.");
     } catch (e, s) {
-       _logger.error("[ApiKeyNotifier] Error saving API key", e, s);
-       // Restore previous state on error
-       state = AsyncValue.error(e, s).copyWithPrevious(state) as AsyncValue<String?>; // Keep previous data available
-       // Rethrow maybe? Or handle in UI
-       rethrow;
+      _logger.error("[ApiKeyNotifier] Error saving API key", e, s);
+      // Restore previous state on error
+      state = AsyncValue.error(e, s).copyWithPrevious(state) as AsyncValue<String?>; // Keep previous data available
+      // Rethrow maybe? Or handle in UI
+      rethrow;
     }
   }
 }
@@ -83,3 +83,5 @@ final globalNewMediaDefaultProvider = StateProvider<bool>((ref) => true);
 final globalMentionsDefaultProvider = StateProvider<bool>((ref) => true);
 final globalLiveDefaultProvider = StateProvider<bool>((ref) => true);
 final globalUpdateDefaultProvider = StateProvider<bool>((ref) => true);
+final globalMembersOnlyDefaultProvider = StateProvider<bool>((ref) => true);
+final globalClipsDefaultProvider = StateProvider<bool>((ref) => true);

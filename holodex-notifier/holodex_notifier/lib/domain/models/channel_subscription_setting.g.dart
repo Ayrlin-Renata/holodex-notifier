@@ -16,6 +16,8 @@ _$ChannelSubscriptionSettingImpl _$$ChannelSubscriptionSettingImplFromJson(
       notifyMentions: json['notifyMentions'] as bool? ?? true,
       notifyLive: json['notifyLive'] as bool? ?? true,
       notifyUpdates: json['notifyUpdates'] as bool? ?? true,
+      notifyMembersOnly: json['notifyMembersOnly'] as bool? ?? true,
+      notifyClips: json['notifyClips'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$$ChannelSubscriptionSettingImplToJson(
@@ -28,4 +30,6 @@ Map<String, dynamic> _$$ChannelSubscriptionSettingImplToJson(
       'notifyMentions': instance.notifyMentions,
       'notifyLive': instance.notifyLive,
       'notifyUpdates': instance.notifyUpdates,
+      'notifyMembersOnly': instance.notifyMembersOnly,
+      'notifyClips': instance.notifyClips,
     };

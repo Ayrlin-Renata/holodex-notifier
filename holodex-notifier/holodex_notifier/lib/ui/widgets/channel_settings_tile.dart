@@ -88,11 +88,26 @@ class ChannelSettingsTile extends ConsumerWidget {
                         value: channelSetting.notifyUpdates,
                         onChanged: (v) => appController.updateChannelNotificationSetting(channelSetting.channelId, 'notifyUpdates', v),
                       ),
+                      _buildToggleChip(
+                        context: context,
+                        label: 'Members',
+                        icon: Icons.card_membership_outlined, // Example icon
+                        value: channelSetting.notifyMembersOnly,
+                        onChanged: (v) => appController.updateChannelNotificationSetting(channelSetting.channelId, 'notifyMembersOnly', v),
+                      ),
+                      _buildToggleChip(
+                        context: context,
+                        label: 'Clips',
+                         icon: Icons.content_cut_outlined, // Example icon
+                        value: channelSetting.notifyClips,
+                        onChanged: (v) => appController.updateChannelNotificationSetting(channelSetting.channelId, 'notifyClips', v),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
+
 
             // Remove Button
             IconButton(

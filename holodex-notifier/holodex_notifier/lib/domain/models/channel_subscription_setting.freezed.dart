@@ -31,6 +31,8 @@ mixin _$ChannelSubscriptionSetting {
   bool get notifyMentions => throw _privateConstructorUsedError;
   bool get notifyLive => throw _privateConstructorUsedError;
   bool get notifyUpdates => throw _privateConstructorUsedError;
+  bool get notifyMembersOnly => throw _privateConstructorUsedError;
+  bool get notifyClips => throw _privateConstructorUsedError;
 
   /// Serializes this ChannelSubscriptionSetting to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -56,7 +58,9 @@ abstract class $ChannelSubscriptionSettingCopyWith<$Res> {
       bool notifyNewMedia,
       bool notifyMentions,
       bool notifyLive,
-      bool notifyUpdates});
+      bool notifyUpdates,
+      bool notifyMembersOnly,
+      bool notifyClips});
 }
 
 /// @nodoc
@@ -82,6 +86,8 @@ class _$ChannelSubscriptionSettingCopyWithImpl<$Res,
     Object? notifyMentions = null,
     Object? notifyLive = null,
     Object? notifyUpdates = null,
+    Object? notifyMembersOnly = null,
+    Object? notifyClips = null,
   }) {
     return _then(_value.copyWith(
       channelId: null == channelId
@@ -112,6 +118,14 @@ class _$ChannelSubscriptionSettingCopyWithImpl<$Res,
           ? _value.notifyUpdates
           : notifyUpdates // ignore: cast_nullable_to_non_nullable
               as bool,
+      notifyMembersOnly: null == notifyMembersOnly
+          ? _value.notifyMembersOnly
+          : notifyMembersOnly // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyClips: null == notifyClips
+          ? _value.notifyClips
+          : notifyClips // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -132,7 +146,9 @@ abstract class _$$ChannelSubscriptionSettingImplCopyWith<$Res>
       bool notifyNewMedia,
       bool notifyMentions,
       bool notifyLive,
-      bool notifyUpdates});
+      bool notifyUpdates,
+      bool notifyMembersOnly,
+      bool notifyClips});
 }
 
 /// @nodoc
@@ -157,6 +173,8 @@ class __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>
     Object? notifyMentions = null,
     Object? notifyLive = null,
     Object? notifyUpdates = null,
+    Object? notifyMembersOnly = null,
+    Object? notifyClips = null,
   }) {
     return _then(_$ChannelSubscriptionSettingImpl(
       channelId: null == channelId
@@ -187,6 +205,14 @@ class __$$ChannelSubscriptionSettingImplCopyWithImpl<$Res>
           ? _value.notifyUpdates
           : notifyUpdates // ignore: cast_nullable_to_non_nullable
               as bool,
+      notifyMembersOnly: null == notifyMembersOnly
+          ? _value.notifyMembersOnly
+          : notifyMembersOnly // ignore: cast_nullable_to_non_nullable
+              as bool,
+      notifyClips: null == notifyClips
+          ? _value.notifyClips
+          : notifyClips // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -202,7 +228,9 @@ class _$ChannelSubscriptionSettingImpl implements _ChannelSubscriptionSetting {
       this.notifyNewMedia = true,
       this.notifyMentions = true,
       this.notifyLive = true,
-      this.notifyUpdates = true});
+      this.notifyUpdates = true,
+      this.notifyMembersOnly = true,
+      this.notifyClips = true});
 
   factory _$ChannelSubscriptionSettingImpl.fromJson(
           Map<String, dynamic> json) =>
@@ -229,10 +257,16 @@ class _$ChannelSubscriptionSettingImpl implements _ChannelSubscriptionSetting {
   @override
   @JsonKey()
   final bool notifyUpdates;
+  @override
+  @JsonKey()
+  final bool notifyMembersOnly;
+  @override
+  @JsonKey()
+  final bool notifyClips;
 
   @override
   String toString() {
-    return 'ChannelSubscriptionSetting(channelId: $channelId, name: $name, avatarUrl: $avatarUrl, notifyNewMedia: $notifyNewMedia, notifyMentions: $notifyMentions, notifyLive: $notifyLive, notifyUpdates: $notifyUpdates)';
+    return 'ChannelSubscriptionSetting(channelId: $channelId, name: $name, avatarUrl: $avatarUrl, notifyNewMedia: $notifyNewMedia, notifyMentions: $notifyMentions, notifyLive: $notifyLive, notifyUpdates: $notifyUpdates, notifyMembersOnly: $notifyMembersOnly, notifyClips: $notifyClips)';
   }
 
   @override
@@ -252,13 +286,26 @@ class _$ChannelSubscriptionSettingImpl implements _ChannelSubscriptionSetting {
             (identical(other.notifyLive, notifyLive) ||
                 other.notifyLive == notifyLive) &&
             (identical(other.notifyUpdates, notifyUpdates) ||
-                other.notifyUpdates == notifyUpdates));
+                other.notifyUpdates == notifyUpdates) &&
+            (identical(other.notifyMembersOnly, notifyMembersOnly) ||
+                other.notifyMembersOnly == notifyMembersOnly) &&
+            (identical(other.notifyClips, notifyClips) ||
+                other.notifyClips == notifyClips));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, channelId, name, avatarUrl,
-      notifyNewMedia, notifyMentions, notifyLive, notifyUpdates);
+  int get hashCode => Object.hash(
+      runtimeType,
+      channelId,
+      name,
+      avatarUrl,
+      notifyNewMedia,
+      notifyMentions,
+      notifyLive,
+      notifyUpdates,
+      notifyMembersOnly,
+      notifyClips);
 
   /// Create a copy of ChannelSubscriptionSetting
   /// with the given fields replaced by the non-null parameter values.
@@ -286,7 +333,9 @@ abstract class _ChannelSubscriptionSetting
       final bool notifyNewMedia,
       final bool notifyMentions,
       final bool notifyLive,
-      final bool notifyUpdates}) = _$ChannelSubscriptionSettingImpl;
+      final bool notifyUpdates,
+      final bool notifyMembersOnly,
+      final bool notifyClips}) = _$ChannelSubscriptionSettingImpl;
 
   factory _ChannelSubscriptionSetting.fromJson(Map<String, dynamic> json) =
       _$ChannelSubscriptionSettingImpl.fromJson;
@@ -307,6 +356,10 @@ abstract class _ChannelSubscriptionSetting
   bool get notifyLive;
   @override
   bool get notifyUpdates;
+  @override
+  bool get notifyMembersOnly;
+  @override
+  bool get notifyClips;
 
   /// Create a copy of ChannelSubscriptionSetting
   /// with the given fields replaced by the non-null parameter values.

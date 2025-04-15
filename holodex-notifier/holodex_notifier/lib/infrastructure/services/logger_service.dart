@@ -41,7 +41,7 @@ class LoggerService implements ILoggingServiceWithOutput {
         _rotatingFileOutput, // Use custom file output
         _memoryOutput, // Use memory output (doesn't need explicit printer)
       ]),
-      level: Level.debug,
+      level: Level.trace,
       filter: ProductionFilter(), // Keep ProductionFilter
     );
     _logger.i("LoggerService initialized with Console, RotatingFile, and Memory outputs.");
@@ -61,6 +61,11 @@ class LoggerService implements ILoggingServiceWithOutput {
   @override
   Future<String?> getLogFileContent() async {
     return await _rotatingFileWriter.getMostRecentLogFileContent();
+  }
+
+  @override
+  void trace(String message, [dynamic error, StackTrace? stackTrace]) {
+    _logger.t(message, error: error, stackTrace: stackTrace);
   }
 
   @override
@@ -111,7 +116,7 @@ String formatLogEvent(OutputEvent event) {
 
 Color getLogColor(OutputEvent event, ThemeData theme) {
   Level level = event.level;
-  // TODO: Replace with proper color mapping from logger or theme
+  if (level == Level.trace) return Colors.grey.shade700;
   if (level == Level.debug) return Colors.grey.shade500;
   if (level == Level.info) return Colors.blue.shade300;
   if (level == Level.warning) return Colors.orange.shade400;

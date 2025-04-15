@@ -49,7 +49,7 @@ class CachedVideos extends Table {
   // Primary Key
   TextColumn get videoId => text().named('video_id')();
   TextColumn get channelId => text().named('channel_id').withDefault(const Constant('Unknown'))();
-  // --- Core fields synced from API ---
+  TextColumn? get topicId => text().named('topic_id').nullable()();
   TextColumn get status => text().named('status')();
   TextColumn? get startScheduled => text().named('start_scheduled').nullable()();
   TextColumn? get startActual => text().named('start_actual').nullable()();
@@ -128,6 +128,14 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<CachedVideo>> getVideosByStatus(String statusFilter) {
     return (select(cachedVideos)..where((t) => t.status.equals(statusFilter))).get();
+  }
+
+  Future<List<CachedVideo>> getMembersOnlyVideosByChannelInternal(String channelIdFilter) {
+    return (select(cachedVideos)..where((t) => t.channelId.equals(channelIdFilter) & t.topicId.equals('membersonly'))).get();
+  }
+
+  Future<List<CachedVideo>> getClipVideosByChannelInternal(String channelIdFilter) {
+    return (select(cachedVideos)..where((t) => t.channelId.equals(channelIdFilter) & t.videoType.equals('clip'))).get();
   }
 
   // --- Pruning ---

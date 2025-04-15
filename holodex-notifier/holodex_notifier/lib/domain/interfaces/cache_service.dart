@@ -9,6 +9,10 @@ abstract class ICacheService {
   /// Inserts a new video or updates an existing one based on the video ID.
   Future<void> upsertVideo(CachedVideosCompanion video);
 
+  /// Partially updates an existing video identified by videoId.
+  /// Only fields present in the companion will be updated.
+  Future<int> updateVideo(String videoId, CachedVideosCompanion partialCompanion); 
+
   /// Deletes a cached video by its ID.
   Future<void> deleteVideo(String videoId);
 
@@ -34,12 +38,10 @@ abstract class ICacheService {
 
   /// Retrieves all videos that currently have a live notification scheduled.
   Future<List<CachedVideo>> getScheduledVideos();
-
-  /// Returns a stream that emits the list of scheduled videos whenever it changes.
   Stream<List<CachedVideo>> watchScheduledVideos();
-
   Future<List<CachedVideo>> getVideosWithScheduledReminders();
-
   Future<void> updateScheduledReminderNotificationId(String videoId, int? notificationId);
   Future<void> updateScheduledReminderTime(String videoId, DateTime? time);
+  Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId);
+  Future<List<CachedVideo>> getClipVideosByChannel(String channelId);
 }
