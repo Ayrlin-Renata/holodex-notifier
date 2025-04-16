@@ -1,4 +1,3 @@
-// Create this file: f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\domain\models\notification_format_config.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart'; // Import NotificationEventType
 

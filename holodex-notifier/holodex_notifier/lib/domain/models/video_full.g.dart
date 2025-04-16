@@ -40,6 +40,8 @@ _$VideoFullImpl _$$VideoFullImplFromJson(Map<String, dynamic> json) =>
           .toList(),
       songs: (json['songs'] as num?)?.toInt(),
       certainty: json['certainty'] as String?,
+      thumbnail: json['thumbnail'] as String?,
+      link: json['link'] as String?,
     );
 
 Map<String, dynamic> _$$VideoFullImplToJson(_$VideoFullImpl instance) =>
@@ -66,4 +68,6 @@ Map<String, dynamic> _$$VideoFullImplToJson(_$VideoFullImpl instance) =>
       'mentions': instance.mentions?.map((e) => e.toJson()).toList(),
       'songs': instance.songs,
       'certainty': instance.certainty,
+      'thumbnail': instance.thumbnail,
+      'link': instance.link,
     };

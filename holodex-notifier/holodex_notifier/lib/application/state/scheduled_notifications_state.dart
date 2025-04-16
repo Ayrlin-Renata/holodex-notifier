@@ -162,9 +162,9 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       }
     }
 
-    String videoType = video.videoType ?? 'Video'; // Default if null in cache
-    if (videoType.isEmpty) { // Also handle empty string case
-        videoType = 'Video';
+    String videoType = video.videoType ?? 'Media'; // Default if null in cache
+    if (videoType.isEmpty || videoType == 'placeholder') { // Also handle empty string case
+        videoType = 'Media';
     }
     String mediaTypeCaps = videoType.toUpperCase();
 
@@ -174,6 +174,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
     String dateMD = DateFormat('MM-dd').format(localScheduledTime);
     String dateDM = DateFormat('dd-MM').format(localScheduledTime);
     String dateAsia = '${DateFormat('yyyy').format(localScheduledTime)}年${DateFormat('MM').format(localScheduledTime)}月${DateFormat('dd').format(localScheduledTime)}日';
+
 
     final replacements = {
       '{channelName}': video.channelName,
@@ -264,3 +265,44 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
   return AsyncData(filteredItems);
 
 }, name: 'filteredScheduledNotificationsProvider');
+
+
+// --- Helper Extension for CombineLatest ---
+extension AsyncValueCombineLatest<T1, T2> on AsyncValue<T1> {
+  AsyncValue<R> combineLatest<R>(
+    AsyncValue<T2> other,
+    R Function(T1, T2) combiner,
+  ) {
+    return when(
+      data: (d1) => other.when(
+        data: (d2) {
+          try {
+            return AsyncData(combiner(d1, d2));
+          } catch (e, st) {
+            return AsyncError(e, st);
+          }
+        },
+        loading: () => const AsyncLoading(),
+        error: (e, st) => AsyncError(e, st),
+      ),
+      loading: () => other.maybeWhen(
+        error: (e, st) => AsyncError(e, st),
+        orElse: () => const AsyncLoading(),
+      ),
+      error: (e, st) => other.maybeWhen(
+        error: (e2, st2) => AsyncError(e, st), // Combine errors? Prioritize first?
+        orElse: () => AsyncError(e, st),
+      ),
+    );
+  }
+}
+
+// Helper to get String representation of AsyncValue state
+extension AsyncValueStateToString on AsyncValue<dynamic> {
+   String stateToString() {
+      if (isLoading) return 'loading';
+      if (hasError) return 'error';
+      if (hasValue) return 'data';
+      return 'unknown';
+   }
+}

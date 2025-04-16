@@ -23,11 +23,11 @@ mixin _$NotificationInstruction {
   String get videoTitle => throw _privateConstructorUsedError;
   String? get videoType => throw _privateConstructorUsedError;
   String? get channelAvatarUrl => throw _privateConstructorUsedError;
-  DateTime get availableAt =>
-      throw _privateConstructorUsedError; // {{ ADD required availableAt }}
-// Fields specific to certain types (optional)
+  DateTime get availableAt => throw _privateConstructorUsedError;
   String? get mentionTargetChannelId => throw _privateConstructorUsedError;
   String? get mentionTargetChannelName => throw _privateConstructorUsedError;
+  String? get videoThumbnailUrl => throw _privateConstructorUsedError;
+  String? get videoSourceLink => throw _privateConstructorUsedError;
 
   /// Create a copy of NotificationInstruction
   /// with the given fields replaced by the non-null parameter values.
@@ -52,7 +52,9 @@ abstract class $NotificationInstructionCopyWith<$Res> {
       String? channelAvatarUrl,
       DateTime availableAt,
       String? mentionTargetChannelId,
-      String? mentionTargetChannelName});
+      String? mentionTargetChannelName,
+      String? videoThumbnailUrl,
+      String? videoSourceLink});
 }
 
 /// @nodoc
@@ -81,6 +83,8 @@ class _$NotificationInstructionCopyWithImpl<$Res,
     Object? availableAt = null,
     Object? mentionTargetChannelId = freezed,
     Object? mentionTargetChannelName = freezed,
+    Object? videoThumbnailUrl = freezed,
+    Object? videoSourceLink = freezed,
   }) {
     return _then(_value.copyWith(
       videoId: null == videoId
@@ -123,6 +127,14 @@ class _$NotificationInstructionCopyWithImpl<$Res,
           ? _value.mentionTargetChannelName
           : mentionTargetChannelName // ignore: cast_nullable_to_non_nullable
               as String?,
+      videoThumbnailUrl: freezed == videoThumbnailUrl
+          ? _value.videoThumbnailUrl
+          : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      videoSourceLink: freezed == videoSourceLink
+          ? _value.videoSourceLink
+          : videoSourceLink // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -146,7 +158,9 @@ abstract class _$$NotificationInstructionImplCopyWith<$Res>
       String? channelAvatarUrl,
       DateTime availableAt,
       String? mentionTargetChannelId,
-      String? mentionTargetChannelName});
+      String? mentionTargetChannelName,
+      String? videoThumbnailUrl,
+      String? videoSourceLink});
 }
 
 /// @nodoc
@@ -174,6 +188,8 @@ class __$$NotificationInstructionImplCopyWithImpl<$Res>
     Object? availableAt = null,
     Object? mentionTargetChannelId = freezed,
     Object? mentionTargetChannelName = freezed,
+    Object? videoThumbnailUrl = freezed,
+    Object? videoSourceLink = freezed,
   }) {
     return _then(_$NotificationInstructionImpl(
       videoId: null == videoId
@@ -216,6 +232,14 @@ class __$$NotificationInstructionImplCopyWithImpl<$Res>
           ? _value.mentionTargetChannelName
           : mentionTargetChannelName // ignore: cast_nullable_to_non_nullable
               as String?,
+      videoThumbnailUrl: freezed == videoThumbnailUrl
+          ? _value.videoThumbnailUrl
+          : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      videoSourceLink: freezed == videoSourceLink
+          ? _value.videoSourceLink
+          : videoSourceLink // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -233,7 +257,9 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
       this.channelAvatarUrl,
       required this.availableAt,
       this.mentionTargetChannelId,
-      this.mentionTargetChannelName});
+      this.mentionTargetChannelName,
+      this.videoThumbnailUrl,
+      this.videoSourceLink});
 
   @override
   final String videoId;
@@ -251,16 +277,18 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
   final String? channelAvatarUrl;
   @override
   final DateTime availableAt;
-// {{ ADD required availableAt }}
-// Fields specific to certain types (optional)
   @override
   final String? mentionTargetChannelId;
   @override
   final String? mentionTargetChannelName;
+  @override
+  final String? videoThumbnailUrl;
+  @override
+  final String? videoSourceLink;
 
   @override
   String toString() {
-    return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName)';
+    return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName, videoThumbnailUrl: $videoThumbnailUrl, videoSourceLink: $videoSourceLink)';
   }
 
   @override
@@ -287,7 +315,11 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
                 other.mentionTargetChannelId == mentionTargetChannelId) &&
             (identical(
                     other.mentionTargetChannelName, mentionTargetChannelName) ||
-                other.mentionTargetChannelName == mentionTargetChannelName));
+                other.mentionTargetChannelName == mentionTargetChannelName) &&
+            (identical(other.videoThumbnailUrl, videoThumbnailUrl) ||
+                other.videoThumbnailUrl == videoThumbnailUrl) &&
+            (identical(other.videoSourceLink, videoSourceLink) ||
+                other.videoSourceLink == videoSourceLink));
   }
 
   @override
@@ -302,7 +334,9 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
       channelAvatarUrl,
       availableAt,
       mentionTargetChannelId,
-      mentionTargetChannelName);
+      mentionTargetChannelName,
+      videoThumbnailUrl,
+      videoSourceLink);
 
   /// Create a copy of NotificationInstruction
   /// with the given fields replaced by the non-null parameter values.
@@ -325,7 +359,9 @@ abstract class _NotificationInstruction implements NotificationInstruction {
       final String? channelAvatarUrl,
       required final DateTime availableAt,
       final String? mentionTargetChannelId,
-      final String? mentionTargetChannelName}) = _$NotificationInstructionImpl;
+      final String? mentionTargetChannelName,
+      final String? videoThumbnailUrl,
+      final String? videoSourceLink}) = _$NotificationInstructionImpl;
 
   @override
   String get videoId;
@@ -342,12 +378,15 @@ abstract class _NotificationInstruction implements NotificationInstruction {
   @override
   String? get channelAvatarUrl;
   @override
-  DateTime get availableAt; // {{ ADD required availableAt }}
-// Fields specific to certain types (optional)
+  DateTime get availableAt;
   @override
   String? get mentionTargetChannelId;
   @override
   String? get mentionTargetChannelName;
+  @override
+  String? get videoThumbnailUrl;
+  @override
+  String? get videoSourceLink;
 
   /// Create a copy of NotificationInstruction
   /// with the given fields replaced by the non-null parameter values.

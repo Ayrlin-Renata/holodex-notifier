@@ -8,10 +8,8 @@ part 'video_full.freezed.dart';
 part 'video_full.g.dart';
 
 // Re-use DateTime parsers if needed, or rely on them being defined in video.dart (if in same library scope)
-DateTime? _dateTimeFromString(String? dateString) =>
-    dateString == null ? null : DateTime.tryParse(dateString);
-DateTime _dateTimeFromStringRequired(String dateString) =>
-    DateTime.parse(dateString);
+DateTime? _dateTimeFromString(String? dateString) => dateString == null ? null : DateTime.tryParse(dateString);
+DateTime _dateTimeFromStringRequired(String dateString) => DateTime.parse(dateString);
 
 @freezed
 class VideoFull with _$VideoFull {
@@ -34,7 +32,6 @@ class VideoFull with _$VideoFull {
     String? description,
     int? songcount, // Base Video schema has this
     required ChannelMin channel, // Added this to base Video model
-
     // --- Fields specific to VideoFull ---
     List<VideoWithChannel>? clips,
     List<VideoWithChannel>? sources,
@@ -48,7 +45,8 @@ class VideoFull with _$VideoFull {
     // Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
     // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
     String? certainty,
-
+    String? thumbnail, // {{ Add placeholder thumbnail }}
+    String? link, // {{ Add placeholder link }}
   }) = _VideoFull;
 
   factory VideoFull.fromJson(Map<String, dynamic> json) => _$VideoFullFromJson(json);

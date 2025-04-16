@@ -55,6 +55,9 @@ mixin _$VideoFull {
       throw _privateConstructorUsedError; // Add the 'certainty' field needed by the design doc, even if not in OpenAPI spec explicitly
 // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
   String? get certainty => throw _privateConstructorUsedError;
+  String? get thumbnail =>
+      throw _privateConstructorUsedError; // {{ Add placeholder thumbnail }}
+  String? get link => throw _privateConstructorUsedError;
 
   /// Serializes this VideoFull to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -93,7 +96,9 @@ abstract class $VideoFullCopyWith<$Res> {
       List<VideoWithChannel>? simulcasts,
       List<ChannelMinWithOrg>? mentions,
       int? songs,
-      String? certainty});
+      String? certainty,
+      String? thumbnail,
+      String? link});
 
   $ChannelMinCopyWith<$Res> get channel;
 }
@@ -135,6 +140,8 @@ class _$VideoFullCopyWithImpl<$Res, $Val extends VideoFull>
     Object? mentions = freezed,
     Object? songs = freezed,
     Object? certainty = freezed,
+    Object? thumbnail = freezed,
+    Object? link = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -225,6 +232,14 @@ class _$VideoFullCopyWithImpl<$Res, $Val extends VideoFull>
           ? _value.certainty
           : certainty // ignore: cast_nullable_to_non_nullable
               as String?,
+      thumbnail: freezed == thumbnail
+          ? _value.thumbnail
+          : thumbnail // ignore: cast_nullable_to_non_nullable
+              as String?,
+      link: freezed == link
+          ? _value.link
+          : link // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -269,7 +284,9 @@ abstract class _$$VideoFullImplCopyWith<$Res>
       List<VideoWithChannel>? simulcasts,
       List<ChannelMinWithOrg>? mentions,
       int? songs,
-      String? certainty});
+      String? certainty,
+      String? thumbnail,
+      String? link});
 
   @override
   $ChannelMinCopyWith<$Res> get channel;
@@ -310,6 +327,8 @@ class __$$VideoFullImplCopyWithImpl<$Res>
     Object? mentions = freezed,
     Object? songs = freezed,
     Object? certainty = freezed,
+    Object? thumbnail = freezed,
+    Object? link = freezed,
   }) {
     return _then(_$VideoFullImpl(
       id: null == id
@@ -400,6 +419,14 @@ class __$$VideoFullImplCopyWithImpl<$Res>
           ? _value.certainty
           : certainty // ignore: cast_nullable_to_non_nullable
               as String?,
+      thumbnail: freezed == thumbnail
+          ? _value.thumbnail
+          : thumbnail // ignore: cast_nullable_to_non_nullable
+              as String?,
+      link: freezed == link
+          ? _value.link
+          : link // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -430,7 +457,9 @@ class _$VideoFullImpl implements _VideoFull {
       final List<VideoWithChannel>? simulcasts,
       final List<ChannelMinWithOrg>? mentions,
       this.songs,
-      this.certainty})
+      this.certainty,
+      this.thumbnail,
+      this.link})
       : _clips = clips,
         _sources = sources,
         _refers = refers,
@@ -539,10 +568,15 @@ class _$VideoFullImpl implements _VideoFull {
 // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
   @override
   final String? certainty;
+  @override
+  final String? thumbnail;
+// {{ Add placeholder thumbnail }}
+  @override
+  final String? link;
 
   @override
   String toString() {
-    return 'VideoFull(id: $id, title: $title, type: $type, topicId: $topicId, publishedAt: $publishedAt, availableAt: $availableAt, duration: $duration, status: $status, startScheduled: $startScheduled, startActual: $startActual, endActual: $endActual, liveViewers: $liveViewers, description: $description, songcount: $songcount, channel: $channel, clips: $clips, sources: $sources, refers: $refers, simulcasts: $simulcasts, mentions: $mentions, songs: $songs, certainty: $certainty)';
+    return 'VideoFull(id: $id, title: $title, type: $type, topicId: $topicId, publishedAt: $publishedAt, availableAt: $availableAt, duration: $duration, status: $status, startScheduled: $startScheduled, startActual: $startActual, endActual: $endActual, liveViewers: $liveViewers, description: $description, songcount: $songcount, channel: $channel, clips: $clips, sources: $sources, refers: $refers, simulcasts: $simulcasts, mentions: $mentions, songs: $songs, certainty: $certainty, thumbnail: $thumbnail, link: $link)';
   }
 
   @override
@@ -582,7 +616,10 @@ class _$VideoFullImpl implements _VideoFull {
             const DeepCollectionEquality().equals(other._mentions, _mentions) &&
             (identical(other.songs, songs) || other.songs == songs) &&
             (identical(other.certainty, certainty) ||
-                other.certainty == certainty));
+                other.certainty == certainty) &&
+            (identical(other.thumbnail, thumbnail) ||
+                other.thumbnail == thumbnail) &&
+            (identical(other.link, link) || other.link == link));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -610,7 +647,9 @@ class _$VideoFullImpl implements _VideoFull {
         const DeepCollectionEquality().hash(_simulcasts),
         const DeepCollectionEquality().hash(_mentions),
         songs,
-        certainty
+        certainty,
+        thumbnail,
+        link
       ]);
 
   /// Create a copy of VideoFull
@@ -653,7 +692,9 @@ abstract class _VideoFull implements VideoFull {
       final List<VideoWithChannel>? simulcasts,
       final List<ChannelMinWithOrg>? mentions,
       final int? songs,
-      final String? certainty}) = _$VideoFullImpl;
+      final String? certainty,
+      final String? thumbnail,
+      final String? link}) = _$VideoFullImpl;
 
   factory _VideoFull.fromJson(Map<String, dynamic> json) =
       _$VideoFullImpl.fromJson;
@@ -713,6 +754,10 @@ abstract class _VideoFull implements VideoFull {
 // It's often implicitly part of YT data sources Holodex might use. Make it nullable.
   @override
   String? get certainty;
+  @override
+  String? get thumbnail; // {{ Add placeholder thumbnail }}
+  @override
+  String? get link;
 
   /// Create a copy of VideoFull
   /// with the given fields replaced by the non-null parameter values.

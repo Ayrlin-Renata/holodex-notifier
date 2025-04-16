@@ -2,13 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'notification_instruction.freezed.dart';
 
-enum NotificationEventType {
-  newMedia,
-  live,
-  update,
-  mention,
-  reminder,
-}
+enum NotificationEventType { newMedia, live, update, mention, reminder }
 
 @freezed
 class NotificationInstruction with _$NotificationInstruction {
@@ -20,12 +14,12 @@ class NotificationInstruction with _$NotificationInstruction {
     required String videoTitle,
     String? videoType,
     String? channelAvatarUrl,
-    required DateTime availableAt, // {{ ADD required availableAt }}
+    required DateTime availableAt,
 
-    // Fields specific to certain types (optional)
     String? mentionTargetChannelId,
     String? mentionTargetChannelName,
 
+    String? videoThumbnailUrl,
+    String? videoSourceLink, // For placeholder 'link' field
   }) = _NotificationInstruction;
-
 }
