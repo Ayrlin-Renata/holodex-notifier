@@ -1,5 +1,7 @@
 // f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\main.dart
 import 'dart:async';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/application/controllers/app_controller.dart';
@@ -189,10 +191,77 @@ Future<void> main() async {
   // ignore: unused_local_variable
   INotificationService? notificationService;
 
+  // --- Helper Function to Get System Info ---
+  Future<String> getSystemInfo() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    StringBuffer info = StringBuffer();
+    try {
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        info.writeln('--- System Info ---');
+
+        info.writeln('Device Type: ${androidInfo.type}, Model: ${androidInfo.model}, Manufacturer: ${androidInfo.manufacturer}');
+        info.writeln('Android Version: ${androidInfo.version.release} (SDK ${androidInfo.version.sdkInt})');
+        info.writeln('Build ID: ${androidInfo.display}');
+        info.writeln('Hardware: ${androidInfo.hardware}');
+        info.writeln('Board: ${androidInfo.board}');
+        info.writeln('Is Physical Device: ${androidInfo.isPhysicalDevice}');
+        info.writeln('Supported ABIs: ${androidInfo.supportedAbis.join(', ')}');
+      } else if (Platform.isWindows) {
+        WindowsDeviceInfo windowsInfo = await deviceInfo.windowsInfo;
+        info.writeln('--- System Info ---');
+        info.writeln('Computer Name: ${windowsInfo.computerName}');
+        info.writeln('Number of Cores: ${windowsInfo.numberOfCores}');
+        info.writeln('System Memory (MB): ${windowsInfo.systemMemoryInMegabytes}');
+        info.writeln('Windows Version: ${windowsInfo.displayVersion} (Build ${windowsInfo.buildNumber})');
+        info.writeln('Product Name: ${windowsInfo.productName}');
+        info.writeln('Registered Owner: ${windowsInfo.registeredOwner}');
+      } else if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        info.writeln('--- System Info ---');
+        info.writeln('Device: ${iosInfo.name} ${iosInfo.model}');
+        info.writeln('OS: ${iosInfo.systemName} ${iosInfo.systemVersion}');
+        info.writeln('IsPhysicalDevice: ${iosInfo.isPhysicalDevice}');
+      } else if (Platform.isLinux) {
+        LinuxDeviceInfo linuxInfo = await deviceInfo.linuxInfo;
+        info.writeln('--- System Info ---');
+        info.writeln('Name: ${linuxInfo.name}');
+        info.writeln('Version: ${linuxInfo.version}');
+        info.writeln('ID: ${linuxInfo.id}');
+        info.writeln('Pretty Name: ${linuxInfo.prettyName}');
+      } else if (Platform.isMacOS) {
+        MacOsDeviceInfo macOsInfo = await deviceInfo.macOsInfo;
+        info.writeln('--- System Info ---');
+        info.writeln('Model: ${macOsInfo.model}');
+        info.writeln('OS Release: ${macOsInfo.osRelease}');
+        info.writeln('Kernel Version: ${macOsInfo.kernelVersion}');
+        info.writeln('Memory Size: ${macOsInfo.memorySize}');
+        info.writeln('CPU Cores: ${macOsInfo.cpuFrequency}'); // cpuFrequency might not be cores, adjust field if needed
+      } else {
+        info.writeln('--- System Info ---');
+        info.writeln('OS: Unknown Platform');
+      }
+    } catch (e) {
+      info.writeln('--- System Info ---');
+      info.writeln('Error getting device info: $e');
+    }
+    info.writeln('App Version: 0.1.0'); // TODO: Read from pubspec or build info
+    info.writeln('-------------------');
+    return info.toString();
+  }
+
   try {
     // Initialize Logger first
     logger = container.read(loggingServiceProvider)!; // Use read directly, assume non-null after this line
     logger.info("Logger initialized.");
+
+    final systemInfo = await getSystemInfo();
+    if (logger is ILoggingServiceWithOutput) {
+      logger.setSystemInfoString(systemInfo);
+      logger.info("System Info collected and set in LoggerService.");
+    } else {
+      logger.warning("Logger service does not support setting system info string.");
+    }
 
     // --- Step 1: Initialize Settings Service ---
     logger.info("Waiting for Settings Service FutureProvider...");

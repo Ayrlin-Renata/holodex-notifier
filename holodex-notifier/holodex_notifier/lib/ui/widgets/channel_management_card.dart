@@ -144,7 +144,7 @@ class ChannelManagementCard extends HookConsumerWidget {
 
                   return ListTile(
                     title: Text(channel.name),
-                    subtitle: Text(channel.englishName ?? channel.id, style: theme.textTheme.bodySmall),
+                    subtitle: Text('${channel.type} - ${channel.id}', style: theme.textTheme.bodySmall),
                     trailing:
                         alreadyAdded
                             ? const Icon(Icons.check_circle, color: Colors.grey, semanticLabel: 'Already Added')

@@ -60,37 +60,41 @@ class LogsDataCard extends ConsumerWidget {
             icon: const Icon(Icons.share_outlined, size: 18),
             label: const Text('Share Full Log'),
             onPressed: () async {
-              // {{ Implement sharing }}
+              // {{ Modify sharing logic }}
               if (loggerService is ILoggingServiceWithOutput) {
                 try {
-                  final filePath = await loggerService.getLogFilePath();
-                  final result = await Share.shareXFiles([XFile(filePath)], text: 'Holodex Notifier Logs');
+                  // Get the combined content (system info + logs)
+                  final logContent = await loggerService.getLogFileContent();
+                  if (logContent == null) {
+                    throw Exception("Failed to retrieve log content.");
+                  }
+
+                  // Share the content directly
+                  final result = await Share.share(
+                    logContent,
+                    subject: 'Holodex Notifier Logs',
+                  );
 
                   if (result.status == ShareResultStatus.success) {
-                    print('Log file shared successfully.');
-                    // Optional: Show success snackbar if desired
-                    // scaffoldMessenger.showSnackBar(
-                    //   const SnackBar(content: Text('Log shared successfully.')),
-                    // );
+                    print('Log content shared successfully.');
                   } else if (result.status == ShareResultStatus.dismissed) {
-                    print('Log file sharing dismissed by user.');
-                    // Do NOT show a snackbar for dismissal
+                    print('Log sharing dismissed by user.');
                   } else {
-                    // Handle other failure statuses (unavailable, etc.)
-                    print('Log file sharing failed: ${result.status}');
+                    print('Log sharing failed: ${result.status}');
                     if (context.mounted) {
                       scaffoldMessenger.showSnackBar(SnackBar(content: Text('Failed to share log: ${result.status}')));
                     }
                   }
                 } catch (e) {
-                  print('Error sharing log file: $e');
+                  print('Error sharing log content: $e');
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error preparing log for sharing: $e')));
                   }
                 }
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log service error: Cannot share file.')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log service error: Cannot share logs.')));
               }
+              // {{ End modification }}
             },
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),

@@ -217,9 +217,8 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                  ),
 
                             // --- Action Buttons ---
-                            ButtonBar(
+                            OverflowBar(
                                  alignment: MainAxisAlignment.spaceEvenly,
-                                 buttonPadding: EdgeInsets.zero,
                                  children: [
                                    if (isPlaceholder && sourceLink != null)
                                        TextButton.icon(
@@ -258,12 +257,20 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                   children: [
                     if (showHeader) _buildDateHeader(item.scheduledTime.toLocal(), theme),
                     // {{ Introduce Dismissible }}
-                    if (notificationId != null)
-                      Dismissible(
-                          // Unique key per item
+                    // {{ Define the itemWidget variable }}
+                    () { // Use an IIFE (Immediately Invoked Function Expression) to define itemWidget
+                      final Widget itemWidget;
+
+                      if (notificationId != null) {
+                        // Define the Dismissible widget first
+                       final dismissibleWidget = Dismissible(
+                            // Unique key per item
                             key: ValueKey('${item.videoData.videoId}_${item.type.name}'),
-                           // Direction: swipe right-to-left
+                            // Direction: swipe right-to-left
                             direction: DismissDirection.startToEnd,
+                            // {{ Add HitTestBehavior }}
+                            // Allow gestures to partially pass through if not handled by Dismissible
+                            behavior: HitTestBehavior.translucent,
                             // --- Updated Background ---
                             background: Container(
                                 // Apply the SAME vertical margin as the Card
@@ -280,10 +287,10 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                   ),
                                 ),
                             ),
-                           // --- End Updated Background ---
+                            // --- End Updated Background ---
                             // Confirmation before dismissing
                             confirmDismiss: (direction) async {
-                              // ... (confirm logic remains the same) ...
+                               // ... (confirm logic remains the same) ...
                               if (!context.mounted) return false;
                               final confirm = await _showCancelConfirmation(context, videoData.videoTitle);
                               return confirm ?? false;
@@ -312,18 +319,31 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                 ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
                               }
                             },
-                           // The actual card content
+                           // The Dismissible child is still the cardContent (ExpansionTile)
                            child: cardContent,
-                        )
-                      else
-                         // If not dismissible, show the card directly without Dismissible wrapper
-                         cardContent,
-                      // {{ End Dismissible Section Update }}
+                        );
+
+                        // {{ Wrap the Dismissible in a GestureDetector }}
+                        itemWidget = GestureDetector(
+                          // No specific drag handlers needed on the wrapper
+                          // Just influence hit testing, let Dismissible handle its gestures
+                          behavior: HitTestBehavior.deferToChild,
+                          child: dismissibleWidget, // Wrap the Dismissible
+                        );
+
+                      } else {
+                        // If not dismissible, just use the cardContent directly
+                        itemWidget = cardContent;
+                      }
+                      // {{ Return the itemWidget for the IIFE }}
+                      return itemWidget;
+                    }(), // Immediately invoke the function
+                      // {{ End Dismissible Section Update (now using itemWidget) }}
                     ],
                   );
               },
             ),
-            // --- Show All/Fewer Button ---
+             // --- Show All/Fewer Button ---
             if (filteredItems.length > _initialItemLimit)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),

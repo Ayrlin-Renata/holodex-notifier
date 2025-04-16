@@ -20,13 +20,13 @@ class HomeScreen extends HookConsumerWidget {
 
     // List of the page widgets
     final List<Widget> pages = [
-      const ScheduledPage(), // Index 0
+      ScheduledPage(pageController: pageController,), // Index 0
       const ChannelsPage(), // Index 1
       const SettingsPage(), // Index 2
     ];
 
     // List of page titles for the AppBar
-    final List<String> pageTitles = ['Scheduled Notifications', 'Channel Management', 'Application Settings'];
+    final List<String> pageTitles = ['Notification Schedule', 'Channel Management', 'Application Settings'];
 
     useEffect(() {
       void listener() {
@@ -49,7 +49,11 @@ class HomeScreen extends HookConsumerWidget {
       // Display the widget corresponding to the current selectedIndex
       body: PageView(
         controller: pageController,
-        children: pages,
+        children: [
+          ScheduledPage(pageController: pageController), // Index 0
+          const ChannelsPage(), // Index 1
+          const SettingsPage(), // Index 2
+        ],
         onPageChanged: (index) {
           // This updates the selectedIndex state when swiped
           selectedIndex.value = index;
