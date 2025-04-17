@@ -38,6 +38,7 @@ dependencies:
   file_picker: ^8.0.3
   timeago: ^3.6.1
   device_info_plus: ^10.1.0
+  permission_handler: ^11.3.0 
 
 
 dev_dependencies:
@@ -52,4 +53,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/ # Declare the directory
+    - assets/images/ # Keep existing images asset declaration
+    - assets/config/ # Add declaration for the config directory

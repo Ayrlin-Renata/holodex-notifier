@@ -12,4 +12,5 @@ abstract class INotificationService {
   Future<void> cancelAllNotifications();
 
   Future<void> reloadFormatConfig();
+  Future<bool> requestNotificationPermissions();
 }

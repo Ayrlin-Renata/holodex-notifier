@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/application/controllers/app_controller.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/domain/interfaces/api_service.dart';
@@ -31,6 +30,13 @@ import 'package:holodex_notifier/infrastructure/services/notification_decision_s
 import 'package:holodex_notifier/infrastructure/services/shared_prefs_settings_service.dart';
 import 'package:holodex_notifier/ui/screens/home_screen.dart';
 import 'package:dio/dio.dart';
+import 'package:holodex_notifier/ui/pages/permission_explanation_page.dart'; // Import PermissionExplanationPage
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart'; // Import permission_handler
+// Import flutter_hooks
+
+
+//TODO: implement config.json
 
 enum IsolateContext { main, background }
 
@@ -294,7 +300,7 @@ Future<void> main() async {
             delayNewMediaProvider.overrideWith((ref) => initialDelay),
             reminderLeadTimeProvider.overrideWith((ref) => initialReminderLeadTime),
           ],
-          child: const MainApp(),
+          child: const MyApp(),
         ),
       ),
     );
@@ -319,8 +325,8 @@ Future<void> main() async {
   }
 }
 
-class MainApp extends ConsumerWidget {
-  const MainApp({super.key});
+class MyApp extends ConsumerWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -332,7 +338,7 @@ class MainApp extends ConsumerWidget {
       theme: ThemeData(colorScheme: lightColorScheme, useMaterial3: true),
       darkTheme: ThemeData(colorScheme: darkColorScheme, useMaterial3: true),
       themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      home: const PermissionCheck(), // Changed to PermissionCheck
     );
   }
 }
@@ -360,3 +366,46 @@ class ErrorApp extends StatelessWidget {
     );
   }
 }
+
+class PermissionCheck extends HookConsumerWidget { // New Widget for permission check
+  const PermissionCheck({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsServiceReady = ref.watch(settingsServiceReadyProvider);
+
+    return settingsServiceReady.when(
+      data: (ready) {
+        if (ready) {
+          return FutureBuilder<PermissionStatus>( // Check permission status
+            future: Permission.notification.status,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator())); // Loading indicator while checking
+              } else if (snapshot.hasData) {
+                final status = snapshot.data!;
+                if (status.isGranted) {
+                  return const HomeScreen(); // Navigate to HomeScreen if permission granted
+                } else {
+                  return const PermissionExplanationPage(); // Show explanation page if not granted
+                }
+              } else {
+                return const Scaffold(body: Center(child: Text('Error checking permissions'))); // Error state
+              }
+            },
+          );
+        } else {
+          return const Scaffold(body: Center(child: Text('Settings not ready'))); // Settings service not ready
+        }
+      },
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())), // Loading indicator while settings loading
+      error: (error, stackTrace) => Scaffold(body: Center(child: Text('Error: $error'))), // Error state for settings loading
+    );
+  }
+}
+
+
+final settingsServiceReadyProvider = FutureProvider<bool>((ref) async {
+  final settingsService = await ref.watch(settingsServiceFutureProvider.future);
+  return settingsService.getMainServicesReady(); // Assuming getMainServicesReady exists and checks for readiness
+});

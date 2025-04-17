@@ -4,8 +4,8 @@ part 'channel_min.freezed.dart';
 part 'channel_min.g.dart';
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class ChannelMin with _$ChannelMin {
+@JsonSerializable(fieldRename: FieldRename.snake)
   const factory ChannelMin({required String id, required String name, String? englishName, @Default('vtuber') String type, String? photo}) =
       _ChannelMin;
 

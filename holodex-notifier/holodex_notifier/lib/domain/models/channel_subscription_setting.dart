@@ -4,8 +4,8 @@ part 'channel_subscription_setting.freezed.dart';
 part 'channel_subscription_setting.g.dart';
 
 @freezed
-@JsonSerializable()
 class ChannelSubscriptionSetting with _$ChannelSubscriptionSetting {
+@JsonSerializable()
   const factory ChannelSubscriptionSetting({
     required String channelId,
     required String name,

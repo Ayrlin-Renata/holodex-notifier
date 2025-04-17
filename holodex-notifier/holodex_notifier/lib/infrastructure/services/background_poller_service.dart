@@ -20,7 +20,7 @@ import 'package:holodex_notifier/domain/models/notification_action.dart';
 import 'package:holodex_notifier/domain/models/video_full.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
-import 'package:holodex_notifier/main.dart' hide ErrorApp, MainApp, appControllerProvider;
+import 'package:holodex_notifier/main.dart' hide ErrorApp, appControllerProvider;
 import 'package:holodex_notifier/main.dart' as main_providers show isolateContextProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest_all.dart' as tz;

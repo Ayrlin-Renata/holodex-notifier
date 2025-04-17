@@ -8,8 +8,8 @@ int? _intFromStringNullable(String? value) => value == null ? null : int.tryPars
 DateTime? _dateTimeFromStringNullable(String? dateString) => dateString == null ? null : DateTime.tryParse(dateString);
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class Channel with _$Channel {
+@JsonSerializable(fieldRename: FieldRename.snake)
   const factory Channel({
     required String id,
     required String name,

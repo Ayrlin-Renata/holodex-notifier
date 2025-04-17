@@ -92,7 +92,6 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
   }
 }
 
-
 class LocalNotificationService implements INotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   final BaseCacheManager _cacheManager = DefaultCacheManager();
@@ -236,8 +235,7 @@ class LocalNotificationService implements INotificationService {
       _logger.debug("_flutterLocalNotificationsPlugin.initialize() COMPLETED.");
 
       if (Platform.isAndroid) {
-        await _requestAndroidPermissions();
-        await _createAndroidChannels();
+        await _createNotificationChannel();
       }
 
       _logger.info("LocalNotificationService initialized successfully.");
@@ -250,24 +248,62 @@ class LocalNotificationService implements INotificationService {
     }
   }
 
-  Future<void> _requestAndroidPermissions() async {
+  @override
+  Future<bool> requestNotificationPermissions() async {
+    if (Platform.isAndroid) {
+      return await _requestAndroidPermissions();
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      final plugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      if (plugin != null) {
+        final granted = await plugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        _logger.debug("iOS/macOS permissions granted: $granted");
+        return granted ?? false; 
+      }
+      return false;
+    } else {
+      return true; 
+    }
+  }
+
+  Future<bool> _requestAndroidPermissions() async {
+    bool permissionsGranted = false;
     final plugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (plugin != null) {
       try {
         _logger.debug("Requesting Android notification permissions...");
-        final notificationsGranted = await plugin.requestNotificationsPermission();
+        bool? notificationsGranted = await plugin.requestNotificationsPermission(); 
         _logger.debug("Android Notification Permission Granted: $notificationsGranted");
 
         _logger.debug("Requesting Android exact alarm permissions...");
-        final exactAlarmsGranted = await plugin.requestExactAlarmsPermission();
+        bool? exactAlarmsGranted = await plugin.requestExactAlarmsPermission(); 
         _logger.debug("Android Exact Alarm Permission Granted: $exactAlarmsGranted");
+
+        permissionsGranted = (notificationsGranted == true) && (exactAlarmsGranted == true); 
       } catch (e, s) {
         _logger.error("Error requesting Android permissions", e, s);
+        permissionsGranted = false; 
       }
     }
+    return permissionsGranted;
   }
 
-  Future<void> _createAndroidChannels() async {
+  Future<bool> areNotificationsEnabled() async {
+    final enabled = await _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.areNotificationsEnabled() ??
+        await _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(
+          alert: false,
+          badge: false,
+          sound: false,
+        ) ??
+        true; 
+    _logger.debug("Notification enabled check: $enabled");
+    return enabled;
+  }
+
+  Future<void> _createNotificationChannel() async {
     const AndroidNotificationChannel defaultChannel = AndroidNotificationChannel(
       defaultChannelId,
       defaultChannelName,

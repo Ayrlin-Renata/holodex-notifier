@@ -1,0 +1,10 @@
+{
+  "appVersion": "0.1.0-alpha",
+  "defaultPollFrequencyMinutes": 10,
+  "defaultReminderLeadTimeMinutes": 0,
+  "maxLogFileSizeMB": 5,
+  "maxLogFilesToKeep": 3,
+  "cacheMaxAgeDays": 30,
+  "notificationGroupingEnabledByDefault": false,
+  "delayNewMediaNotificationsByDefault": false
+}

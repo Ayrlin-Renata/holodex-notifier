@@ -14,7 +14,7 @@
     <!-- Needed for connectivity_plus -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
-        android:label="holodex_notifier"
+        android:label="Holodex Notifier"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
