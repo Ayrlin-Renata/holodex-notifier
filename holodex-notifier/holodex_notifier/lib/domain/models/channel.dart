@@ -4,18 +4,15 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'channel.freezed.dart';
 part 'channel.g.dart';
 
-
 // Define helper functions for parsing potentially null string fields into specific types
 int? _intFromStringNullable(String? value) => value == null ? null : int.tryParse(value);
 
-DateTime? _dateTimeFromStringNullable(String? dateString) =>
-    dateString == null ? null : DateTime.tryParse(dateString);
-
+DateTime? _dateTimeFromStringNullable(String? dateString) => dateString == null ? null : DateTime.tryParse(dateString);
 
 // The API seems to return ChannelWithGroup from the /channels endpoint
 @freezed
+@JsonSerializable(fieldRename: FieldRename.snake)
 class Channel with _$Channel {
-  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Channel({
     required String id,
     required String name,
@@ -38,6 +35,5 @@ class Channel with _$Channel {
     String? description,
   }) = _Channel;
 
-  factory Channel.fromJson(Map<String, dynamic> json) =>
-      _$ChannelFromJson(json);
+  factory Channel.fromJson(Map<String, dynamic> json) => _$ChannelFromJson(json);
 }

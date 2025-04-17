@@ -6,8 +6,8 @@ part 'notification_format_config.g.dart';
 
 /// Represents the format template for a single notification type.
 @freezed
+@JsonSerializable()
 class NotificationFormat with _$NotificationFormat {
-  @JsonSerializable()
   const factory NotificationFormat({
     required String titleTemplate,
     required String bodyTemplate,
@@ -22,8 +22,8 @@ class NotificationFormat with _$NotificationFormat {
 
 /// Holds the format configurations for all notification event types.
 @freezed
+@JsonSerializable(explicitToJson: true) // Needed for nested maps/objects
 class NotificationFormatConfig with _$NotificationFormatConfig {
-  @JsonSerializable(explicitToJson: true) // Needed for nested maps/objects
   const factory NotificationFormatConfig({
     // Use a Map where the key is NotificationEventType and value is the format.
     // Need a custom converter because NotificationEventType cannot be a Map key directly in JSON.

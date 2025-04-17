@@ -7,7 +7,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:holodex_notifier/application/state/background_service_state.dart';
-import 'package:holodex_notifier/application/state/channel_providers.dart'; // Need lastErrorProvider
+// Need lastErrorProvider
 import 'package:holodex_notifier/domain/interfaces/background_polling_service.dart';
 import 'package:holodex_notifier/domain/interfaces/api_service.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
@@ -19,7 +19,6 @@ import 'package:holodex_notifier/domain/interfaces/notification_service.dart'; /
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/domain/models/notification_action.dart';
-import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:holodex_notifier/domain/models/video_full.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart'; // Import database for CachedVideo
 import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
@@ -440,7 +439,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       return; // Exit cycle early
     }
     // Prepare data structures for API call
-    final Map<String, ChannelSubscriptionSetting> channelSettingsMap = {for (var s in channelSettingsList) s.channelId: s};
     final Set<String> subscribedIds = {};
     final Set<String> mentionIds = {};
     for (final setting in channelSettingsList) {

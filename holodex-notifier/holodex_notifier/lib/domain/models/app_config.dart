@@ -5,8 +5,8 @@ part 'app_config.freezed.dart';
 part 'app_config.g.dart';
 
 @freezed
+@JsonSerializable(explicitToJson: true) // Needed for nested list
 class AppConfig with _$AppConfig {
-  @JsonSerializable(explicitToJson: true) // Needed for nested list
   const factory AppConfig({
     // Include non-sensitive settings
     required int pollFrequencyMinutes,

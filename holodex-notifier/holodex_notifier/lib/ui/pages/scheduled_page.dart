@@ -1,6 +1,6 @@
 // ... Other imports ...
 import 'dart:async'; // {{ Add import for unawaited }}
-import 'package:flutter/scheduler.dart'; // Needed for timeDilation
+// Needed for timeDilation
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart'; // Import flutter_hooks
@@ -11,8 +11,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/ui/widgets/scheduled_notifications_card.dart'; // Import the refactored card content
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart'; // {{ Import moved provider }}
 import 'package:holodex_notifier/main.dart'; // Import loggingServiceProvider
-import 'package:flutter_background_service/flutter_background_service.dart'; // {{ Import background service }}
-import 'package:holodex_notifier/application/state/settings_providers.dart'; // For isFirstLaunch etc.
 
 // {{ Modify ScheduledPage to accept PageController }}
 class ScheduledPage extends HookConsumerWidget {
@@ -23,9 +21,6 @@ class ScheduledPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final logger = ref.watch(loggingServiceProvider);
-    final bgService = FlutterBackgroundService(); // {{ Get service instance }}
-    final scaffoldMessenger = ScaffoldMessenger.of(context); // {{ Get ScaffoldMessenger }}
-    final apiKeyAsync = ref.watch(apiKeyProvider);
     final isFirstLaunchAsync = ref.watch(isFirstLaunchProvider);
 
     // {{ State to store the time when a manual poll was triggered }}
@@ -238,7 +233,7 @@ class ScheduledPage extends HookConsumerWidget {
                         value: channel.channelId,
                         child: Text(channel.name, overflow: TextOverflow.ellipsis),
                       );
-                    }).toList(),
+                    }),
                   ],
                   onChanged: (String? newValue) {
                     ref.read(scheduledFilterChannelProvider.notifier).state = newValue;

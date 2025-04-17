@@ -174,7 +174,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                   margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 0.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.3))
+                    side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3))
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: ExpansionTile(

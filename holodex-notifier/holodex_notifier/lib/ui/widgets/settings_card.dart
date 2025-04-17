@@ -18,7 +18,7 @@ class SettingsCard extends StatelessWidget {
       elevation: 1, // Subtle elevation
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12), // Rounded corners
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)), // Optional subtle border
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)), // Optional subtle border
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -213,14 +213,10 @@ class NotificationDecisionService implements INotificationDecisionService {
           processingState.scheduledLiveNotificationId = null; // Assume cancellation succeeds state-wise
         }
         // Add Schedule action only if scheduledTime is valid
-        if (scheduledTime != null) {
-            final instruction = _createNotificationInstruction(fetchedVideo, NotificationEventType.live);
-            actions.add(NotificationAction.schedule(instruction: instruction, scheduleTime: scheduledTime, videoId: videoId));
-            processingState.scheduledLiveNotificationId = -1; // Placeholder indicates intent to schedule
-        } else {
-             logger.warning("[$videoId] Should schedule live, but scheduledTime is null? This shouldn't happen.");
-        }
-      } else {
+          final instruction = _createNotificationInstruction(fetchedVideo, NotificationEventType.live);
+          actions.add(NotificationAction.schedule(instruction: instruction, scheduleTime: scheduledTime, videoId: videoId));
+          processingState.scheduledLiveNotificationId = -1; // Placeholder indicates intent to schedule
+            } else {
         logger.debug(
           '[DecisionService] ($videoId) Live Already correctly scheduled (ID: ${processingState.scheduledLiveNotificationId}). No action.',
         );

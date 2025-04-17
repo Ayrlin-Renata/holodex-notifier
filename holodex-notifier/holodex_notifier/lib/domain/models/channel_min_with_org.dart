@@ -6,8 +6,8 @@ part 'channel_min_with_org.freezed.dart';
 part 'channel_min_with_org.g.dart';
 
 @freezed
+@JsonSerializable(fieldRename: FieldRename.snake)
 class ChannelMinWithOrg with _$ChannelMinWithOrg {
-  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ChannelMinWithOrg({
     // Reuse fields from ChannelMin by embedding or duplicating
     // Embedding is cleaner but requires manual fromJson/toJson handling typically.
@@ -24,6 +24,5 @@ class ChannelMinWithOrg with _$ChannelMinWithOrg {
   // You can add convenience getters if you want ChannelMin behavior
   // ChannelMin get channelMin => ChannelMin(id: id, name: name, englishName: englishName, type: type, photo: photo);
 
-  factory ChannelMinWithOrg.fromJson(Map<String, dynamic> json) =>
-      _$ChannelMinWithOrgFromJson(json);
+  factory ChannelMinWithOrg.fromJson(Map<String, dynamic> json) => _$ChannelMinWithOrgFromJson(json);
 }

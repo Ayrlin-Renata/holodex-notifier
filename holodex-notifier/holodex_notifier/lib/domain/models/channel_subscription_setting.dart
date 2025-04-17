@@ -5,9 +5,9 @@ part 'channel_subscription_setting.freezed.dart';
 part 'channel_subscription_setting.g.dart';
 
 @freezed
+@JsonSerializable()
 class ChannelSubscriptionSetting with _$ChannelSubscriptionSetting {
   // Apply JsonSerializable for persistence via SettingsService (e.g., saving to SharedPreferences as JSON)
-  @JsonSerializable()
   const factory ChannelSubscriptionSetting({
     // Identifying information for the channel
     required String channelId,

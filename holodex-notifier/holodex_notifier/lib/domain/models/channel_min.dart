@@ -5,8 +5,8 @@ part 'channel_min.freezed.dart';
 part 'channel_min.g.dart';
 
 @freezed
+@JsonSerializable(fieldRename: FieldRename.snake) // Automatically convert snake_case from JSON
 class ChannelMin with _$ChannelMin {
-  @JsonSerializable(fieldRename: FieldRename.snake) // Automatically convert snake_case from JSON
   const factory ChannelMin({
     required String id,
     required String name,
@@ -16,6 +16,5 @@ class ChannelMin with _$ChannelMin {
     String? photo, // API schema says string, but example shows potentially missing
   }) = _ChannelMin;
 
-  factory ChannelMin.fromJson(Map<String, dynamic> json) =>
-      _$ChannelMinFromJson(json);
+  factory ChannelMin.fromJson(Map<String, dynamic> json) => _$ChannelMinFromJson(json);
 }

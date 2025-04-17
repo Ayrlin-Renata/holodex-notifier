@@ -86,15 +86,17 @@ class ChannelListNotifier extends StateNotifier<List<ChannelSubscriptionSetting>
 
       if (changed) {
         state = loadedState;
-        if (!isInitialLoad)
+        if (!isInitialLoad) {
           _logger.info("ChannelListNotifier: Reloaded state with changes (${state.length} channels).");
-        else
+        } else {
           _logger.info("ChannelListNotifier: Loaded initial state (${state.length} channels).");
+        }
       } else {
-        if (!isInitialLoad)
+        if (!isInitialLoad) {
           _logger.info("ChannelListNotifier: Reloaded state, no changes detected.");
-        else
+        } else {
           _logger.info("ChannelListNotifier: Loaded initial state matches current state.");
+        }
       }
     } catch (e, s) {
       _logger.error("ChannelListNotifier: Error ${isInitialLoad ? 'loading initial' : 'reloading'} state", e, s);

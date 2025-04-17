@@ -20,7 +20,6 @@ import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart'; // {{ Import path_provider }}
 import 'package:share_plus/share_plus.dart'; // {{ Import share_plus }}
 import 'package:path/path.dart' as p; // Path manipulation
@@ -29,6 +28,7 @@ class AppController {
   final Ref _ref;
   final ISettingsService _settingsService;
   final ILoggingService _loggingService;
+  // ignore: unused_field
   final ICacheService _cacheService;
   final INotificationService _notificationService;
   final INotificationDecisionService _decisionService;
@@ -495,6 +495,7 @@ class AppController {
 
       // Add the dispatch call to a list of futures
       dispatchFutures.add(
+        // ignore: body_might_complete_normally_catch_error
         _notificationService.showNotification(instruction).catchError((e, s) {
           _loggingService.error("Error sending test notification type $type", e, s);
           // Don't rethrow, try sending others

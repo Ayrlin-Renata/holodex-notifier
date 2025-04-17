@@ -55,8 +55,6 @@ class RotatingFileWriter {
     return _currentSink!;
   }
 
-  String get _currentLogPath => _currentLogFile?.path ?? 'unknown'; // Getter for current log path
-
   Future<void> write(String text) async {
     await _lock.synchronized(() async {
       final sink = await _getSink();

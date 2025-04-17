@@ -49,9 +49,11 @@ class DriftCacheService implements ICacheService {
   @override
   Future<void> setPendingNewMediaFlag(String videoId, bool isPending) => _db.setPendingNewMediaFlagInternal(videoId, isPending);
 
+  @override
   Future<void> updateScheduledReminderNotificationId(String videoId, int? notificationId) =>
       _db.updateScheduledReminderNotificationIdInternal(videoId, notificationId);
 
+  @override
   Future<void> updateScheduledReminderTime(String videoId, DateTime? time) => _db.updateScheduledReminderTimeInternal(videoId, time);
 
   @override

@@ -21,7 +21,7 @@ String _formatDuration(Duration d) {
       return "$hours hr";
     } else {
       // Only show minutes if they exist
-      return "$hours hr ${minutes} min";
+      return "$hours hr $minutes min";
     }
   }
 }
@@ -67,7 +67,7 @@ String _formatReminderDuration(Duration d) {
     if (minutes == 0) {
       return "$hours hr before";
     } else {
-      return "$hours hr ${minutes} min before";
+      return "$hours hr $minutes min before";
     }
   }
 }

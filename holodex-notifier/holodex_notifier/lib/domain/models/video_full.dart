@@ -8,13 +8,12 @@ part 'video_full.freezed.dart';
 part 'video_full.g.dart';
 
 // Re-use DateTime parsers if needed, or rely on them being defined in video.dart (if in same library scope)
-DateTime? _dateTimeFromString(String? dateString) => dateString == null ? null : DateTime.tryParse(dateString);
-DateTime _dateTimeFromStringRequired(String dateString) => DateTime.parse(dateString);
+DateTime? _dateTimeFromString(String? dateString) => dateString == null ? null : DateTime.tryParse(dateString)?.toUtc();
+DateTime _dateTimeFromStringRequired(String dateString) => DateTime.parse(dateString).toUtc();
 
 @freezed
+@JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
 class VideoFull with _$VideoFull {
-  // Again, freezed doesn't do 'allOf', so we combine properties.
-  @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
   const factory VideoFull({
     // --- Fields from base Video ---
     required String id,

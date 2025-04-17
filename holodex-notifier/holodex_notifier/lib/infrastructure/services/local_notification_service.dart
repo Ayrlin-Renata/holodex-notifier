@@ -47,6 +47,7 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
 
   final String videoId = payload; // Payload is the videoId
   String? urlToLaunch;
+  // ignore: unused_local_variable
   bool openApp = false;
 
   // Determine action based on actionId
@@ -95,7 +96,6 @@ class LocalNotificationService implements INotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   // Use DefaultCacheManager or configure a custom one
   final BaseCacheManager _cacheManager = DefaultCacheManager();
-  final String _appName = 'Holodex Notifier'; // {{ App name for actions }}
 
   // Stream controller for tap events (to signal ಮುಖ್ಯ app)
   final StreamController<String?> _notificationTapController = StreamController<String?>.broadcast();
@@ -131,9 +131,6 @@ class LocalNotificationService implements INotificationService {
   // --- Constructor ---
   LocalNotificationService(this._logger, this._settingsService);
 
-  // {{ Add notificationTapStream getter override if needed, though not in interface scope }}
-  // @override - Not part of the interface itself, so no override needed here.
-  @override
   Stream<String?> get notificationTapStream => _notificationTapController.stream;
 
   // State
@@ -352,10 +349,6 @@ class LocalNotificationService implements INotificationService {
       final config = _formatConfig;
       // Find the specific format for this event type
       final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
-      if (format == null) { // Should not happen with fallback, but good check
-          _logger.error("[ShowNotification] No format found for event type ${instruction.eventType}. Aborting show.");
-          return null;
-      }
       _logger.trace("[ShowNotification] Using format config: ${format.toJson()}");
 
       // {{ --- 1. Format Title & Body --- }}
@@ -471,10 +464,6 @@ class LocalNotificationService implements INotificationService {
       final config = _formatConfig;
       // Find the specific format for this event type
       final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
-        if (format == null) {
-            _logger.error("[ScheduleNotification] No format found for event type ${instruction.eventType}. Aborting schedule.");
-            return null;
-        }
         _logger.trace("[ScheduleNotification] Using format config: ${format.toJson()}");
 
       // {{ --- 1. Format Title & Body --- }}

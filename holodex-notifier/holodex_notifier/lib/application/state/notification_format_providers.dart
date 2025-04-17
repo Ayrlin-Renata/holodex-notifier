@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart'; // Import SettingsService
-import 'package:holodex_notifier/domain/interfaces/background_polling_service.dart'; // {{ Add import for IBackgroundPollingService }}
+// {{ Add import for IBackgroundPollingService }}
 import 'package:holodex_notifier/main.dart'; // For settingsServiceProvider etc.
 
 /// Provider to hold the currently selected NotificationEventType in the editor UI.

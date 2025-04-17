@@ -310,6 +310,7 @@ class NotificationFormatPage extends HookConsumerWidget {
         return 'Mention';
       case NotificationEventType.reminder:
         return 'Reminder';
+      // ignore: unreachable_switch_default
       default:
         return type.name;
     }
