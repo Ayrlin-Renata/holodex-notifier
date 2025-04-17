@@ -1,4 +1,5 @@
-// ignore_for_file: unused_result
+
+// ignore_for_file: unused_result, body_might_complete_normally_catch_error
 
 import 'dart:convert';
 import 'dart:io';
@@ -423,7 +424,6 @@ class AppController {
       }
 
       dispatchFutures.add(
-        // ignore: body_might_complete_normally_catch_error
         _notificationService.showNotification(instruction).catchError((e, s) {
           _loggingService.error("Error sending test notification type $type", e, s);
         }),

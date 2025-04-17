@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
@@ -22,10 +23,14 @@ class StringListConverter extends TypeConverter<List<String>, String> {
       if (decoded is List) {
         return List<String>.from(decoded.map((item) => item.toString()));
       }
-      print("StringListConverter WARN: Decoded DB value is not a List: $fromDb");
+      if (kDebugMode) {
+        print("StringListConverter WARN: Decoded DB value is not a List: $fromDb");
+      }
       return [];
     } catch (e) {
-      print("StringListConverter ERROR decoding from DB: $e, value: $fromDb");
+      if (kDebugMode) {
+        print("StringListConverter ERROR decoding from DB: $e, value: $fromDb");
+      }
       return [];
     }
   }
@@ -191,7 +196,9 @@ LazyDatabase openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'holodex_notifier_db.sqlite'));
-    print("Database file path: ${file.path}");
-    return NativeDatabase.createInBackground(file, logStatements: true);
+    if (kDebugMode) {
+      print("Database file path: ${file.path}");
+    }
+    return NativeDatabase.createInBackground(file, logStatements: kDebugMode);
   });
 }

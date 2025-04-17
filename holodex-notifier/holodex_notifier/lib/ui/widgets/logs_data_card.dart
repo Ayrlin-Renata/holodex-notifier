@@ -66,22 +66,23 @@ class LogsDataCard extends ConsumerWidget {
                   final result = await Share.share(logContent, subject: 'Holodex Notifier Logs');
 
                   if (result.status == ShareResultStatus.success) {
-                    print('Log content shared successfully.');
+                    loggerService.info('Log content shared successfully.');
                   } else if (result.status == ShareResultStatus.dismissed) {
-                    print('Log sharing dismissed by user.');
+                    loggerService.info('Log sharing dismissed by user.');
                   } else {
-                    print('Log sharing failed: ${result.status}');
+                    loggerService.warning('Log sharing failed: ${result.status}');
                     if (context.mounted) {
                       scaffoldMessenger.showSnackBar(SnackBar(content: Text('Failed to share log: ${result.status}')));
                     }
                   }
-                } catch (e) {
-                  print('Error sharing log content: $e');
+                } catch (e, s) {
+                  loggerService.error('Error sharing log content', e, s);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error preparing log for sharing: $e')));
                   }
                 }
               } else {
+                loggerService.error("Attempted to share logs, but logger service is not ILoggingServiceWithOutput");
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log service error: Cannot share logs.')));
               }
             },

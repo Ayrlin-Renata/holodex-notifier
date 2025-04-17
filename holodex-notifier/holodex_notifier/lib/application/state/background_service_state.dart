@@ -41,10 +41,7 @@ final backgroundServiceStatusStreamProvider = StreamProvider.autoDispose<Backgro
 
   fetchStatus();
 
-  // Fetch periodically
-  // Consider checking more frequently if needed for responsiveness in UI status updates.
-  // Current interval: 15 seconds.
-  timer = Timer.periodic(const Duration(seconds: 15), (_) => fetchStatus()); // Check more frequently?
+  timer = Timer.periodic(const Duration(seconds: 15), (_) => fetchStatus());
 
   ref.onDispose(() {
     timer?.cancel();

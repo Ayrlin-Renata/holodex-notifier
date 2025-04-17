@@ -1,3 +1,5 @@
+// ignore_for_file: unreachable_switch_default
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -278,7 +280,6 @@ class NotificationFormatPage extends HookConsumerWidget {
         return 'Mention';
       case NotificationEventType.reminder:
         return 'Reminder';
-      // ignore: unreachable_switch_default
       default:
         return type.name;
     }

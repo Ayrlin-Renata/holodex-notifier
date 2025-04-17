@@ -660,11 +660,12 @@ class NotificationDecisionService implements INotificationDecisionService {
             );
             _logger.debug("[DecisionService] ($channelId/${video.videoId}) Clearing pending flag due to disabled clips.");
           }
-          if (video.scheduledLiveNotificationId != null)
+          if (video.scheduledLiveNotificationId != null) {
             actions.add(
               NotificationAction.cancel(notificationId: video.scheduledLiveNotificationId!, videoId: video.videoId, type: NotificationEventType.live),
             );
-          if (video.scheduledReminderNotificationId != null)
+          }
+          if (video.scheduledReminderNotificationId != null) {
             actions.add(
               NotificationAction.cancel(
                 notificationId: video.scheduledReminderNotificationId!,
@@ -672,6 +673,7 @@ class NotificationDecisionService implements INotificationDecisionService {
                 type: NotificationEventType.reminder,
               ),
             );
+          }
         }
       } else if (settingKey == 'notifyNewMedia') {
         _logger.debug("[DecisionService] ($channelId) Disabling notifyNewMedia. Checking for pending videos to clear flag...");

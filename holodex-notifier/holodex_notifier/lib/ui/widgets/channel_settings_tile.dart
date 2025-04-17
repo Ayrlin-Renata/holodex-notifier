@@ -112,10 +112,12 @@ class ChannelSettingsTile extends ConsumerWidget {
                           child: const Text('Remove', style: TextStyle(color: Colors.red)),
                           onPressed: () async {
                             await appController.removeChannel(channelSetting.channelId);
-                            Navigator.of(ctx).pop();
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text('Removed ${channelSetting.name}'), duration: Duration(seconds: 2)));
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text('Removed ${channelSetting.name}'), duration: Duration(seconds: 2)));
+                            }
                           },
                         ),
                       ],

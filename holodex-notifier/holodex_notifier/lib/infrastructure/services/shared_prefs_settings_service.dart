@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,20 +24,19 @@ const String _keyNotificationFormatConfig = 'settings_notificationFormatConfig';
 class SharedPrefsSettingsService implements ISettingsService {
   late final SharedPreferences _prefs;
   final ISecureStorageService _secureStorageService;
+  final ILoggingService _logger;
 
   static const Duration _defaultPollFrequency = Duration(minutes: 10);
   static const bool _defaultNotificationGrouping = false;
   static const bool _defaultDelayNewMedia = false;
   static const Duration _defaultReminderLeadTime = Duration.zero;
 
-  SharedPrefsSettingsService(this._secureStorageService);
+  SharedPrefsSettingsService(this._secureStorageService, this._logger);
 
   @override
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
-    if (kDebugMode) {
-      print("[SharedPrefsSettingsService] Instance initialized.");
-    }
+    _logger.debug("[SharedPrefsSettingsService] Instance initialized.");
   }
 
   Future<void> _ensureFreshPrefs() async {
@@ -126,8 +126,8 @@ class SharedPrefsSettingsService implements ISettingsService {
       try {
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         settings.add(ChannelSubscriptionSetting.fromJson(jsonMap));
-      } catch (e) {
-        print('Error decoding channel subscription setting: $e. Skipping invalid entry: $jsonString');
+      } catch (e, s) {
+        _logger.error('Error decoding channel subscription setting. Skipping invalid entry: $jsonString', e, s);
       }
     }
     return settings;
@@ -140,8 +140,8 @@ class SharedPrefsSettingsService implements ISettingsService {
             .map((setting) {
               try {
                 return jsonEncode(setting.toJson());
-              } catch (e) {
-                print('Error encoding channel subscription setting: $e for channel ${setting.channelId}');
+              } catch (e, s) {
+                _logger.error('Error encoding channel subscription setting for channel ${setting.channelId}', e, s);
                 return null;
               }
             })
@@ -179,7 +179,7 @@ class SharedPrefsSettingsService implements ISettingsService {
         }
       }
     } else {
-      print("[SharedPrefsSettingsService] WARNING: Attempted to update avatar for non-subscribed channel ID: $channelId");
+      _logger.warning("[SharedPrefsSettingsService] Attempted to update avatar for non-subscribed channel ID: $channelId");
     }
   }
 
@@ -235,7 +235,7 @@ class SharedPrefsSettingsService implements ISettingsService {
 
   @override
   Future<bool> importConfiguration(AppConfig config) async {
-    print("[SharedPrefsSettingsService] Importing configuration version ${config.version}...");
+    _logger.info("[SharedPrefsSettingsService] Importing configuration version ${config.version}...");
     try {
       await setPollFrequency(Duration(minutes: config.pollFrequencyMinutes));
       await setNotificationGrouping(config.notificationGrouping);
@@ -244,10 +244,10 @@ class SharedPrefsSettingsService implements ISettingsService {
 
       await saveChannelSubscriptions(config.channelSubscriptions);
 
-      print("[SharedPrefsSettingsService] Config import successful.");
+      _logger.info("[SharedPrefsSettingsService] Config import successful.");
       return true;
-    } catch (e) {
-      print("[SharedPrefsSettingsService] Config Import Error during apply: $e");
+    } catch (e, s) {
+      _logger.error("[SharedPrefsSettingsService] Config Import Error during apply", e, s);
       return false;
     }
   }
@@ -260,8 +260,8 @@ class SharedPrefsSettingsService implements ISettingsService {
       try {
         final jsonMap = jsonDecode(jsonString);
         return NotificationFormatConfig.fromJson(jsonMap);
-      } catch (e) {
-        print("Error decoding NotificationFormatConfig JSON: $e. Returning default.");
+      } catch (e, s) {
+        _logger.warning("Error decoding NotificationFormatConfig JSON. Returning default.", e, s);
       }
     }
     return NotificationFormatConfig.defaultConfig();
@@ -272,8 +272,8 @@ class SharedPrefsSettingsService implements ISettingsService {
     try {
       final jsonString = jsonEncode(config.toJson());
       await _prefs.setString(_keyNotificationFormatConfig, jsonString);
-    } catch (e) {
-      print("Error encoding NotificationFormatConfig JSON: $e");
+    } catch (e, s) {
+      _logger.error("Error encoding NotificationFormatConfig JSON", e, s);
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:synchronized/synchronized.dart';
@@ -68,7 +69,9 @@ class RotatingFileWriter {
   }
 
   Future<void> _rotateLogs() async {
-    print("[RotatingFileWriter] Rotating logs...");
+    if (kDebugMode) {
+      print("[RotatingFileWriter] Rotating logs...");
+    }
     await _currentSink?.close();
     _currentSink = null;
     _currentLogFile = null;
@@ -84,7 +87,9 @@ class RotatingFileWriter {
     if (await currentFileBeforeRotation.exists()) {
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
       await currentFileBeforeRotation.rename(p.join(dir, '$baseFilename-$timestamp.log'));
-      print("[RotatingFileWriter] Renamed previous log file.");
+      if (kDebugMode) {
+        print("[RotatingFileWriter] Renamed previous log file.");
+      }
     }
 
     if (files.length >= maxFilesToKeep) {
@@ -93,9 +98,13 @@ class RotatingFileWriter {
         if (file is File) {
           try {
             await file.delete();
-            print("[RotatingFileWriter] Deleted old log file: ${file.path}");
+            if (kDebugMode) {
+              print("[RotatingFileWriter] Deleted old log file: ${file.path}");
+            }
           } catch (e) {
-            print("[RotatingFileWriter] Error deleting old log file ${file.path}: $e");
+            if (kDebugMode) {
+              print("[RotatingFileWriter] Error deleting old log file ${file.path}: $e");
+            }
           }
         }
       }
@@ -106,37 +115,51 @@ class RotatingFileWriter {
     await _lock.synchronized(() async {
       await _currentSink?.close();
       _currentSink = null;
-      print("[RotatingFileWriter] Sink closed.");
+      if (kDebugMode) {
+        print("[RotatingFileWriter] Sink closed.");
+      }
     });
   }
 
   Future<String?> getMostRecentLogFileContent({int? maxBytes}) async {
     final file = await _getLogFile();
-    print("[RotatingFileWriter] Reading content from: ${file.path}${maxBytes != null ? ' (max: $maxBytes bytes)' : ''}");
+    if (kDebugMode) {
+      print("[RotatingFileWriter] Reading content from: ${file.path}${maxBytes != null ? ' (max: $maxBytes bytes)' : ''}");
+    }
 
     if (await file.exists()) {
       try {
         final fileLength = await file.length();
 
         if (fileLength == 0) {
-          print("[RotatingFileWriter] Log file is empty.");
+          if (kDebugMode) {
+            print("[RotatingFileWriter] Log file is empty.");
+          }
           return "";
         }
 
         if (maxBytes != null && fileLength > maxBytes) {
-          print("[RotatingFileWriter] Log file size ($fileLength) exceeds maxBytes ($maxBytes). Reading tail.");
+          if (kDebugMode) {
+            print("[RotatingFileWriter] Log file size ($fileLength) exceeds maxBytes ($maxBytes). Reading tail.");
+          }
           final stream = file.openRead(fileLength - maxBytes, fileLength);
           return await utf8.decodeStream(stream.cast<List<int>>());
         } else {
-          print("[RotatingFileWriter] Reading full file ($fileLength bytes).");
+          if (kDebugMode) {
+            print("[RotatingFileWriter] Reading full file ($fileLength bytes).");
+          }
           return await file.readAsString();
         }
       } catch (e) {
-        print("[RotatingFileWriter] Error reading ${maxBytes != null ? 'tail of' : ''} log file content: $e");
+        if (kDebugMode) {
+          print("[RotatingFileWriter] Error reading ${maxBytes != null ? 'tail of' : ''} log file content: $e");
+        }
         return null;
       }
     } else {
-      print("[RotatingFileWriter] Log file does not exist: ${file.path}");
+      if (kDebugMode) {
+        print("[RotatingFileWriter] Log file does not exist: ${file.path}");
+      }
       return null;
     }
   }

@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -41,7 +43,8 @@ final loggingServiceProvider = Provider<ILoggingService>((ref) {
 });
 
 final secureStorageServiceProvider = Provider<ISecureStorageService>((ref) {
-  return FlutterSecureStorageService();
+  final log = ref.watch(loggingServiceProvider);
+  return FlutterSecureStorageService(log);
 });
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -59,7 +62,8 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final cacheServiceProvider = Provider<ICacheService>((ref) {
   final db = ref.watch(databaseProvider);
-  return DriftCacheService(db);
+  final log = ref.watch(loggingServiceProvider);
+  return DriftCacheService(db, log);
 });
 
 final connectivityServiceProvider = Provider<IConnectivityService>((ref) {
@@ -79,13 +83,14 @@ final dioProvider = Provider<Dio>((ref) {
 
 final apiServiceProvider = Provider<IApiService>((ref) {
   final dio = ref.watch(dioProvider);
-  return HolodexApiService(dio);
+  final log = ref.watch(loggingServiceProvider);
+  return HolodexApiService(dio, log);
 });
 
 final settingsServiceFutureProvider = FutureProvider<ISettingsService>((ref) async {
   final log = ref.watch(loggingServiceProvider);
   final secureStorage = ref.watch(secureStorageServiceProvider);
-  final service = SharedPrefsSettingsService(secureStorage);
+  final service = SharedPrefsSettingsService(secureStorage, log);
   log.info("Initializing Settings Service...");
   await service.initialize();
   log.info("Settings Service initialized.");
@@ -120,7 +125,7 @@ final notificationServiceFutureProvider = FutureProvider<INotificationService>((
 
 final backgroundServiceFutureProvider = FutureProvider<IBackgroundPollingService>((ref) async {
   final log = ref.watch(loggingServiceProvider);
-  final service = BackgroundPollerService();
+  final service = BackgroundPollerService(log);
   log.info("Initializing Background Service...");
   await service.initialize();
   log.info("Background Service initialized (Setup).");
@@ -170,7 +175,6 @@ Future<void> main() async {
   final container = ProviderContainer();
   ILoggingService? logger;
   ISettingsService? settingsService;
-  // ignore: unused_local_variable
   INotificationService? notificationService;
 
   Future<String> getSystemInfo() async {

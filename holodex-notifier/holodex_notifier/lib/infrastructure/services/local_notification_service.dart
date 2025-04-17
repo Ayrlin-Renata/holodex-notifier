@@ -1,6 +1,9 @@
+// ignore_for_file: unused_local_variable, unreachable_switch_default
+
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
@@ -18,22 +21,27 @@ import 'package:timezone/timezone.dart' as tz;
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
-  print(
-    'Background Notification Tapped: ID=${notificationResponse.id}, ActionID=${notificationResponse.actionId}, Payload=${notificationResponse.payload}',
-  );
+  if (kDebugMode) {
+    print(
+      'Background Notification Tapped: ID=${notificationResponse.id}, ActionID=${notificationResponse.actionId}, Payload=${notificationResponse.payload}',
+    );
+  }
   _handleTap(payload: notificationResponse.payload, actionId: notificationResponse.actionId, isBackground: true);
 }
 
 Future<void> _handleTap({required String? payload, required String? actionId, required bool isBackground}) async {
-  print("Handling Tap: Payload=$payload, ActionID=$actionId, Background=$isBackground");
+  if (kDebugMode) {
+    print("Handling Tap: Payload=$payload, ActionID=$actionId, Background=$isBackground");
+  }
   if (payload == null || payload.isEmpty) {
-    print("Tap Handler: No payload (videoId expected), ignoring.");
+    if (kDebugMode) {
+      print("Tap Handler: No payload (videoId expected), ignoring.");
+    }
     return;
   }
 
   final String videoId = payload;
   String? urlToLaunch;
-  // ignore: unused_local_variable
   bool openApp = false;
 
   if (actionId == LocalNotificationService.actionOpenYoutube) {
@@ -42,12 +50,18 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   } else if (actionId == LocalNotificationService.actionOpenSource) {
     urlToLaunch = 'https://holodex.net/watch/$videoId';
-    print("Tap Handler WARNING: action_open_source tapped. Source link not directly available in payload. Falling back to Holodex page: $videoId");
+    if (kDebugMode) {
+      print("Tap Handler WARNING: action_open_source tapped. Source link not directly available in payload. Falling back to Holodex page: $videoId");
+    }
   } else if (actionId == LocalNotificationService.actionOpenApp) {
     openApp = true;
-    print("Tap Handler: App open action requested for video $videoId.");
+    if (kDebugMode) {
+      print("Tap Handler: App open action requested for video $videoId.");
+    }
   } else {
-    print("Tap Handler: Main notification tap. Defaulting to Holodex.");
+    if (kDebugMode) {
+      print("Tap Handler: Main notification tap. Defaulting to Holodex.");
+    }
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   }
 
@@ -57,18 +71,27 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
       try {
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
-          print("Launched URL: $uri");
+          if (kDebugMode) {
+            print("Launched URL: $uri");
+          }
         } else {
-          print('Could not launch URI: $uri');
+          if (kDebugMode) {
+            print('Could not launch URI: $uri');
+          }
         }
       } catch (e) {
-        print('Error launching URL $uri: $e');
+        if (kDebugMode) {
+          print('Error launching URL $uri: $e');
+        }
       }
     } else {
-      print('Failed to parse URI: $urlToLaunch');
+      if (kDebugMode) {
+        print('Failed to parse URI: $urlToLaunch');
+      }
     }
   }
 }
+
 
 class LocalNotificationService implements INotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -557,7 +580,6 @@ class LocalNotificationService implements INotificationService {
       case NotificationEventType.reminder:
         _logger.warning("_getChannelIdForInstruction: Unexpected immediate REMINDER event -> defaultChannelId (fallback)");
         return defaultChannelId;
-      // ignore: unreachable_switch_default
       default:
         _logger.warning("Unknown event type in _getChannelIdForInstruction: ${instruction.eventType} -> defaultChannelId (fallback)");
         return defaultChannelId;
@@ -575,7 +597,6 @@ class LocalNotificationService implements INotificationService {
       case NotificationEventType.newMedia:
       case NotificationEventType.update:
       case NotificationEventType.mention:
-      // ignore: unreachable_switch_default
       default:
         _logger.warning("Attempting to SCHEDULE unexpected notification type: ${instruction.eventType}. Using default channel.");
         return defaultChannelId;

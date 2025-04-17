@@ -26,15 +26,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 
 class BackgroundPollerService implements IBackgroundPollingService {
+  final ILoggingService _logger;
   final _service = FlutterBackgroundService();
   static const String backgroundChannelId = 'holodex_notifier_background_service';
 
+  BackgroundPollerService(this._logger);
+
   @override
   Future<void> initialize() async {
-    print('[BG Poller Service] Initializing...');
+    _logger.info('[BG Poller Service] Initializing...');
 
     if (Platform.isAndroid) {
-      print('[BG Poller Service] Creating notification channel: $backgroundChannelId');
+      _logger.info('[BG Poller Service] Creating notification channel: $backgroundChannelId');
       try {
         final flp = FlutterLocalNotificationsPlugin();
         await flp.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(
@@ -47,9 +50,9 @@ class BackgroundPollerService implements IBackgroundPollingService {
             showBadge: false,
           ),
         );
-        print('[BG Poller Service] Notification channel $backgroundChannelId created/ensured.');
+        _logger.info('[BG Poller Service] Notification channel $backgroundChannelId created/ensured.');
       } catch (e, s) {
-        print('[BG Poller Service] ERROR creating notification channel $backgroundChannelId: $e\n$s');
+        _logger.error('[BG Poller Service] ERROR creating notification channel $backgroundChannelId', e, s);
       }
     }
 
@@ -68,28 +71,28 @@ class BackgroundPollerService implements IBackgroundPollingService {
       iosConfiguration: IosConfiguration(autoStart: true, onForeground: onStart),
     );
 
-    print('[BG Poller Service] Configuration complete.');
+    _logger.info('[BG Poller Service] Configuration complete.');
   }
 
   @override
   Future<void> startPolling() async {
     final isRunning = await _service.isRunning();
     if (!isRunning) {
-      print('[BG Poller Service] Attempting to start background service via startService()...');
+      _logger.info('[BG Poller Service] Attempting to start background service via startService()...');
       try {
         await _service.startService();
-        print('[BG Poller Service] startService() called successfully.');
+        _logger.info('[BG Poller Service] startService() called successfully.');
       } catch (e, s) {
-        print('[BG Poller Service] ERROR calling startService(): $e\n$s');
+        _logger.error('[BG Poller Service] ERROR calling startService()', e, s);
       }
     } else {
-      print('[BG Poller Service] Service is already running.');
+      _logger.info('[BG Poller Service] Service is already running.');
     }
   }
 
   @override
   Future<void> stopPolling() async {
-    print('[BG Poller Service] Stopping service...');
+    _logger.info('[BG Poller Service] Stopping service...');
     _service.invoke("stopService");
   }
 
@@ -105,7 +108,7 @@ class BackgroundPollerService implements IBackgroundPollingService {
 
   @override
   void notifySettingChanged(String key, dynamic value) {
-    print('[BG Poller Service Invoke] Notifying background: Setting changed - Key=$key');
+    _logger.debug('[BG Poller Service Invoke] Notifying background: Setting changed - Key=$key');
     _service.invoke('updateSetting', {'key': key, 'value': value});
   }
 }

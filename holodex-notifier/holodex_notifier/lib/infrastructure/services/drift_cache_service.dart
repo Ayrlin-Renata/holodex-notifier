@@ -1,9 +1,12 @@
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
+import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 
 class DriftCacheService implements ICacheService {
   final AppDatabase _db;
-  DriftCacheService(this._db);
+  final ILoggingService _logger;
+
+  DriftCacheService(this._db, this._logger);
 
   @override
   Future<CachedVideo?> getVideo(String videoId) => _db.getVideo(videoId);
@@ -30,7 +33,7 @@ class DriftCacheService implements ICacheService {
     final countPast = await _db.prunePastVideos();
     final countOld = await _db.pruneOldVideos(cutoff);
 
-    print("[DriftCacheService] Pruned $countPast 'past' videos and $countOld videos older than $cutoff.");
+    _logger.info("[DriftCacheService] Pruned $countPast 'past' videos and $countOld videos older than $cutoff.");
     return countPast + countOld;
   }
 

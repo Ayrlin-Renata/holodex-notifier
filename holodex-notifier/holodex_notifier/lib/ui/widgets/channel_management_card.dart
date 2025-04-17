@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/main.dart';
+import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/ui/widgets/channel_settings_tile.dart';
 
 class ChannelManagementCard extends HookConsumerWidget {
@@ -145,11 +146,13 @@ class ChannelManagementCard extends HookConsumerWidget {
           },
           error: (error, stackTrace) {
             String errorMessage;
+            final ILoggingService logger = ref.read(loggingServiceProvider);
+
             if (error is ApiKeyRequiredException) {
               errorMessage = error.message;
             } else {
               errorMessage = 'Search failed. Please try again.';
-              print("Channel Search Error: $error\n$stackTrace");
+              logger.error("Channel Search Error", error, stackTrace);
             }
             return Padding(
               padding: const EdgeInsets.all(8.0),

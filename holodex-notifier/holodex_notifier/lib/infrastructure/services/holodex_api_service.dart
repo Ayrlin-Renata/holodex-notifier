@@ -1,12 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:holodex_notifier/domain/interfaces/api_service.dart';
+import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/channel.dart';
 import 'package:holodex_notifier/domain/models/video_full.dart';
 
 class HolodexApiService implements IApiService {
   final Dio _dio;
+  final ILoggingService _logger;
 
-  HolodexApiService(this._dio /*, {ILoggingService? logger} */) /* : _logger = logger */;
+  HolodexApiService(this._dio, this._logger);
 
   @override
   Future<List<VideoFull>> fetchVideos({
@@ -15,7 +17,7 @@ class HolodexApiService implements IApiService {
     required DateTime from,
     int limit = 50,
   }) async {
-    print('[API Service] Fetching videos for channels: ${channelIds.length}, mentions: ${mentionChannelIds.length} since ${from.toIso8601String()}');
+    _logger.info('[API Service] Fetching videos for channels: ${channelIds.length}, mentions: ${mentionChannelIds.length} since ${from.toIso8601String()}');
 
     final List<Map<String, dynamic>> allVideos = [];
     final Set<String> processedChannelIds = {};
@@ -42,13 +44,13 @@ class HolodexApiService implements IApiService {
         if (response.statusCode == 200 && response.data is List) {
           allVideos.addAll(List<Map<String, dynamic>>.from(response.data));
         } else {
-          print('[API Service] WARN: Received status ${response.statusCode} or invalid data for channel $id');
+          _logger.warning('[API Service] WARN: Received status ${response.statusCode} or invalid data for channel $id');
         }
         processedChannelIds.add(id);
-      } on DioException catch (e) {
-        print('[API Service] ERROR fetching videos for channel $id: ${e.message}');
-      } catch (e) {
-        print('[API Service] UNEXPECTED ERROR fetching videos for channel $id: $e');
+      } on DioException catch (e, s) {
+        _logger.error('[API Service] ERROR fetching videos for channel $id: ${e.message}', e, s);
+      } catch (e, s) {
+        _logger.error('[API Service] UNEXPECTED ERROR fetching videos for channel $id', e, s);
       }
     }
 
@@ -71,13 +73,13 @@ class HolodexApiService implements IApiService {
         if (response.statusCode == 200 && response.data is List) {
           allVideos.addAll(List<Map<String, dynamic>>.from(response.data));
         } else {
-          print('[API Service] WARN: Received status ${response.statusCode} or invalid data for mention $id');
+          _logger.warning('[API Service] WARN: Received status ${response.statusCode} or invalid data for mention $id');
         }
         processedMentionIds.add(id);
-      } on DioException catch (e) {
-        print('[API Service] ERROR fetching mentions for channel $id: ${e.message}');
-      } catch (e) {
-        print('[API Service] UNEXPECTED ERROR fetching mentions for channel $id: $e');
+      } on DioException catch (e, s) {
+        _logger.error('[API Service] ERROR fetching mentions for channel $id: ${e.message}', e, s);
+      } catch (e, s) {
+        _logger.error('[API Service] UNEXPECTED ERROR fetching mentions for channel $id', e, s);
       }
     }
 
@@ -91,7 +93,7 @@ class HolodexApiService implements IApiService {
       }
     }
 
-    print('[API Service] Fetched ${allVideos.length} videos raw, ${distinctVideos.length} distinct videos.');
+    _logger.debug('[API Service] Fetched ${allVideos.length} videos raw, ${distinctVideos.length} distinct videos.');
 
     final List<VideoFull> parsedVideos =
         distinctVideos
@@ -99,19 +101,19 @@ class HolodexApiService implements IApiService {
               try {
                 return VideoFull.fromJson(jsonData);
               } catch (e, s) {
-                print('Failed to parse VideoFull: $e\n$s\nData: $jsonData');
+                _logger.error('[API Service] Failed to parse VideoFull: $e\nData: $jsonData', e, s);
                 return null;
               }
             })
             .whereType<VideoFull>()
             .toList();
-    print('[API Service] Parsed ${parsedVideos.length} VideoFull objects.');
+    _logger.info('[API Service] Parsed ${parsedVideos.length} VideoFull objects.');
     return parsedVideos;
   }
 
   @override
   Future<List<Channel>> searchChannels(String query) async {
-    print('[API Service] Searching channels for "$query" using autocomplete...');
+    _logger.info('[API Service] Searching channels for "$query" using autocomplete...');
     if (query.isEmpty || query.length < 3) return [];
 
     try {
@@ -149,21 +151,21 @@ class HolodexApiService implements IApiService {
                 ),
               );
             } else {
-              print('[API Service] WARN: Autocomplete item missing ID or Text: $item');
+              _logger.warning('[API Service] WARN: Autocomplete item missing ID or Text: $item');
             }
           }
         }
-        print('[API Service] Found ${parsedChannels.length} channels via autocomplete.');
+        _logger.info('[API Service] Found ${parsedChannels.length} channels via autocomplete.');
         return parsedChannels;
       } else {
-        print('[API Service] WARN: Received status ${response.statusCode} or invalid data for autocomplete "$query"');
+        _logger.warning('[API Service] WARN: Received status ${response.statusCode} or invalid data for autocomplete "$query"');
         return [];
       }
-    } on DioException catch (e) {
-      print('[API Service] ERROR searching autocomplete "$query": ${e.message}');
+    } on DioException catch (e, s) {
+      _logger.error('[API Service] ERROR searching autocomplete "$query": ${e.message}', e, s);
       return [];
-    } catch (e) {
-      print('[API Service] UNEXPECTED ERROR searching autocomplete "$query": $e');
+    } catch (e, s) {
+      _logger.error('[API Service] UNEXPECTED ERROR searching autocomplete "$query"', e, s);
       return [];
     }
   }
