@@ -30,7 +30,7 @@ class SharedPrefsSettingsService implements ISettingsService {
 
   // Defaults
   static const Duration _defaultPollFrequency = Duration(minutes: 10);
-  static const bool _defaultNotificationGrouping = true;
+  static const bool _defaultNotificationGrouping = false;
   static const bool _defaultDelayNewMedia = false;
   static const Duration _defaultReminderLeadTime = Duration.zero;
 

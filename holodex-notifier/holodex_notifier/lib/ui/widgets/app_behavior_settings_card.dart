@@ -143,22 +143,23 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
       children: [
         // --- Notification Grouping ---
         SwitchListTile(
-          title: const Text('Group Notifications'),
-          subtitle: const Text('Combine notifications for the same video'),
+          title: const Text('Group Collab Notifs'),
+          subtitle: const Text('Combine notifications for collabs'),
           value: groupNotifications,
-          onChanged: (bool value) {
-            // Use AppController to update the setting
-            logger.info("[AppBehaviorSettingsCard] Grouping onChanged triggered with value: $value");
-            ref.read(notificationGroupingProvider.notifier).update((_) => value);
-            appController.updateGlobalSetting('notificationGrouping', value);
-          },
+          onChanged: null,
+          // onChanged: (bool value) {
+          //   // Use AppController to update the setting
+          //   logger.info("[AppBehaviorSettingsCard] Grouping onChanged triggered with value: $value");
+          //   ref.read(notificationGroupingProvider.notifier).update((_) => value);
+          //   appController.updateGlobalSetting('notificationGrouping', value);
+          // },
           secondary: const Icon(Icons.group_work_outlined),
         ),
 
         // --- Delay New Media ---
         SwitchListTile(
-          title: const Text('Delay New Media'),
-          subtitle: const Text('Wait until scheduled time for new media notifications (if possible)'),
+          title: const Text('Delay New Media Notifs'),
+          subtitle: const Text('Wait until we know the release/stream time.'),
           value: delayNewMedia,
           onChanged: (bool value) {
             logger.info("[AppBehaviorSettingsCard] Delay onChanged triggered with value: $value");
