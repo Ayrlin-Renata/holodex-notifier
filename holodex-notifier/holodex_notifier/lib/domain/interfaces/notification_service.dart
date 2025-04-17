@@ -2,22 +2,29 @@
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 
 abstract class INotificationService {
+  /// Initializes the notification service (e.g., requesting permissions).
   Future<void> initialize();
 
-  /// Shows an immediate notification based on the instruction.
-  Future<void> showNotification(NotificationInstruction instruction);
+  /// Sends a notification immediately based on the provided instruction.
+  /// Returns the platform-specific notification ID if successful, null otherwise.
+  Future<int?> showNotification(NotificationInstruction instruction);
 
-  /// Schedules a future notification.
-  /// Formatting (title/body) happens inside the implementation based on the instruction.
-  /// Returns the platform notification ID if successful, null otherwise.
+  /// Schedules a notification to be shown at a specific time.
+  /// Returns the platform-specific notification ID if successful, null otherwise.
   Future<int?> scheduleNotification({
-    required NotificationInstruction instruction, // Use the instruction model
-    required DateTime scheduledTime, // Specific time to show the notification
+    required NotificationInstruction instruction,
+    required DateTime scheduledTime,
   });
 
-  Future<void> cancelScheduledNotification(int notificationId);
+  /// Cancels a previously sent or scheduled notification by its ID.
+  /// This covers both immediate and scheduled notifications.
+  Future<void> cancelNotification(int notificationId);
+
+  /// Cancels all notifications previously sent or scheduled by this app.
   Future<void> cancelAllNotifications();
 
-  // Stream to listen for notification tap events (payload can be videoId)
-  Stream<String?> get notificationTapStream;
+  /// Reloads the notification format configuration from the settings.
+  /// This is typically called when the format is updated in the UI
+  /// to ensure the background service uses the latest settings without restarting.
+  Future<void> reloadFormatConfig();
 }

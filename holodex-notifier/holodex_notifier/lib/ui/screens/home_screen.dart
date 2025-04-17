@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/ui/pages/scheduled_page.dart';
 import 'package:holodex_notifier/ui/pages/channels_page.dart';
 import 'package:holodex_notifier/ui/pages/settings_page.dart';
+import 'package:holodex_notifier/ui/pages/notification_format_page.dart';
 
 // Main screen containing the BottomNavigationBar and page routing
 class HomeScreen extends HookConsumerWidget {
@@ -20,13 +21,14 @@ class HomeScreen extends HookConsumerWidget {
 
     // List of the page widgets
     final List<Widget> pages = [
-      ScheduledPage(pageController: pageController,), // Index 0
+      ScheduledPage(pageController: pageController), // Index 0
       const ChannelsPage(), // Index 1
       const SettingsPage(), // Index 2
+      const NotificationFormatPage(), // Index 3 - New Page
     ];
 
     // List of page titles for the AppBar
-    final List<String> pageTitles = ['Notification Schedule', 'Channel Management', 'Application Settings'];
+    final List<String> pageTitles = ['Notification Schedule', 'Channel Management', 'Application Settings', 'Notification Formatting'];
 
     useEffect(() {
       void listener() {
@@ -49,31 +51,24 @@ class HomeScreen extends HookConsumerWidget {
       // Display the widget corresponding to the current selectedIndex
       body: PageView(
         controller: pageController,
-        children: [
-          ScheduledPage(pageController: pageController), // Index 0
-          const ChannelsPage(), // Index 1
-          const SettingsPage(), // Index 2
-        ],
+        children: pages,
         onPageChanged: (index) {
-          // This updates the selectedIndex state when swiped
           selectedIndex.value = index;
         },
       ),
       // Define the bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
+        // Make icons smaller when there are more items
+        iconSize: 20,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
+        type: BottomNavigationBarType.fixed, // Ensure all labels are visible
         // Items in the navigation bar
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_active_outlined),
-            activeIcon: Icon(Icons.notifications_active), // Optional active icon
-            label: 'Scheduled',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined), // Using list_alt for channels
-            activeIcon: Icon(Icons.list_alt),
-            label: 'Channels',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_active_outlined), activeIcon: Icon(Icons.notifications_active), label: 'Scheduled'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt_outlined), activeIcon: Icon(Icons.list_alt), label: 'Channels'),
           BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(icon: Icon(Icons.edit_note_outlined), activeIcon: Icon(Icons.edit_note), label: 'Formats'),
         ],
         // The currently selected item index
         currentIndex: selectedIndex.value,

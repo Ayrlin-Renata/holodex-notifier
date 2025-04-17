@@ -35,13 +35,7 @@ class AppController {
   final INotificationActionHandler _actionHandler;
 
   // Updated constructor
-  AppController(
-    this._ref,
-    this._settingsService,
-    this._loggingService,
-    this._cacheService,
-    this._notificationService,
-    this._decisionService,
+  AppController(this._ref, this._settingsService, this._loggingService, this._cacheService, this._notificationService, this._decisionService,
     this._actionHandler,
   );
 

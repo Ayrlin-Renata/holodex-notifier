@@ -3,6 +3,6 @@ abstract class IBackgroundPollingService {
   Future<void> startPolling();
   Future<void> stopPolling();
   Future<bool> isRunning();
-  // TODO: Add method to update poll frequency dynamically if needed
-  // Future<void> updatePollFrequency(Duration frequency);
+  Future<void> triggerPoll();
+  notifySettingChanged(String key, dynamic value);
 }

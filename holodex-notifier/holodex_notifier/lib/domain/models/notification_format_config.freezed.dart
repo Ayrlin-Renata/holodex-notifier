@@ -22,6 +22,10 @@ NotificationFormat _$NotificationFormatFromJson(Map<String, dynamic> json) {
 mixin _$NotificationFormat {
   String get titleTemplate => throw _privateConstructorUsedError;
   String get bodyTemplate => throw _privateConstructorUsedError;
+  bool get showThumbnail => throw _privateConstructorUsedError;
+  bool get showYoutubeLink => throw _privateConstructorUsedError;
+  bool get showHolodexLink => throw _privateConstructorUsedError;
+  bool get showSourceLink => throw _privateConstructorUsedError;
 
   /// Serializes this NotificationFormat to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -39,7 +43,13 @@ abstract class $NotificationFormatCopyWith<$Res> {
           NotificationFormat value, $Res Function(NotificationFormat) then) =
       _$NotificationFormatCopyWithImpl<$Res, NotificationFormat>;
   @useResult
-  $Res call({String titleTemplate, String bodyTemplate});
+  $Res call(
+      {String titleTemplate,
+      String bodyTemplate,
+      bool showThumbnail,
+      bool showYoutubeLink,
+      bool showHolodexLink,
+      bool showSourceLink});
 }
 
 /// @nodoc
@@ -59,6 +69,10 @@ class _$NotificationFormatCopyWithImpl<$Res, $Val extends NotificationFormat>
   $Res call({
     Object? titleTemplate = null,
     Object? bodyTemplate = null,
+    Object? showThumbnail = null,
+    Object? showYoutubeLink = null,
+    Object? showHolodexLink = null,
+    Object? showSourceLink = null,
   }) {
     return _then(_value.copyWith(
       titleTemplate: null == titleTemplate
@@ -69,6 +83,22 @@ class _$NotificationFormatCopyWithImpl<$Res, $Val extends NotificationFormat>
           ? _value.bodyTemplate
           : bodyTemplate // ignore: cast_nullable_to_non_nullable
               as String,
+      showThumbnail: null == showThumbnail
+          ? _value.showThumbnail
+          : showThumbnail // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showYoutubeLink: null == showYoutubeLink
+          ? _value.showYoutubeLink
+          : showYoutubeLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showHolodexLink: null == showHolodexLink
+          ? _value.showHolodexLink
+          : showHolodexLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showSourceLink: null == showSourceLink
+          ? _value.showSourceLink
+          : showSourceLink // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -81,7 +111,13 @@ abstract class _$$NotificationFormatImplCopyWith<$Res>
       __$$NotificationFormatImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String titleTemplate, String bodyTemplate});
+  $Res call(
+      {String titleTemplate,
+      String bodyTemplate,
+      bool showThumbnail,
+      bool showYoutubeLink,
+      bool showHolodexLink,
+      bool showSourceLink});
 }
 
 /// @nodoc
@@ -99,6 +135,10 @@ class __$$NotificationFormatImplCopyWithImpl<$Res>
   $Res call({
     Object? titleTemplate = null,
     Object? bodyTemplate = null,
+    Object? showThumbnail = null,
+    Object? showYoutubeLink = null,
+    Object? showHolodexLink = null,
+    Object? showSourceLink = null,
   }) {
     return _then(_$NotificationFormatImpl(
       titleTemplate: null == titleTemplate
@@ -109,6 +149,22 @@ class __$$NotificationFormatImplCopyWithImpl<$Res>
           ? _value.bodyTemplate
           : bodyTemplate // ignore: cast_nullable_to_non_nullable
               as String,
+      showThumbnail: null == showThumbnail
+          ? _value.showThumbnail
+          : showThumbnail // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showYoutubeLink: null == showYoutubeLink
+          ? _value.showYoutubeLink
+          : showYoutubeLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showHolodexLink: null == showHolodexLink
+          ? _value.showHolodexLink
+          : showHolodexLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showSourceLink: null == showSourceLink
+          ? _value.showSourceLink
+          : showSourceLink // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -118,7 +174,12 @@ class __$$NotificationFormatImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$NotificationFormatImpl implements _NotificationFormat {
   const _$NotificationFormatImpl(
-      {required this.titleTemplate, required this.bodyTemplate});
+      {required this.titleTemplate,
+      required this.bodyTemplate,
+      this.showThumbnail = true,
+      this.showYoutubeLink = true,
+      this.showHolodexLink = true,
+      this.showSourceLink = true});
 
   factory _$NotificationFormatImpl.fromJson(Map<String, dynamic> json) =>
       _$$NotificationFormatImplFromJson(json);
@@ -127,10 +188,22 @@ class _$NotificationFormatImpl implements _NotificationFormat {
   final String titleTemplate;
   @override
   final String bodyTemplate;
+  @override
+  @JsonKey()
+  final bool showThumbnail;
+  @override
+  @JsonKey()
+  final bool showYoutubeLink;
+  @override
+  @JsonKey()
+  final bool showHolodexLink;
+  @override
+  @JsonKey()
+  final bool showSourceLink;
 
   @override
   String toString() {
-    return 'NotificationFormat(titleTemplate: $titleTemplate, bodyTemplate: $bodyTemplate)';
+    return 'NotificationFormat(titleTemplate: $titleTemplate, bodyTemplate: $bodyTemplate, showThumbnail: $showThumbnail, showYoutubeLink: $showYoutubeLink, showHolodexLink: $showHolodexLink, showSourceLink: $showSourceLink)';
   }
 
   @override
@@ -141,12 +214,21 @@ class _$NotificationFormatImpl implements _NotificationFormat {
             (identical(other.titleTemplate, titleTemplate) ||
                 other.titleTemplate == titleTemplate) &&
             (identical(other.bodyTemplate, bodyTemplate) ||
-                other.bodyTemplate == bodyTemplate));
+                other.bodyTemplate == bodyTemplate) &&
+            (identical(other.showThumbnail, showThumbnail) ||
+                other.showThumbnail == showThumbnail) &&
+            (identical(other.showYoutubeLink, showYoutubeLink) ||
+                other.showYoutubeLink == showYoutubeLink) &&
+            (identical(other.showHolodexLink, showHolodexLink) ||
+                other.showHolodexLink == showHolodexLink) &&
+            (identical(other.showSourceLink, showSourceLink) ||
+                other.showSourceLink == showSourceLink));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, titleTemplate, bodyTemplate);
+  int get hashCode => Object.hash(runtimeType, titleTemplate, bodyTemplate,
+      showThumbnail, showYoutubeLink, showHolodexLink, showSourceLink);
 
   /// Create a copy of NotificationFormat
   /// with the given fields replaced by the non-null parameter values.
@@ -168,7 +250,11 @@ class _$NotificationFormatImpl implements _NotificationFormat {
 abstract class _NotificationFormat implements NotificationFormat {
   const factory _NotificationFormat(
       {required final String titleTemplate,
-      required final String bodyTemplate}) = _$NotificationFormatImpl;
+      required final String bodyTemplate,
+      final bool showThumbnail,
+      final bool showYoutubeLink,
+      final bool showHolodexLink,
+      final bool showSourceLink}) = _$NotificationFormatImpl;
 
   factory _NotificationFormat.fromJson(Map<String, dynamic> json) =
       _$NotificationFormatImpl.fromJson;
@@ -177,6 +263,14 @@ abstract class _NotificationFormat implements NotificationFormat {
   String get titleTemplate;
   @override
   String get bodyTemplate;
+  @override
+  bool get showThumbnail;
+  @override
+  bool get showYoutubeLink;
+  @override
+  bool get showHolodexLink;
+  @override
+  bool get showSourceLink;
 
   /// Create a copy of NotificationFormat
   /// with the given fields replaced by the non-null parameter values.

@@ -1,17 +1,14 @@
+// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\ui\widgets\background_status_card.dart
 import 'package:flutter/material.dart';
 import 'package:holodex_notifier/application/state/background_service_state.dart';
-import 'package:holodex_notifier/application/state/channel_providers.dart';
-import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
-// Removed: import 'package:holodex_notifier/application/state/channel_providers.dart' hide backgroundLastErrorProvider; // Not needed here directly
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-// For providers backgroundServiceStatusStreamProvider, backgroundLastErrorProvider
 import 'package:holodex_notifier/application/state/settings_providers.dart'; // For pollFrequencyProvider
 import 'package:holodex_notifier/main.dart'; // For backgroundServiceProvider, loggingServiceProvider
 import 'package:intl/intl.dart'; // For date formatting
-// REMOVED: import 'package:holodex_notifier/ui/widgets/settings_card.dart';
-import 'package:flutter_background_service/flutter_background_service.dart'; // To invoke service
+// {{ Add import for IBackgroundPollingService }}
 
-// No longer needs SettingsCard parent
+// ... existing code ...
+
 class BackgroundStatusCard extends HookConsumerWidget {
   const BackgroundStatusCard({super.key});
 
@@ -21,17 +18,15 @@ class BackgroundStatusCard extends HookConsumerWidget {
     final statusAsync = ref.watch(backgroundServiceStatusStreamProvider);
     final pollFrequency = ref.watch(pollFrequencyProvider);
 
-    final backgroundService = FlutterBackgroundService(); // Get instance to invoke
     final logger = ref.watch(loggingServiceProvider); // Get logger
 
-    // REMOVED: SettingsCard(...) wrapper
-    // Return the content Column directly based on the AsyncValue state
     return statusAsync.when(
       data: (status) {
         final nextPollTime = status.lastPollTime?.add(pollFrequency);
-        final lastError = status.lastError; // Get error from status object
-        final appController = ref.watch(appControllerProvider); // {{ Get AppController }}
-        final scaffoldMessenger = ScaffoldMessenger.of(context); // {{ Get ScaffoldMessenger }}
+        final lastError = status.lastError;
+        // {{ Remove unused AppController }}
+        // final appController = ref.watch(appControllerProvider);
+        final scaffoldMessenger = ScaffoldMessenger.of(context);
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -74,12 +69,12 @@ class BackgroundStatusCard extends HookConsumerWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
-                if (lastError != null)
-                  Container(
+                if (lastError != null) // {{ Cleaned up error display logic slightly }}
+                  Container( // ... Error Container ...
                     padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(8)),
-                    child: Row(
-                      children: [
+                    child: Row( // ... Error Row ...
+                      children: [ // ... Error children ...
                         Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer, size: 18),
                         const SizedBox(width: 8),
                         Expanded(
@@ -88,15 +83,14 @@ class BackgroundStatusCard extends HookConsumerWidget {
                             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
                           ),
                         ),
-                        IconButton(
+                        IconButton( // ... Clear button ...
                           icon: Icon(Icons.clear, size: 16, color: theme.colorScheme.onErrorContainer),
                           tooltip: 'Clear Error Message',
                           visualDensity: VisualDensity.compact,
                           onPressed: () {
                             ref.read(backgroundLastErrorProvider.notifier).state = null;
-                            // Trigger a refresh of the status stream to update UI immediately
-                            // ignore: unused_result
-                            ref.refresh(backgroundServiceStatusStreamProvider);
+                            // {{ Refresh provider directly }}
+                            ref.invalidate(backgroundServiceStatusStreamProvider);
                           },
                         ),
                       ],
@@ -106,50 +100,53 @@ class BackgroundStatusCard extends HookConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Space buttons
                   children: [
-                    // Poll Now Button
+                    // Poll Now Button (Keep as TextButton)
                     TextButton.icon(
-                      // Use TextButton for less emphasis
                       icon: const Icon(Icons.sync, size: 18),
                       label: const Text('Poll Now'),
-                      onPressed:
-                          !status.isRunning
-                              ? null
-                              : () {
-                                // Existing logic
-                                logger.info("Invoking manual poll...");
-                                backgroundService.invoke('triggerPoll');
-                                scaffoldMessenger.showSnackBar(
-                                  const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)),
-                                );
-                                // ignore: unused_result
-                                ref.refresh(backgroundServiceStatusStreamProvider);
-                                Future.delayed(const Duration(seconds: 3), () {
-                                  if (context.mounted) {
-                                    logger.debug("Refreshing status/scheduled/channels after 3s delay post manual poll trigger.");
-                                    // ignore: unused_result
-                                    ref.refresh(backgroundServiceStatusStreamProvider);
-                                    ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
-                                    ref.read(channelListProvider.notifier).reloadState(); // Refresh channel list too
-                                  }
-                                });
-                              },
+                      onPressed: !status.isRunning
+                          ? null
+                          : () {
+                              logger.info("[UI] Invoking manual poll...");
+                              // {{ Use backgroundServiceProvider to invoke }}
+                              ref.read(backgroundServiceProvider).triggerPoll();
+                              scaffoldMessenger.showSnackBar(
+                                const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)),
+                              );
+                              // {{ Refresh provider directly }}
+                              ref.invalidate(backgroundServiceStatusStreamProvider);
+                              // {{ Simplified refresh logic - rely on status stream updates }}
+                              // Future.delayed(...) // Consider removing this delay/refresh block if status stream updates are reliable
+                            },
                     ),
-                    // Test Notifications Button
-                    TextButton.icon(
-                      // Use TextButton
-                      icon: const Icon(Icons.science_outlined, size: 18), // Test tube icon
-                      label: const Text('Send Tests'),
+
+                    TextButton.icon( // Use ElevatedButton for primary action
+                      icon: Icon(status.isRunning ? Icons.restart_alt : Icons.play_arrow_outlined, size: 18),
+                      label: Text(status.isRunning ? 'Restart Service' : 'Start Service'),
                       onPressed: () async {
-                        // Make async
-                        logger.info("Triggering test notifications...");
-                        // Call the AppController method
-                        await appController.sendTestNotifications();
-                        // Show feedback
-                        scaffoldMessenger.showSnackBar(
-                          const SnackBar(content: Text('Sending test notifications... Check shade.'), duration: Duration(seconds: 3)),
-                        );
+                        final service = ref.read(backgroundServiceProvider);
+                        if (status.isRunning) {
+                          logger.info("[UI] Attempting Background Service RESTART...");
+                          // No need for 'await' here if we trigger refresh immediately
+                          service.stopPolling();
+                          await Future.delayed(const Duration(milliseconds: 500)); // Short delay to ensure stop command is processed
+                          service.startPolling();
+                           scaffoldMessenger.showSnackBar(
+                            const SnackBar(content: Text('Restarting background service...'), duration: Duration(seconds: 2)),
+                          );
+                        } else {
+                           logger.info("[UI] Attempting Background Service START...");
+                           service.startPolling();
+                            scaffoldMessenger.showSnackBar(
+                            const SnackBar(content: Text('Starting background service...'), duration: Duration(seconds: 2)),
+                           );
+                        }
+                        // Refresh status after a short delay to allow service state to update
+                        await Future.delayed(const Duration(milliseconds: 1000));
+                         ref.invalidate(backgroundServiceStatusStreamProvider);
                       },
                     ),
+                    // ****** END CHANGE ******
                   ],
                 ),
               ],
@@ -157,14 +154,33 @@ class BackgroundStatusCard extends HookConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())),
-      error:
-          (error, stack) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text('Error loading background status: $error', style: TextStyle(color: theme.colorScheme.error)),
-            ),
+      // ... loading & error states ...
+       loading: () => Card( // {{ Show card structure while loading }}
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        elevation: 1,
+         shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
           ),
+        child: const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (error, stack) => Card( // {{ Show card structure on error }}
+         margin: const EdgeInsets.symmetric(vertical: 8.0),
+         elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.7)),
+          ),
+         child: Padding(
+           padding: const EdgeInsets.all(16.0),
+           child: Center(
+              child: Text('Error loading status: $error', style: TextStyle(color: theme.colorScheme.error)),
+           ),
+         ),
+      ),
     );
   }
 }

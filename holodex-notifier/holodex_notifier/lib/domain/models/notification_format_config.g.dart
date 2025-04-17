@@ -11,6 +11,10 @@ _$NotificationFormatImpl _$$NotificationFormatImplFromJson(
     _$NotificationFormatImpl(
       titleTemplate: json['titleTemplate'] as String,
       bodyTemplate: json['bodyTemplate'] as String,
+      showThumbnail: json['showThumbnail'] as bool? ?? true,
+      showYoutubeLink: json['showYoutubeLink'] as bool? ?? true,
+      showHolodexLink: json['showHolodexLink'] as bool? ?? true,
+      showSourceLink: json['showSourceLink'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$$NotificationFormatImplToJson(
@@ -18,6 +22,10 @@ Map<String, dynamic> _$$NotificationFormatImplToJson(
     <String, dynamic>{
       'titleTemplate': instance.titleTemplate,
       'bodyTemplate': instance.bodyTemplate,
+      'showThumbnail': instance.showThumbnail,
+      'showYoutubeLink': instance.showYoutubeLink,
+      'showHolodexLink': instance.showHolodexLink,
+      'showSourceLink': instance.showSourceLink,
     };
 
 _$NotificationFormatConfigImpl _$$NotificationFormatConfigImplFromJson(

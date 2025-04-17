@@ -106,6 +106,19 @@ class BackgroundPollerService implements IBackgroundPollingService {
   Future<bool> isRunning() async {
     return await _service.isRunning();
   }
+
+  @override
+  Future<void> triggerPoll() async {
+    _service.invoke("triggerPoll");
+  }
+
+  @override
+  void notifySettingChanged(String key, dynamic value) {
+    // Use a non-injectable logger or print for this simple cross-isolate trigger.
+    // The background isolate has its own logger instance.
+    print('[BG Poller Service Invoke] Notifying background: Setting changed - Key=$key');
+    _service.invoke('updateSetting', {'key': key, 'value': value});
+  }
 }
 
 // --- Background Isolate Entry Point Variables (accessible within onStart scope) ---
@@ -224,6 +237,18 @@ Future<void> onStart(ServiceInstance service) async {
     } else if (key == 'apiKey') {
       // No immediate action needed, Dio interceptor gets it on next request.
       logger.debug("BG Isolate: Received API Key update notification. No background action needed.");
+    } else if (key == 'notificationFormat') {
+      logger.info("BG Isolate: Received 'notificationFormat' update notification.");
+      try {
+        // Resolve the NotificationService within the background isolate's container
+        final notificationService = container.read(notificationServiceProvider);
+        // Call the new reload method
+        await notificationService.reloadFormatConfig();
+        logger.info("BG Isolate: Successfully instructed NotificationService to reload format config.");
+      } catch (e, s) {
+        logger.error("BG Isolate: Error reloading notification format config.", e, s);
+        // Potentially update error state or take other action if reload fails
+      }
     } else {
       logger.warning("BG Isolate: Received unhandled setting update key: $key");
     }

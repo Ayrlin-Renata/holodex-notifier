@@ -11,6 +11,10 @@ class NotificationFormat with _$NotificationFormat {
   const factory NotificationFormat({
     required String titleTemplate,
     required String bodyTemplate,
+    @Default(true) bool showThumbnail,
+    @Default(true) bool showYoutubeLink,
+    @Default(true) bool showHolodexLink,
+    @Default(true) bool showSourceLink,
   }) = _NotificationFormat;
 
   factory NotificationFormat.fromJson(Map<String, dynamic> json) => _$NotificationFormatFromJson(json);
@@ -23,10 +27,7 @@ class NotificationFormatConfig with _$NotificationFormatConfig {
   const factory NotificationFormatConfig({
     // Use a Map where the key is NotificationEventType and value is the format.
     // Need a custom converter because NotificationEventType cannot be a Map key directly in JSON.
-    @JsonKey(
-      fromJson: _notificationFormatMapFromJson,
-      toJson: _notificationFormatMapToJson,
-    )
+    @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
     required Map<NotificationEventType, NotificationFormat> formats,
     @Default(1) int version, // For future schema changes
   }) = _NotificationFormatConfig;

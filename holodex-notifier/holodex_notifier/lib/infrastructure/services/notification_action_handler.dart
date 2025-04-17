@@ -100,7 +100,7 @@ class NotificationActionHandler implements INotificationActionHandler {
 
         case CancelNotificationAction(:final notificationId, :final videoId, :final type):
           _logger.debug("ActionHandler: Cancelling notification ID $notificationId (Type: ${type?.name ?? 'Unknown'}) for video $videoId.");
-          await _notificationService.cancelScheduledNotification(notificationId);
+          await _notificationService.cancelNotification(notificationId);
           break;
 
         case DispatchNotificationAction(:final instruction):

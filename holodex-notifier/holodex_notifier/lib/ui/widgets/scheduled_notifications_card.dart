@@ -300,7 +300,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                               // ... (cancellation logic remains the same) ...
                               logger.info("Dismissed item, cancelling ID: $notificationId for video: ${videoData.videoId}");
                               try {
-                                await notificationService.cancelScheduledNotification(notificationId);
+                                await notificationService.cancelNotification(notificationId);
                                 if (item.type == NotificationEventType.reminder) {
                                   await cacheService.updateScheduledReminderNotificationId(videoData.videoId, null);
                                   await cacheService.updateScheduledReminderTime(videoData.videoId, null);
