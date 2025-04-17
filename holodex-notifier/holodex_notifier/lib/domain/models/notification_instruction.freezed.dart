@@ -1,20 +1,11 @@
-// coverage:ignore-file
-// GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint
-// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
-
 part of 'notification_instruction.dart';
-
-// **************************************************************************
-// FreezedGenerator
-// **************************************************************************
 
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
-/// @nodoc
 mixin _$NotificationInstruction {
   String get videoId => throw _privateConstructorUsedError;
   NotificationEventType get eventType => throw _privateConstructorUsedError;
@@ -29,47 +20,36 @@ mixin _$NotificationInstruction {
   String? get videoThumbnailUrl => throw _privateConstructorUsedError;
   String? get videoSourceLink => throw _privateConstructorUsedError;
 
-  /// Create a copy of NotificationInstruction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $NotificationInstructionCopyWith<NotificationInstruction> get copyWith =>
-      throw _privateConstructorUsedError;
+  $NotificationInstructionCopyWith<NotificationInstruction> get copyWith => throw _privateConstructorUsedError;
 }
 
-/// @nodoc
 abstract class $NotificationInstructionCopyWith<$Res> {
-  factory $NotificationInstructionCopyWith(NotificationInstruction value,
-          $Res Function(NotificationInstruction) then) =
+  factory $NotificationInstructionCopyWith(NotificationInstruction value, $Res Function(NotificationInstruction) then) =
       _$NotificationInstructionCopyWithImpl<$Res, NotificationInstruction>;
   @useResult
-  $Res call(
-      {String videoId,
-      NotificationEventType eventType,
-      String channelId,
-      String channelName,
-      String videoTitle,
-      String? videoType,
-      String? channelAvatarUrl,
-      DateTime availableAt,
-      String? mentionTargetChannelId,
-      String? mentionTargetChannelName,
-      String? videoThumbnailUrl,
-      String? videoSourceLink});
+  $Res call({
+    String videoId,
+    NotificationEventType eventType,
+    String channelId,
+    String channelName,
+    String videoTitle,
+    String? videoType,
+    String? channelAvatarUrl,
+    DateTime availableAt,
+    String? mentionTargetChannelId,
+    String? mentionTargetChannelName,
+    String? videoThumbnailUrl,
+    String? videoSourceLink,
+  });
 }
 
-/// @nodoc
-class _$NotificationInstructionCopyWithImpl<$Res,
-        $Val extends NotificationInstruction>
-    implements $NotificationInstructionCopyWith<$Res> {
+class _$NotificationInstructionCopyWithImpl<$Res, $Val extends NotificationInstruction> implements $NotificationInstructionCopyWith<$Res> {
   _$NotificationInstructionCopyWithImpl(this._value, this._then);
 
-  // ignore: unused_field
   final $Val _value;
-  // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of NotificationInstruction
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -86,95 +66,52 @@ class _$NotificationInstructionCopyWithImpl<$Res,
     Object? videoThumbnailUrl = freezed,
     Object? videoSourceLink = freezed,
   }) {
-    return _then(_value.copyWith(
-      videoId: null == videoId
-          ? _value.videoId
-          : videoId // ignore: cast_nullable_to_non_nullable
-              as String,
-      eventType: null == eventType
-          ? _value.eventType
-          : eventType // ignore: cast_nullable_to_non_nullable
-              as NotificationEventType,
-      channelId: null == channelId
-          ? _value.channelId
-          : channelId // ignore: cast_nullable_to_non_nullable
-              as String,
-      channelName: null == channelName
-          ? _value.channelName
-          : channelName // ignore: cast_nullable_to_non_nullable
-              as String,
-      videoTitle: null == videoTitle
-          ? _value.videoTitle
-          : videoTitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      videoType: freezed == videoType
-          ? _value.videoType
-          : videoType // ignore: cast_nullable_to_non_nullable
-              as String?,
-      channelAvatarUrl: freezed == channelAvatarUrl
-          ? _value.channelAvatarUrl
-          : channelAvatarUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      availableAt: null == availableAt
-          ? _value.availableAt
-          : availableAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      mentionTargetChannelId: freezed == mentionTargetChannelId
-          ? _value.mentionTargetChannelId
-          : mentionTargetChannelId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      mentionTargetChannelName: freezed == mentionTargetChannelName
-          ? _value.mentionTargetChannelName
-          : mentionTargetChannelName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      videoThumbnailUrl: freezed == videoThumbnailUrl
-          ? _value.videoThumbnailUrl
-          : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      videoSourceLink: freezed == videoSourceLink
-          ? _value.videoSourceLink
-          : videoSourceLink // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            videoId: null == videoId ? _value.videoId : videoId as String,
+            eventType: null == eventType ? _value.eventType : eventType as NotificationEventType,
+            channelId: null == channelId ? _value.channelId : channelId as String,
+            channelName: null == channelName ? _value.channelName : channelName as String,
+            videoTitle: null == videoTitle ? _value.videoTitle : videoTitle as String,
+            videoType: freezed == videoType ? _value.videoType : videoType as String?,
+            channelAvatarUrl: freezed == channelAvatarUrl ? _value.channelAvatarUrl : channelAvatarUrl as String?,
+            availableAt: null == availableAt ? _value.availableAt : availableAt as DateTime,
+            mentionTargetChannelId: freezed == mentionTargetChannelId ? _value.mentionTargetChannelId : mentionTargetChannelId as String?,
+            mentionTargetChannelName: freezed == mentionTargetChannelName ? _value.mentionTargetChannelName : mentionTargetChannelName as String?,
+            videoThumbnailUrl: freezed == videoThumbnailUrl ? _value.videoThumbnailUrl : videoThumbnailUrl as String?,
+            videoSourceLink: freezed == videoSourceLink ? _value.videoSourceLink : videoSourceLink as String?,
+          )
+          as $Val,
+    );
   }
 }
 
-/// @nodoc
-abstract class _$$NotificationInstructionImplCopyWith<$Res>
-    implements $NotificationInstructionCopyWith<$Res> {
-  factory _$$NotificationInstructionImplCopyWith(
-          _$NotificationInstructionImpl value,
-          $Res Function(_$NotificationInstructionImpl) then) =
+abstract class _$$NotificationInstructionImplCopyWith<$Res> implements $NotificationInstructionCopyWith<$Res> {
+  factory _$$NotificationInstructionImplCopyWith(_$NotificationInstructionImpl value, $Res Function(_$NotificationInstructionImpl) then) =
       __$$NotificationInstructionImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String videoId,
-      NotificationEventType eventType,
-      String channelId,
-      String channelName,
-      String videoTitle,
-      String? videoType,
-      String? channelAvatarUrl,
-      DateTime availableAt,
-      String? mentionTargetChannelId,
-      String? mentionTargetChannelName,
-      String? videoThumbnailUrl,
-      String? videoSourceLink});
+  $Res call({
+    String videoId,
+    NotificationEventType eventType,
+    String channelId,
+    String channelName,
+    String videoTitle,
+    String? videoType,
+    String? channelAvatarUrl,
+    DateTime availableAt,
+    String? mentionTargetChannelId,
+    String? mentionTargetChannelName,
+    String? videoThumbnailUrl,
+    String? videoSourceLink,
+  });
 }
 
-/// @nodoc
-class __$$NotificationInstructionImplCopyWithImpl<$Res>
-    extends _$NotificationInstructionCopyWithImpl<$Res,
-        _$NotificationInstructionImpl>
+class __$$NotificationInstructionImplCopyWithImpl<$Res> extends _$NotificationInstructionCopyWithImpl<$Res, _$NotificationInstructionImpl>
     implements _$$NotificationInstructionImplCopyWith<$Res> {
-  __$$NotificationInstructionImplCopyWithImpl(
-      _$NotificationInstructionImpl _value,
-      $Res Function(_$NotificationInstructionImpl) _then)
-      : super(_value, _then);
+  __$$NotificationInstructionImplCopyWithImpl(_$NotificationInstructionImpl _value, $Res Function(_$NotificationInstructionImpl) _then)
+    : super(_value, _then);
 
-  /// Create a copy of NotificationInstruction
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -191,75 +128,40 @@ class __$$NotificationInstructionImplCopyWithImpl<$Res>
     Object? videoThumbnailUrl = freezed,
     Object? videoSourceLink = freezed,
   }) {
-    return _then(_$NotificationInstructionImpl(
-      videoId: null == videoId
-          ? _value.videoId
-          : videoId // ignore: cast_nullable_to_non_nullable
-              as String,
-      eventType: null == eventType
-          ? _value.eventType
-          : eventType // ignore: cast_nullable_to_non_nullable
-              as NotificationEventType,
-      channelId: null == channelId
-          ? _value.channelId
-          : channelId // ignore: cast_nullable_to_non_nullable
-              as String,
-      channelName: null == channelName
-          ? _value.channelName
-          : channelName // ignore: cast_nullable_to_non_nullable
-              as String,
-      videoTitle: null == videoTitle
-          ? _value.videoTitle
-          : videoTitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      videoType: freezed == videoType
-          ? _value.videoType
-          : videoType // ignore: cast_nullable_to_non_nullable
-              as String?,
-      channelAvatarUrl: freezed == channelAvatarUrl
-          ? _value.channelAvatarUrl
-          : channelAvatarUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      availableAt: null == availableAt
-          ? _value.availableAt
-          : availableAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      mentionTargetChannelId: freezed == mentionTargetChannelId
-          ? _value.mentionTargetChannelId
-          : mentionTargetChannelId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      mentionTargetChannelName: freezed == mentionTargetChannelName
-          ? _value.mentionTargetChannelName
-          : mentionTargetChannelName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      videoThumbnailUrl: freezed == videoThumbnailUrl
-          ? _value.videoThumbnailUrl
-          : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      videoSourceLink: freezed == videoSourceLink
-          ? _value.videoSourceLink
-          : videoSourceLink // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
+    return _then(
+      _$NotificationInstructionImpl(
+        videoId: null == videoId ? _value.videoId : videoId as String,
+        eventType: null == eventType ? _value.eventType : eventType as NotificationEventType,
+        channelId: null == channelId ? _value.channelId : channelId as String,
+        channelName: null == channelName ? _value.channelName : channelName as String,
+        videoTitle: null == videoTitle ? _value.videoTitle : videoTitle as String,
+        videoType: freezed == videoType ? _value.videoType : videoType as String?,
+        channelAvatarUrl: freezed == channelAvatarUrl ? _value.channelAvatarUrl : channelAvatarUrl as String?,
+        availableAt: null == availableAt ? _value.availableAt : availableAt as DateTime,
+        mentionTargetChannelId: freezed == mentionTargetChannelId ? _value.mentionTargetChannelId : mentionTargetChannelId as String?,
+        mentionTargetChannelName: freezed == mentionTargetChannelName ? _value.mentionTargetChannelName : mentionTargetChannelName as String?,
+        videoThumbnailUrl: freezed == videoThumbnailUrl ? _value.videoThumbnailUrl : videoThumbnailUrl as String?,
+        videoSourceLink: freezed == videoSourceLink ? _value.videoSourceLink : videoSourceLink as String?,
+      ),
+    );
   }
 }
 
-/// @nodoc
-
 class _$NotificationInstructionImpl implements _NotificationInstruction {
-  const _$NotificationInstructionImpl(
-      {required this.videoId,
-      required this.eventType,
-      required this.channelId,
-      required this.channelName,
-      required this.videoTitle,
-      this.videoType,
-      this.channelAvatarUrl,
-      required this.availableAt,
-      this.mentionTargetChannelId,
-      this.mentionTargetChannelName,
-      this.videoThumbnailUrl,
-      this.videoSourceLink});
+  const _$NotificationInstructionImpl({
+    required this.videoId,
+    required this.eventType,
+    required this.channelId,
+    required this.channelName,
+    required this.videoTitle,
+    this.videoType,
+    this.channelAvatarUrl,
+    required this.availableAt,
+    this.mentionTargetChannelId,
+    this.mentionTargetChannelName,
+    this.videoThumbnailUrl,
+    this.videoSourceLink,
+  });
 
   @override
   final String videoId;
@@ -297,71 +199,58 @@ class _$NotificationInstructionImpl implements _NotificationInstruction {
         (other.runtimeType == runtimeType &&
             other is _$NotificationInstructionImpl &&
             (identical(other.videoId, videoId) || other.videoId == videoId) &&
-            (identical(other.eventType, eventType) ||
-                other.eventType == eventType) &&
-            (identical(other.channelId, channelId) ||
-                other.channelId == channelId) &&
-            (identical(other.channelName, channelName) ||
-                other.channelName == channelName) &&
-            (identical(other.videoTitle, videoTitle) ||
-                other.videoTitle == videoTitle) &&
-            (identical(other.videoType, videoType) ||
-                other.videoType == videoType) &&
-            (identical(other.channelAvatarUrl, channelAvatarUrl) ||
-                other.channelAvatarUrl == channelAvatarUrl) &&
-            (identical(other.availableAt, availableAt) ||
-                other.availableAt == availableAt) &&
-            (identical(other.mentionTargetChannelId, mentionTargetChannelId) ||
-                other.mentionTargetChannelId == mentionTargetChannelId) &&
-            (identical(
-                    other.mentionTargetChannelName, mentionTargetChannelName) ||
-                other.mentionTargetChannelName == mentionTargetChannelName) &&
-            (identical(other.videoThumbnailUrl, videoThumbnailUrl) ||
-                other.videoThumbnailUrl == videoThumbnailUrl) &&
-            (identical(other.videoSourceLink, videoSourceLink) ||
-                other.videoSourceLink == videoSourceLink));
+            (identical(other.eventType, eventType) || other.eventType == eventType) &&
+            (identical(other.channelId, channelId) || other.channelId == channelId) &&
+            (identical(other.channelName, channelName) || other.channelName == channelName) &&
+            (identical(other.videoTitle, videoTitle) || other.videoTitle == videoTitle) &&
+            (identical(other.videoType, videoType) || other.videoType == videoType) &&
+            (identical(other.channelAvatarUrl, channelAvatarUrl) || other.channelAvatarUrl == channelAvatarUrl) &&
+            (identical(other.availableAt, availableAt) || other.availableAt == availableAt) &&
+            (identical(other.mentionTargetChannelId, mentionTargetChannelId) || other.mentionTargetChannelId == mentionTargetChannelId) &&
+            (identical(other.mentionTargetChannelName, mentionTargetChannelName) || other.mentionTargetChannelName == mentionTargetChannelName) &&
+            (identical(other.videoThumbnailUrl, videoThumbnailUrl) || other.videoThumbnailUrl == videoThumbnailUrl) &&
+            (identical(other.videoSourceLink, videoSourceLink) || other.videoSourceLink == videoSourceLink));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      videoId,
-      eventType,
-      channelId,
-      channelName,
-      videoTitle,
-      videoType,
-      channelAvatarUrl,
-      availableAt,
-      mentionTargetChannelId,
-      mentionTargetChannelName,
-      videoThumbnailUrl,
-      videoSourceLink);
+    runtimeType,
+    videoId,
+    eventType,
+    channelId,
+    channelName,
+    videoTitle,
+    videoType,
+    channelAvatarUrl,
+    availableAt,
+    mentionTargetChannelId,
+    mentionTargetChannelName,
+    videoThumbnailUrl,
+    videoSourceLink,
+  );
 
-  /// Create a copy of NotificationInstruction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$NotificationInstructionImplCopyWith<_$NotificationInstructionImpl>
-      get copyWith => __$$NotificationInstructionImplCopyWithImpl<
-          _$NotificationInstructionImpl>(this, _$identity);
+  _$$NotificationInstructionImplCopyWith<_$NotificationInstructionImpl> get copyWith =>
+      __$$NotificationInstructionImplCopyWithImpl<_$NotificationInstructionImpl>(this, _$identity);
 }
 
 abstract class _NotificationInstruction implements NotificationInstruction {
-  const factory _NotificationInstruction(
-      {required final String videoId,
-      required final NotificationEventType eventType,
-      required final String channelId,
-      required final String channelName,
-      required final String videoTitle,
-      final String? videoType,
-      final String? channelAvatarUrl,
-      required final DateTime availableAt,
-      final String? mentionTargetChannelId,
-      final String? mentionTargetChannelName,
-      final String? videoThumbnailUrl,
-      final String? videoSourceLink}) = _$NotificationInstructionImpl;
+  const factory _NotificationInstruction({
+    required final String videoId,
+    required final NotificationEventType eventType,
+    required final String channelId,
+    required final String channelName,
+    required final String videoTitle,
+    final String? videoType,
+    final String? channelAvatarUrl,
+    required final DateTime availableAt,
+    final String? mentionTargetChannelId,
+    final String? mentionTargetChannelName,
+    final String? videoThumbnailUrl,
+    final String? videoSourceLink,
+  }) = _$NotificationInstructionImpl;
 
   @override
   String get videoId;
@@ -388,10 +277,7 @@ abstract class _NotificationInstruction implements NotificationInstruction {
   @override
   String? get videoSourceLink;
 
-  /// Create a copy of NotificationInstruction
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$NotificationInstructionImplCopyWith<_$NotificationInstructionImpl>
-      get copyWith => throw _privateConstructorUsedError;
+  _$$NotificationInstructionImplCopyWith<_$NotificationInstructionImpl> get copyWith => throw _privateConstructorUsedError;
 }

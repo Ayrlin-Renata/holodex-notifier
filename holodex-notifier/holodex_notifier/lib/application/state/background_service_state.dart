@@ -1,23 +1,17 @@
-// Create this file: f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\application\state\background_service_state.dart
 import 'dart:async';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:holodex_notifier/main.dart'; // For service providers
+import 'package:holodex_notifier/main.dart';
 
-// --- BackgroundStatus Data class ---
 class BackgroundStatus {
   final bool isRunning;
   final DateTime? lastPollTime;
-  final String? lastError; // Error message from the background process
+  final String? lastError;
 
   BackgroundStatus({required this.isRunning, this.lastPollTime, this.lastError});
 }
 
-// --- Provider for Last Background Error ---
-// Kept in channel_providers.dart for now as background poller writes to it
-// Moved it here to keep all background state together. Update channel_providers.dart to remove it.
 final backgroundLastErrorProvider = StateProvider<String?>((ref) => null);
 
-// --- StreamProvider for Background Status ---
 final backgroundServiceStatusStreamProvider = StreamProvider.autoDispose<BackgroundStatus>((ref) {
   final backgroundService = ref.watch(backgroundServiceProvider);
   final settingsService = ref.watch(settingsServiceProvider);
@@ -26,33 +20,30 @@ final backgroundServiceStatusStreamProvider = StreamProvider.autoDispose<Backgro
   final controller = StreamController<BackgroundStatus>();
 
   Future<void> fetchStatus() async {
-    // Check if the provider is still active before fetching
     if (controller.isClosed) return;
 
     try {
       final isRunning = await backgroundService.isRunning();
       final lastPoll = await settingsService.getLastPollTime();
-      // Read last error state from its provider
       final lastError = ref.read(backgroundLastErrorProvider);
-      logger.debug("[StatusStream] Background Status Check: Running=$isRunning, LastPoll=$lastPoll, Error=$lastError");
+      logger.debug("Background status: isRunning=$isRunning, lastPoll=$lastPoll, lastError=$lastError");
 
-      // Check again before adding to the controller
       if (!controller.isClosed) {
         controller.add(BackgroundStatus(isRunning: isRunning, lastPollTime: lastPoll, lastError: lastError));
       }
     } catch (e, s) {
-      logger.error("[StatusStream] Error fetching background status", e, s);
-      // Check again before adding error
+      logger.error("Error fetching background status", e, s);
       if (!controller.isClosed) {
-        controller.addError(e, s); // Propagate error to the stream consumer
+        controller.addError(e, s);
       }
     }
   }
 
-  // Fetch immediately on creation
   fetchStatus();
 
   // Fetch periodically
+  // Consider checking more frequently if needed for responsiveness in UI status updates.
+  // Current interval: 15 seconds.
   timer = Timer.periodic(const Duration(seconds: 15), (_) => fetchStatus()); // Check more frequently?
 
   ref.onDispose(() {

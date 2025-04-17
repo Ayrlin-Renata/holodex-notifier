@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // For avatars
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/main.dart';
-
-// Assuming you have AppController methods eventually
-// import 'package:holodex_notifier/application/controllers/app_controller.dart';
-// import 'package:holodex_notifier/main.dart'; // For appControllerProvider
 
 class ChannelSettingsTile extends ConsumerWidget {
   final ChannelSubscriptionSetting channelSetting;
@@ -24,41 +20,33 @@ class ChannelSettingsTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Row(
           children: [
-            // Reorder Handle
             const Padding(padding: EdgeInsets.symmetric(horizontal: 8.0), child: Icon(Icons.drag_handle)),
 
-            // Avatar
-                        SizedBox(
+            SizedBox(
               width: 64,
               height: 64,
               child: ClipOval(
                 child: CachedNetworkImage(
-                  // Use the avatarUrl from the setting object
-                  imageUrl: channelSetting.avatarUrl ?? '', // Use null-aware operator and provide empty string if null
-                  placeholder: (context, url) => const CircleAvatar(
-                     backgroundColor: Colors.grey, // Placeholder background
-                     child: Icon(Icons.person_outline, color: Colors.white70),
-                  ),
-                  errorWidget: (context, url, error) => const CircleAvatar(
-                     backgroundColor: Colors.grey, // Placeholder background
-                     child: Icon(Icons.error_outline, color: Colors.white70), // Error icon
-                  ),
+                  imageUrl: channelSetting.avatarUrl ?? '',
+                  placeholder:
+                      (context, url) => const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.person_outline, color: Colors.white70)),
+                  errorWidget:
+                      (context, url, error) =>
+                          const CircleAvatar(backgroundColor: Colors.grey, child: Icon(Icons.error_outline, color: Colors.white70)),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             const SizedBox(width: 12),
 
-            // Channel Name & Toggles
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(channelSetting.name, style: theme.textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  // Wrap toggles for smaller screens if necessary
                   Wrap(
-                    spacing: 4.0, // Horizontal spacing
-                    runSpacing: 0.0, // Vertical spacing
+                    spacing: 4.0,
+                    runSpacing: 0.0,
                     children: [
                       _buildToggleChip(
                         context: context,
@@ -91,14 +79,14 @@ class ChannelSettingsTile extends ConsumerWidget {
                       _buildToggleChip(
                         context: context,
                         label: 'Members',
-                        icon: Icons.card_membership_outlined, // Example icon
+                        icon: Icons.card_membership_outlined,
                         value: channelSetting.notifyMembersOnly,
                         onChanged: (v) => appController.updateChannelNotificationSetting(channelSetting.channelId, 'notifyMembersOnly', v),
                       ),
                       _buildToggleChip(
                         context: context,
                         label: 'Clips',
-                         icon: Icons.content_cut_outlined, // Example icon
+                        icon: Icons.content_cut_outlined,
                         value: channelSetting.notifyClips,
                         onChanged: (v) => appController.updateChannelNotificationSetting(channelSetting.channelId, 'notifyClips', v),
                       ),
@@ -108,13 +96,10 @@ class ChannelSettingsTile extends ConsumerWidget {
               ),
             ),
 
-
-            // Remove Button
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
               tooltip: 'Remove Channel',
               onPressed: () {
-                // Show confirmation dialog
                 showDialog(
                   context: context,
                   builder: (BuildContext ctx) {
@@ -126,7 +111,6 @@ class ChannelSettingsTile extends ConsumerWidget {
                         TextButton(
                           child: const Text('Remove', style: TextStyle(color: Colors.red)),
                           onPressed: () async {
-                            // Call the AppController method which includes cleanup
                             await appController.removeChannel(channelSetting.channelId);
                             Navigator.of(ctx).pop();
                             ScaffoldMessenger.of(
@@ -146,7 +130,6 @@ class ChannelSettingsTile extends ConsumerWidget {
     );
   }
 
-  // Helper for toggle chips
   Widget _buildToggleChip({
     required BuildContext context,
     required String label,
@@ -164,7 +147,7 @@ class ChannelSettingsTile extends ConsumerWidget {
       labelPadding: const EdgeInsets.symmetric(horizontal: 4),
       selectedColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.6),
       checkmarkColor: Theme.of(context).colorScheme.onPrimaryContainer,
-      showCheckmark: false, // More explicit toggle state
+      showCheckmark: false,
     );
   }
 }

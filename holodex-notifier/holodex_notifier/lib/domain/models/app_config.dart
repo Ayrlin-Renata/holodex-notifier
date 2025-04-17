@@ -5,18 +5,15 @@ part 'app_config.freezed.dart';
 part 'app_config.g.dart';
 
 @freezed
-@JsonSerializable(explicitToJson: true) // Needed for nested list
+@JsonSerializable(explicitToJson: true)
 class AppConfig with _$AppConfig {
   const factory AppConfig({
-    // Include non-sensitive settings
     required int pollFrequencyMinutes,
     required bool notificationGrouping,
     required bool delayNewMedia,
     required int reminderLeadTimeMinutes,
 
     required List<ChannelSubscriptionSetting> channelSubscriptions,
-    // DO NOT include API Key or other sensitive/runtime data like lastPollTime
-    // Add version if needed for future compatibility
     @Default(1) int version,
   }) = _AppConfig;
 

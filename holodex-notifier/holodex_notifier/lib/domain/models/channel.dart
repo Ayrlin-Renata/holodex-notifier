@@ -1,15 +1,12 @@
-// Create this file: f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\domain\models\channel.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'channel.freezed.dart';
 part 'channel.g.dart';
 
-// Define helper functions for parsing potentially null string fields into specific types
 int? _intFromStringNullable(String? value) => value == null ? null : int.tryParse(value);
 
 DateTime? _dateTimeFromStringNullable(String? dateString) => dateString == null ? null : DateTime.tryParse(dateString);
 
-// The API seems to return ChannelWithGroup from the /channels endpoint
 @freezed
 @JsonSerializable(fieldRename: FieldRename.snake)
 class Channel with _$Channel {
@@ -17,10 +14,8 @@ class Channel with _$Channel {
     required String id,
     required String name,
     String? englishName,
-    // API uses enum: ["vtuber", "subber"]
     String? type,
     String? org,
-    // This field is specific to ChannelWithGroup used in the /channels response
     String? group,
     String? photo,
     String? banner,

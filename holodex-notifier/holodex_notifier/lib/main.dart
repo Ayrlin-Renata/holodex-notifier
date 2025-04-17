@@ -1,4 +1,3 @@
-// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\main.dart
 import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -37,8 +36,6 @@ final isolateContextProvider = Provider<IsolateContext>((ref) {
   return IsolateContext.main;
 }, name: 'isolateContextProvider');
 
-// --- Foundational Services ---
-
 final loggingServiceProvider = Provider<ILoggingService>((ref) {
   return LoggerService();
 });
@@ -48,8 +45,8 @@ final secureStorageServiceProvider = Provider<ISecureStorageService>((ref) {
 });
 
 final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase(openConnection());
   final log = ref.watch(loggingServiceProvider);
+  final db = AppDatabase(openConnection(), log);
 
   ref.onDispose(() async {
     log.info("Closing database connection...");
@@ -69,15 +66,14 @@ final connectivityServiceProvider = Provider<IConnectivityService>((ref) {
   return ConnectivityPlusService();
 });
 
-// --- API & Background Services ---
-
 final dioProvider = Provider<Dio>((ref) {
+  final log = ref.watch(loggingServiceProvider);
   final settingsService = ref.watch(settingsServiceProvider);
   apiKeyGetter() async {
     return settingsService.getApiKey();
   }
 
-  final dioClient = DioClient(apiKeyGetter: apiKeyGetter);
+  final dioClient = DioClient(apiKeyGetter: apiKeyGetter, logger: log);
   return dioClient.instance;
 });
 
@@ -85,8 +81,6 @@ final apiServiceProvider = Provider<IApiService>((ref) {
   final dio = ref.watch(dioProvider);
   return HolodexApiService(dio);
 });
-
-// --- Async Initialization ---
 
 final settingsServiceFutureProvider = FutureProvider<ISettingsService>((ref) async {
   final log = ref.watch(loggingServiceProvider);
@@ -100,7 +94,7 @@ final settingsServiceFutureProvider = FutureProvider<ISettingsService>((ref) asy
 
 final notificationServiceFutureProvider = FutureProvider<INotificationService>((ref) async {
   final log = ref.watch(loggingServiceProvider);
-  final settingsService = ref.watch(settingsServiceProvider); // Get settings service via sync provider
+  final settingsService = ref.watch(settingsServiceProvider);
 
   final service = LocalNotificationService(log, settingsService);
 
@@ -109,23 +103,19 @@ final notificationServiceFutureProvider = FutureProvider<INotificationService>((
   log.info("Resolving Notification Service Provider (Isolate Context: $isolateContext)");
 
   if (isolateContext == IsolateContext.main) {
-    // Check the context
-    // Only run full initialization in the main isolate
     log.info("Initializing Notification Service (Main Isolate)...");
     try {
-      await service.initialize(); // Perform full initialization
+      await service.initialize();
       log.info("Notification Service initialized (Main Isolate).");
     } catch (e, s) {
       log.fatal("Failed Notification Service initialization in Main Isolate", e, s);
       rethrow;
     }
   } else {
-    // context == IsolateContext.background
-    // In background isolate, DO NOT call initialize().
     log.info("Skipping Notification Service initialization (Background Isolate). Assumes main isolate succeeded.");
   }
 
-  return service; // Return the service instance
+  return service;
 }, name: 'notificationServiceFutureProvider');
 
 final backgroundServiceFutureProvider = FutureProvider<IBackgroundPollingService>((ref) async {
@@ -136,8 +126,6 @@ final backgroundServiceFutureProvider = FutureProvider<IBackgroundPollingService
   log.info("Background Service initialized (Setup).");
   return service;
 }, name: 'backgroundServiceFutureProvider');
-
-// --- Synchronous Access to Initialized Services ---
 
 final settingsServiceProvider = Provider<ISettingsService>((ref) {
   return ref.watch(settingsServiceFutureProvider).requireValue;
@@ -152,7 +140,6 @@ final backgroundServiceProvider = Provider<IBackgroundPollingService>((ref) {
 }, name: 'backgroundServiceProvider');
 
 final notificationDecisionServiceProvider = Provider<INotificationDecisionService>((ref) {
-  // Depends on cache, settings, and logger
   final cacheService = ref.watch(cacheServiceProvider);
   final settingsService = ref.watch(settingsServiceProvider);
   final logger = ref.watch(loggingServiceProvider);
@@ -160,28 +147,23 @@ final notificationDecisionServiceProvider = Provider<INotificationDecisionServic
 }, name: 'notificationDecisionServiceProvider');
 
 final notificationActionHandlerProvider = Provider<INotificationActionHandler>((ref) {
-  // Depends on notification service, cache, and logger
   final notificationService = ref.watch(notificationServiceProvider);
   final cacheService = ref.watch(cacheServiceProvider);
   final logger = ref.watch(loggingServiceProvider);
   return NotificationActionHandler(notificationService, cacheService, logger);
 }, name: 'notificationActionHandlerProvider');
 
-// --- AppController ---
 final appControllerProvider = Provider<AppController>((ref) {
-  // Get all required services
   final settingsService = ref.watch(settingsServiceProvider);
   final loggingService = ref.watch(loggingServiceProvider);
-  final cacheService = ref.watch(cacheServiceProvider); // Get Cache Service
-  final notificationService = ref.watch(notificationServiceProvider); // Get Notification Service
+  final cacheService = ref.watch(cacheServiceProvider);
+  final notificationService = ref.watch(notificationServiceProvider);
   final decisionService = ref.watch(notificationDecisionServiceProvider);
   final actionHandler = ref.watch(notificationActionHandlerProvider);
 
-  // Pass them to the constructor
   return AppController(ref, settingsService, loggingService, cacheService, notificationService, decisionService, actionHandler);
 }, name: 'appControllerProvider');
 
-// --- Main Function ---
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -191,7 +173,6 @@ Future<void> main() async {
   // ignore: unused_local_variable
   INotificationService? notificationService;
 
-  // --- Helper Function to Get System Info ---
   Future<String> getSystemInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     StringBuffer info = StringBuffer();
@@ -236,7 +217,7 @@ Future<void> main() async {
         info.writeln('OS Release: ${macOsInfo.osRelease}');
         info.writeln('Kernel Version: ${macOsInfo.kernelVersion}');
         info.writeln('Memory Size: ${macOsInfo.memorySize}');
-        info.writeln('CPU Cores: ${macOsInfo.cpuFrequency}'); // cpuFrequency might not be cores, adjust field if needed
+        info.writeln('CPU Cores: ${macOsInfo.cpuFrequency}');
       } else {
         info.writeln('--- System Info ---');
         info.writeln('OS: Unknown Platform');
@@ -245,42 +226,35 @@ Future<void> main() async {
       info.writeln('--- System Info ---');
       info.writeln('Error getting device info: $e');
     }
-    info.writeln('App Version: 0.1.0'); // TODO: Read from pubspec or build info
+    info.writeln('App Version: 0.1.0');
     info.writeln('-------------------');
     return info.toString();
   }
 
   try {
-    // Initialize Logger first
-    logger = container.read(loggingServiceProvider)!; // Use read directly, assume non-null after this line
+    logger = container.read(loggingServiceProvider)!;
     logger.info("Logger initialized.");
 
     final systemInfo = await getSystemInfo();
     if (logger is ILoggingServiceWithOutput) {
       logger.setSystemInfoString(systemInfo);
-      logger.info("System Info collected and set in LoggerService.");
+      logger.info("System Info collected and set.");
     } else {
       logger.warning("Logger service does not support setting system info string.");
     }
 
-    // --- Step 1: Initialize Settings Service ---
-    logger.info("Waiting for Settings Service FutureProvider...");
+    logger.info("Waiting for Settings Service...");
     settingsService = await container.read(settingsServiceFutureProvider.future);
     logger.info("Settings Service resolved.");
 
-    // --- Step 2: Reset Readiness Flag ---
-    // Null Assertion OK: settingsService is guaranteed non-null here
     await settingsService!.setMainServicesReady(false);
     logger.info("Main Services Readiness Flag RESET to FALSE.");
 
-    // --- Step 3: Wait for OTHER critical async services ---
-    logger.info("Waiting for Notification Service FutureProvider...");
-    // Ensure notification service is initialized before readiness flag is set
+    logger.info("Waiting for Notification Service...");
     notificationService = await container.read(notificationServiceFutureProvider.future);
     logger.info("Notification Service resolved.");
 
-    logger.info("Waiting for Background Service FutureProvider...");
-    // Get the instance after awaiting
+    logger.info("Waiting for Background Service...");
     final backgroundService = await container.read(backgroundServiceFutureProvider.future);
     logger.info("Background Service resolved.");
 
@@ -288,29 +262,23 @@ Future<void> main() async {
 
     try {
       logger.info("Starting background polling service...");
-      await backgroundService.startPolling(); // Call startPolling here
+      await backgroundService.startPolling();
       logger.info("Background polling service start initiated.");
     } catch (e, s) {
       logger.error("Error starting background polling service", e, s);
-      // Decide if this is fatal or app can continue
     }
 
-    // --- Step 4: Set Readiness Flag to TRUE ---
-    // Null Assertion OK: settingsService is guaranteed non-null here
     await settingsService.setMainServicesReady(true);
     logger.info("Main Services Readiness Flag SET to TRUE.");
 
-    // --- Step 6: Load Initial UI State ---
     logger.info("Loading initial state values for UI overrides...");
-    // Null Assertion OK: settingsService is guaranteed non-null here
     final initialPollFrequency = await settingsService.getPollFrequency();
     final initialGrouping = await settingsService.getNotificationGrouping();
     final initialDelay = await settingsService.getDelayNewMedia();
-    final initialReminderLeadTime = await settingsService.getReminderLeadTime(); // {{ Load reminder lead time }}
+    final initialReminderLeadTime = await settingsService.getReminderLeadTime();
 
     logger.info("Initial state values loaded.");
 
-    // --- Step 7: Run the App ---
     logger.info("Running app...");
     runApp(
       UncontrolledProviderScope(
@@ -328,11 +296,9 @@ Future<void> main() async {
     );
     logger.info("App started successfully.");
   } catch (e, s) {
-    // --- Fatal Error Handling ---
-    final initLogger = logger ?? LoggerService(); // Use existing or fallback
+    final initLogger = logger ?? LoggerService();
     initLogger.fatal("--- FATAL ERROR during app initialization! ---", e, s);
     try {
-      // Use Null check for settingsService
       if (settingsService != null) {
         await settingsService.setMainServicesReady(false);
         initLogger.warning("Reset Main Services Readiness Flag to FALSE due to initialization error.");
@@ -345,12 +311,10 @@ Future<void> main() async {
       container.dispose();
       initLogger.warning("ProviderContainer disposed during error handling.");
     }
-    // Show minimal error UI
     runApp(ErrorApp(error: e, stackTrace: s));
-  } // End try/catch
-} // End main
+  }
+}
 
-// --- Main App Widget ---
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
@@ -369,7 +333,6 @@ class MainApp extends ConsumerWidget {
   }
 }
 
-// --- Error Display App ---
 class ErrorApp extends StatelessWidget {
   final Object error;
   final StackTrace stackTrace;

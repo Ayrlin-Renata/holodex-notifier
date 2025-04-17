@@ -1,4 +1,3 @@
-// Create this file: f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\application\state\scheduled_notifications_state.dart
 import 'dart:async';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
@@ -8,12 +7,12 @@ import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:intl/intl.dart';
-import 'package:timeago/timeago.dart' as timeago; // For service providers
+import 'package:timeago/timeago.dart' as timeago;
 
 class ScheduledNotificationItem {
-  final CachedVideo videoData; // The original data
-  final NotificationEventType type; // Live or Reminder
-  final DateTime scheduledTime; // The time this specific notification fires
+  final CachedVideo videoData;
+  final NotificationEventType type;
+  final DateTime scheduledTime;
   final String formattedTitle;
   final String formattedBody;
 
@@ -24,20 +23,17 @@ class ScheduledNotificationItem {
     required this.formattedTitle,
     required this.formattedBody,
   });
-  // Getter for the specific notification ID for cancellation
   int? get notificationId {
     return type == NotificationEventType.reminder ? videoData.scheduledReminderNotificationId : videoData.scheduledLiveNotificationId;
   }
 
-  // Getter for channelId for filtering
   String get channelId => videoData.channelId;
 }
 
-// --- ScheduledNotificationsNotifier ---
 class ScheduledNotificationsNotifier extends StateNotifier<AsyncValue<List<CachedVideo>>> {
   final ICacheService _cacheService;
   final ILoggingService _logger;
-  bool _isFetching = false; // Basic lock to prevent concurrent fetches
+  bool _isFetching = false;
 
   ScheduledNotificationsNotifier(this._cacheService, this._logger) : super(const AsyncValue.loading()) {
     fetchScheduledNotifications();
@@ -78,7 +74,6 @@ class ScheduledNotificationsNotifier extends StateNotifier<AsyncValue<List<Cache
   }
 }
 
-// --- Provider Definition ---
 final scheduledNotificationsProvider = StateNotifierProvider.autoDispose<ScheduledNotificationsNotifier, AsyncValue<List<CachedVideo>>>((ref) {
   final log = ref.watch(loggingServiceProvider);
   log.info("Creating ScheduledNotificationsNotifier...");
@@ -87,70 +82,45 @@ final scheduledNotificationsProvider = StateNotifierProvider.autoDispose<Schedul
   return ScheduledNotificationsNotifier(cacheService, log);
 }, name: 'scheduledNotificationsProvider');
 
-// --- Filter State Providers ---
-
-/// Controls which notification types (Live, Reminder) are shown.
 final scheduledFilterTypeProvider = StateProvider.autoDispose<Set<NotificationEventType>>((ref) {
-  // Default to showing both types
   return {NotificationEventType.live, NotificationEventType.reminder};
 }, name: 'scheduledFilterTypeProvider');
 
-/// Controls which channels are shown (null means show all).
 final scheduledFilterChannelProvider = StateProvider.autoDispose<String?>((ref) {
-  // Default to showing all channels
   return null;
 }, name: 'scheduledFilterChannelProvider');
 
-
-// --- Provider for Notification Format Configuration ---
 final notificationFormatConfigProvider = FutureProvider.autoDispose<NotificationFormatConfig>((ref) async {
-  // Depend on the synchronously available settings service provider
   final settingsService = ref.watch(settingsServiceProvider);
   return await settingsService.getNotificationFormatConfig();
 }, name: 'notificationFormatConfigProvider');
 
-// --- Derived Filtered List Provider ---
 final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<List<ScheduledNotificationItem>>>((ref) {
-  // Watch both async dependencies
   final baseAsyncValue = ref.watch(scheduledNotificationsProvider);
-  final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider); // Watch the new provider
+  final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
 
-  // Get synchronous filter values
   final allowedTypes = ref.watch(scheduledFilterTypeProvider);
   final selectedChannelId = ref.watch(scheduledFilterChannelProvider);
   final logger = ref.watch(loggingServiceProvider);
 
-  // --- Handle Combined Loading/Error States ---
-  // If either dependency is loading, the result is loading.
   if (baseAsyncValue.isLoading || formatConfigAsyncValue.isLoading) {
-    // Combine loading states, keeping previous data if available
     return const AsyncLoading<List<ScheduledNotificationItem>>();
   }
 
-  // If either dependency has an error, the result is an error.
-  // Combine error states, preferring the first error encountered.
   if (baseAsyncValue.hasError) {
     return AsyncError<List<ScheduledNotificationItem>>(baseAsyncValue.error!, baseAsyncValue.stackTrace!);
   }
   if (formatConfigAsyncValue.hasError) {
-     return AsyncError<List<ScheduledNotificationItem>>(formatConfigAsyncValue.error!, formatConfigAsyncValue.stackTrace!);
+    return AsyncError<List<ScheduledNotificationItem>>(formatConfigAsyncValue.error!, formatConfigAsyncValue.stackTrace!);
   }
-  // --- End Combined State Handling ---
 
-
-  // --- Helper for IN-PROVIDER Formatter (remains the same) ---
-  ({String title, String body}) formatItem(
-    CachedVideo video,
-    NotificationEventType type,
-    DateTime scheduledTime,
-    NotificationFormatConfig config,
-  ) {
-     final format = config.formats[type];
+  ({String title, String body}) formatItem(CachedVideo video, NotificationEventType type, DateTime scheduledTime, NotificationFormatConfig config) {
+    final format = config.formats[type];
     if (format == null) {
       logger.warning("No format found for event type $type in UI provider");
-      return (title: video.channelName, body: video.videoTitle); // Basic fallback
+      return (title: video.channelName, body: video.videoTitle);
     }
-    
+
     final localScheduledTime = scheduledTime.toLocal();
     final String mediaTime = DateFormat.jm().format(localScheduledTime);
     String relativeTime = 'soon';
@@ -162,9 +132,9 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       }
     }
 
-    String videoType = video.videoType ?? 'Media'; // Default if null in cache
-    if (videoType.isEmpty || videoType == 'placeholder') { // Also handle empty string case
-        videoType = 'Media';
+    String videoType = video.videoType ?? 'Media';
+    if (videoType.isEmpty || videoType == 'placeholder') {
+      videoType = 'Media';
     }
     String mediaTypeCaps = videoType.toUpperCase();
 
@@ -173,13 +143,13 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
     String dateMDY = DateFormat('MM-dd-yyyy').format(localScheduledTime);
     String dateMD = DateFormat('MM-dd').format(localScheduledTime);
     String dateDM = DateFormat('dd-MM').format(localScheduledTime);
-    String dateAsia = '${DateFormat('yyyy').format(localScheduledTime)}年${DateFormat('MM').format(localScheduledTime)}月${DateFormat('dd').format(localScheduledTime)}日';
-
+    String dateAsia =
+        '${DateFormat('yyyy').format(localScheduledTime)}年${DateFormat('MM').format(localScheduledTime)}月${DateFormat('dd').format(localScheduledTime)}日';
 
     final replacements = {
       '{channelName}': video.channelName,
       '{mediaTitle}': video.videoTitle,
-      '{mediaTime}': mediaTime, // Time part
+      '{mediaTime}': mediaTime,
       '{relativeTime}': relativeTime,
       '{mediaType}': videoType,
       '{mediaTypeCaps}': mediaTypeCaps,
@@ -192,7 +162,6 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       '{mediaDateAsia}': dateAsia,
     };
 
-
     String title = format.titleTemplate;
     String body = format.bodyTemplate;
     replacements.forEach((key, value) {
@@ -201,108 +170,94 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
     });
     return (title: title, body: body);
   }
-  // --- End Formatter Helper ---
 
-  // Only proceed if both dependencies have data
   final videoList = baseAsyncValue.requireValue;
-  // {{ Get formatConfig safely from the AsyncValue }}
   final NotificationFormatConfig formatConfig = formatConfigAsyncValue.requireValue;
 
-  // --- Start Actual Filtering and Formatting ---
   final List<ScheduledNotificationItem> expandedItems = [];
 
-  // 1. Expand the list and FORMAT (using the successful formatConfig)
   for (final video in videoList) {
-    // Handle Reminder
     if (video.scheduledReminderNotificationId != null && video.scheduledReminderTime != null) {
       try {
         final reminderTime = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!);
         if (reminderTime.isAfter(DateTime.now())) {
           final formatted = formatItem(video, NotificationEventType.reminder, reminderTime, formatConfig);
-          expandedItems.add(ScheduledNotificationItem(
-            videoData: video,
-            type: NotificationEventType.reminder,
-            scheduledTime: reminderTime,
-            formattedTitle: formatted.title,
-            formattedBody: formatted.body,
-          ));
+          expandedItems.add(
+            ScheduledNotificationItem(
+              videoData: video,
+              type: NotificationEventType.reminder,
+              scheduledTime: reminderTime,
+              formattedTitle: formatted.title,
+              formattedBody: formatted.body,
+            ),
+          );
         }
-      } catch (e) { logger.error("Error processing reminder item ${video.videoId}", e); }
+      } catch (e) {
+        logger.error("Error processing reminder item ${video.videoId}", e);
+      }
     }
 
-    // Handle Live
     if (video.scheduledLiveNotificationId != null && video.startScheduled != null) {
       try {
         final liveTime = DateTime.parse(video.startScheduled!);
         if (liveTime.isAfter(DateTime.now())) {
           final formatted = formatItem(video, NotificationEventType.live, liveTime, formatConfig);
-          expandedItems.add(ScheduledNotificationItem(
-            videoData: video,
-            type: NotificationEventType.live,
-            scheduledTime: liveTime,
-            formattedTitle: formatted.title,
-            formattedBody: formatted.body,
-          ));
+          expandedItems.add(
+            ScheduledNotificationItem(
+              videoData: video,
+              type: NotificationEventType.live,
+              scheduledTime: liveTime,
+              formattedTitle: formatted.title,
+              formattedBody: formatted.body,
+            ),
+          );
         }
-      } catch (e) { logger.error("Error processing live item ${video.videoId}", e); }
+      } catch (e) {
+        logger.error("Error processing live item ${video.videoId}", e);
+      }
     }
   }
-  // --- End Expanding and Formatting ---
 
-  // 2. Filter the formatted & expanded list
-  final List<ScheduledNotificationItem> filteredItems = expandedItems.where((item) {
-    bool typeMatch = allowedTypes.contains(item.type);
-    if (!typeMatch) return false;
-    bool channelMatch = selectedChannelId == null || selectedChannelId == item.channelId;
-    if (!channelMatch) return false;
-    return true;
-  }).toList();
+  final List<ScheduledNotificationItem> filteredItems =
+      expandedItems.where((item) {
+        bool typeMatch = allowedTypes.contains(item.type);
+        if (!typeMatch) return false;
+        bool channelMatch = selectedChannelId == null || selectedChannelId == item.channelId;
+        if (!channelMatch) return false;
+        return true;
+      }).toList();
 
-  // 3. Sort the final filtered list by scheduledTime
   filteredItems.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
 
-  // Return the final list wrapped in AsyncData
   return AsyncData(filteredItems);
-
 }, name: 'filteredScheduledNotificationsProvider');
 
-
-// --- Helper Extension for CombineLatest ---
 extension AsyncValueCombineLatest<T1, T2> on AsyncValue<T1> {
-  AsyncValue<R> combineLatest<R>(
-    AsyncValue<T2> other,
-    R Function(T1, T2) combiner,
-  ) {
+  AsyncValue<R> combineLatest<R>(AsyncValue<T2> other, R Function(T1, T2) combiner) {
     return when(
-      data: (d1) => other.when(
-        data: (d2) {
-          try {
-            return AsyncData(combiner(d1, d2));
-          } catch (e, st) {
-            return AsyncError(e, st);
-          }
-        },
-        loading: () => const AsyncLoading(),
-        error: (e, st) => AsyncError(e, st),
-      ),
-      loading: () => other.maybeWhen(
-        error: (e, st) => AsyncError(e, st),
-        orElse: () => const AsyncLoading(),
-      ),
-      error: (e, st) => other.maybeWhen(
-        error: (e2, st2) => AsyncError(e, st), // Combine errors? Prioritize first?
-        orElse: () => AsyncError(e, st),
-      ),
+      data:
+          (d1) => other.when(
+            data: (d2) {
+              try {
+                return AsyncData(combiner(d1, d2));
+              } catch (e, st) {
+                return AsyncError(e, st);
+              }
+            },
+            loading: () => const AsyncLoading(),
+            error: (e, st) => AsyncError(e, st),
+          ),
+      loading: () => other.maybeWhen(error: (e, st) => AsyncError(e, st), orElse: () => const AsyncLoading()),
+      error: (e, st) => other.maybeWhen(error: (e2, st2) => AsyncError(e, st), orElse: () => AsyncError(e, st)),
     );
   }
 }
 
-// Helper to get String representation of AsyncValue state
 extension AsyncValueStateToString on AsyncValue<dynamic> {
-   String stateToString() {
-      if (isLoading) return 'loading';
-      if (hasError) return 'error';
-      if (hasValue) return 'data';
-      return 'unknown';
-   }
+  String stateToString() {
+    if (isLoading) return 'loading';
+    if (hasError) return 'error';
+    if (hasValue) return 'data';
+    return 'unknown';
+  }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holodex_notifier/infrastructure/services/logger_service.dart'; // Import new providers/helpers
+import 'package:holodex_notifier/infrastructure/services/logger_service.dart';
 import 'package:holodex_notifier/main.dart';
-import 'package:logger/logger.dart'; // Import OutputEvent
-import 'package:share_plus/share_plus.dart'; // Import share_plus
+import 'package:logger/logger.dart';
+import 'package:share_plus/share_plus.dart';
 
 class LogsDataCard extends ConsumerWidget {
   const LogsDataCard({super.key});
@@ -11,39 +11,36 @@ class LogsDataCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final logsAsync = ref.watch(recentLogsProvider); // Watch the new stream provider
-    final loggerService = ref.watch(loggingServiceProvider); // Get the service instance
-    final scaffoldMessenger = ScaffoldMessenger.of(context); // Get messenger
-    final appController = ref.watch(appControllerProvider); // {{ Get AppController }}
+    final logsAsync = ref.watch(recentLogsProvider);
+    final loggerService = ref.watch(loggingServiceProvider);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final appController = ref.watch(appControllerProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // --- Section Title ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8.0),
           child: Text('Application Logs & Configuration', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.secondary)),
         ),
         const SizedBox(height: 8.0),
 
-        // --- Live Log View ---
         Text('Recent Log Output:', style: theme.textTheme.labelMedium),
         const SizedBox(height: 4.0),
         Container(
-          height: 300, // Fixed height for the log view
+          height: 300,
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLowest, // Use a slightly different background
+            color: theme.colorScheme.surfaceContainerLowest,
             border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(8.0),
           ),
           child: logsAsync.when(
             data:
                 (logEvents) => SingleChildScrollView(
-                  reverse: true, // Show latest logs at the bottom and auto-scroll
+                  reverse: true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    // Map OutputEvent to styled Text widgets
                     children: logEvents.map((event) => _buildLogEntryWidget(event, theme)).toList(),
                   ),
                 ),
@@ -53,27 +50,20 @@ class LogsDataCard extends ConsumerWidget {
         ),
         const SizedBox(height: 16.0),
 
-        // --- Share Log Button ---
         Align(
           alignment: Alignment.center,
           child: TextButton.icon(
             icon: const Icon(Icons.share_outlined, size: 18),
             label: const Text('Share Full Log'),
             onPressed: () async {
-              // {{ Modify sharing logic }}
               if (loggerService is ILoggingServiceWithOutput) {
                 try {
-                  // Get the combined content (system info + logs)
                   final logContent = await loggerService.getLogFileContent();
                   if (logContent == null) {
                     throw Exception("Failed to retrieve log content.");
                   }
 
-                  // Share the content directly
-                  final result = await Share.share(
-                    logContent,
-                    subject: 'Holodex Notifier Logs',
-                  );
+                  final result = await Share.share(logContent, subject: 'Holodex Notifier Logs');
 
                   if (result.status == ShareResultStatus.success) {
                     print('Log content shared successfully.');
@@ -94,28 +84,24 @@ class LogsDataCard extends ConsumerWidget {
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log service error: Cannot share logs.')));
               }
-              // {{ End modification }}
             },
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ),
         const SizedBox(height: 16.0),
 
-        // --- Import/Export Buttons ---
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             TextButton.icon(
               icon: const Icon(Icons.upload_file_outlined, size: 18),
               label: const Text('Export Config'),
-              // {{ Add async and connect to controller }}
               onPressed: () async {
                 final success = await appController.exportConfiguration();
                 if (context.mounted) {
                   if (!success) {
                     scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Failed to export configuration.')));
                   }
-                  // No snackbar on success, Share sheet provides feedback
                 }
               },
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -123,14 +109,12 @@ class LogsDataCard extends ConsumerWidget {
             TextButton.icon(
               icon: const Icon(Icons.download_outlined, size: 18),
               label: const Text('Import Config'),
-              // {{ Add async and connect to controller }}
               onPressed: () async {
                 final success = await appController.importConfiguration();
                 if (context.mounted) {
                   if (success) {
                     scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Configuration imported successfully! UI refreshing...')));
                   } else {
-                    // Failure or cancellation message handled inside controller or shown by picker
                     scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Configuration import failed or canceled.')));
                   }
                 }
@@ -143,23 +127,13 @@ class LogsDataCard extends ConsumerWidget {
     );
   }
 
-  // Build widget for a single log event
   Widget _buildLogEntryWidget(OutputEvent event, ThemeData theme) {
-    final color = getLogColor(event, theme); // Use helper from logger_service
-    final text = formatLogEvent(event); // Use helper from logger_service
+    final color = getLogColor(event, theme);
+    final text = formatLogEvent(event);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1.0), // Reduced padding
-      child: Text(
-        text,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: color,
-          fontFamily: 'monospace', // Use monospace for logs
-          fontSize: 10, // Make logs slightly smaller
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
+      child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: color, fontFamily: 'monospace', fontSize: 10)),
     );
   }
-
-  // REMOVE: old _buildLogEntry method that took a string
 }

@@ -1,9 +1,6 @@
-// ignore_for_file: unused_import
-
 import 'dart:async';
-import 'dart:io'; // For Platform check
+import 'dart:io';
 
-import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
@@ -13,31 +10,20 @@ import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:intl/intl.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:timeago/timeago.dart' as timeago; // Import timeago package
-import 'package:url_launcher/url_launcher.dart'; // {{ Add for launching URLs }}
-
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-// --- Notification Tap/Action Handling ---
-
-// Renamed top-level function for background isolate execution
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
-  // IMPORTANT: This runs in a separate isolate. Minimal logic here.
-  // We can try to reconstruct URLs directly if needed, or use a simpler payload.
-  print('Background Notification Tapped: ID=${notificationResponse.id}, ActionID=${notificationResponse.actionId}, Payload=${notificationResponse.payload}');
-  // Directly call _handleTap with background context
-  _handleTap(
-    payload: notificationResponse.payload,
-    actionId: notificationResponse.actionId,
-    isBackground: true,
+  print(
+    'Background Notification Tapped: ID=${notificationResponse.id}, ActionID=${notificationResponse.actionId}, Payload=${notificationResponse.payload}',
   );
+  _handleTap(payload: notificationResponse.payload, actionId: notificationResponse.actionId, isBackground: true);
 }
 
-// Common handler function (TOP-LEVEL) for launching URLs or app actions
-// Needs to be top-level to be callable from background isolate.
 Future<void> _handleTap({required String? payload, required String? actionId, required bool isBackground}) async {
   print("Handling Tap: Payload=$payload, ActionID=$actionId, Background=$isBackground");
   if (payload == null || payload.isEmpty) {
@@ -45,31 +31,26 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
     return;
   }
 
-  final String videoId = payload; // Payload is the videoId
+  final String videoId = payload;
   String? urlToLaunch;
   // ignore: unused_local_variable
   bool openApp = false;
 
-  // Determine action based on actionId
   if (actionId == LocalNotificationService.actionOpenYoutube) {
     urlToLaunch = 'https://www.youtube.com/watch?v=$videoId';
   } else if (actionId == LocalNotificationService.actionOpenHolodex) {
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   } else if (actionId == LocalNotificationService.actionOpenSource) {
-     // Handle this more gracefully if source link isn't available in payload directly
-     urlToLaunch = 'https://holodex.net/watch/$videoId'; // Fallback
-     print("Tap Handler WARNING: action_open_source tapped. Source link not directly available in payload. Falling back to Holodex page: $videoId");
+    urlToLaunch = 'https://holodex.net/watch/$videoId';
+    print("Tap Handler WARNING: action_open_source tapped. Source link not directly available in payload. Falling back to Holodex page: $videoId");
   } else if (actionId == LocalNotificationService.actionOpenApp) {
     openApp = true;
     print("Tap Handler: App open action requested for video $videoId.");
-    // Actual app opening/navigation needs to be handled by the main isolate listener
   } else {
-    // No action ID, assume main notification tap -> Default action (e.g., Holodex)
     print("Tap Handler: Main notification tap. Defaulting to Holodex.");
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   }
 
-  // Launch URL if determined
   if (urlToLaunch != null) {
     final uri = Uri.tryParse(urlToLaunch);
     if (uri != null) {
@@ -87,29 +68,22 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
       print('Failed to parse URI: $urlToLaunch');
     }
   }
-  // App opening signal is handled by the foreground callback listener
 }
-// --- End Notification Tap/Action Handling ---
-
 
 class LocalNotificationService implements INotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  // Use DefaultCacheManager or configure a custom one
   final BaseCacheManager _cacheManager = DefaultCacheManager();
 
-  // Stream controller for tap events (to signal ಮುಖ್ಯ app)
   final StreamController<String?> _notificationTapController = StreamController<String?>.broadcast();
 
   static const String _androidIconReference = '@mipmap/ic_launcher';
 
-  // Dependencies
   final ILoggingService _logger;
-  final ISettingsService _settingsService; // {{ Inject ISettingsService }}
+  final ISettingsService _settingsService;
 
   static bool _isInitialized = false;
-  static final _initLock = Lock(); // Basic lock object
+  static final _initLock = Lock();
 
-  // --- Channel Definitions ---
   static const String defaultChannelId = 'holodex_notifier_default';
   static const String defaultChannelName = 'Holodex Notifications';
   static const String defaultChannelDesc = 'General notifications from Holodex Notifier';
@@ -122,64 +96,50 @@ class LocalNotificationService implements INotificationService {
   static const String reminderChannelName = 'Upcoming Stream Reminders';
   static const String reminderChannelDesc = 'Reminders for streams that are due soon';
 
-  // --- Action ID Constants ---
   static const String actionOpenYoutube = 'action_open_youtube';
   static const String actionOpenHolodex = 'action_open_holodex';
-  static const String actionOpenSource = 'action_open_source'; // ID for source link (if available)
+  static const String actionOpenSource = 'action_open_source';
   static const String actionOpenApp = 'action_open_app';
 
-  // --- Constructor ---
   LocalNotificationService(this._logger, this._settingsService);
 
   Stream<String?> get notificationTapStream => _notificationTapController.stream;
 
-  // State
-  NotificationFormatConfig? _formatConfigInternal; // Change to nullable
-  bool _configLoadAttempted = false; // Flag to prevent multiple loads
+  NotificationFormatConfig? _formatConfigInternal;
+  bool _configLoadAttempted = false;
 
- // Getter for external use (returns loaded config or throws error if not yet loaded properly)
   NotificationFormatConfig get _formatConfig {
     if (_formatConfigInternal == null) {
-      // This shouldn't happen if loadFormatConfig is called correctly, but acts as a safeguard.
       _logger.fatal("_formatConfig accessed before successful load! Ensure loadFormatConfig() or _ensureConfigLoaded() is called first.");
-      // Optionally return default or throw, but fatal better indicates logic error
       throw StateError("Notification Format Config not loaded!");
     }
     return _formatConfigInternal!;
   }
 
-  // {{ Ensure loadFormatConfig has @override }}
-  // NOTE: loadFormatConfig is NOT part of the INotificationService interface
-  // It's an internal method for this implementation. Do NOT add @override.
   Future<void> loadFormatConfig() async {
     if (_configLoadAttempted) {
-       _logger.trace("Notification Format Config load already attempted/completed.");
-      return; // Avoid redundant loads
+      _logger.trace("Notification Format Config load already attempted/completed.");
+      return;
     }
-    _configLoadAttempted = true; // Set flag immediately
+    _configLoadAttempted = true;
     try {
       _logger.debug("Loading Notification Format Config...");
-      _formatConfigInternal = await _settingsService.getNotificationFormatConfig(); // Assign to nullable field
+      _formatConfigInternal = await _settingsService.getNotificationFormatConfig();
       _logger.debug("Notification Format Config loaded (Version: ${_formatConfigInternal?.version}).");
     } catch (e, s) {
       _logger.error("Failed to load Notification Format Config. Using defaults.", e, s);
-      _formatConfigInternal = NotificationFormatConfig.defaultConfig(); // Assign default to nullable field
-      // Consider if retry is appropriate on error. Keeping `_configLoadAttempted = true` prevents retries on subsequent calls.
+      _formatConfigInternal = NotificationFormatConfig.defaultConfig();
     }
   }
 
-  // {{ Re-add reloadFormatConfig with @override }}
   @override
   Future<void> reloadFormatConfig() async {
     _logger.info("Reloading Notification Format Config...");
     try {
-      // Re-fetch the config from the settings service
       _formatConfigInternal = await _settingsService.getNotificationFormatConfig();
       _logger.info("Notification Format Config reloaded successfully (Version: ${_formatConfigInternal?.version}).");
     } catch (e, s) {
       _logger.error("Failed to reload Notification Format Config. Existing config (if any) will be kept.", e, s);
-      // Optionally: revert to defaults if reload fails critically?
-      // _formatConfigInternal = NotificationFormatConfig.defaultConfig();
     }
   }
 
@@ -192,7 +152,6 @@ class LocalNotificationService implements INotificationService {
 
   @override
   Future<void> initialize() async {
-    // Use the lock to prevent concurrent initialization
     bool shouldInitialize = false;
     await _initLock.synchronized(() {
       if (!_isInitialized) {
@@ -208,15 +167,12 @@ class LocalNotificationService implements INotificationService {
 
     _logger.info("Initializing LocalNotificationService...");
     try {
-      // {{ --- Load Format Config FIRST --- }}
-      await loadFormatConfig(); // Ensure config is loaded before use elsewhere
+      await loadFormatConfig();
 
-      // --- Timezone Setup ---
       _logger.debug("Initializing timezones...");
       tz.initializeTimeZones();
       _logger.debug("Timezones initialized.");
 
-      // --- Platform Settings ---
       const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(_androidIconReference);
       final DarwinInitializationSettings initializationSettingsDarwin = DarwinInitializationSettings(
         requestAlertPermission: true,
@@ -224,9 +180,8 @@ class LocalNotificationService implements INotificationService {
         requestSoundPermission: true,
         onDidReceiveLocalNotification: (int id, String? title, String? body, String? payload) async {
           _logger.info("[iOS Legacy] Notification Received (id=$id, payload=$payload)");
-          // Handle legacy tap like a main tap
-          _handleTap(payload: payload, actionId: null, isBackground: false); // Assume foreground for legacy
-          _notificationTapController.add(payload); // Signal controller with videoId
+          _handleTap(payload: payload, actionId: null, isBackground: false);
+          _notificationTapController.add(payload);
         },
       );
       const LinuxInitializationSettings initializationSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open');
@@ -238,31 +193,25 @@ class LocalNotificationService implements INotificationService {
         linux: initializationSettingsLinux,
       );
 
-      // --- Initialize Plugin ---
       _logger.debug("Calling _flutterLocalNotificationsPlugin.initialize()...");
       await _flutterLocalNotificationsPlugin.initialize(
         initializationSettings,
-        // --- Updated Foreground Callback ---
         onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
           final payload = notificationResponse.payload ?? '<null>';
           final actionId = notificationResponse.actionId;
           _logger.info("Foreground Notification Tapped: ActionID=$actionId, Payload=$payload");
 
-          // Call the common handler (which is now top-level)
           await _handleTap(payload: payload, actionId: actionId, isBackground: false);
 
-          // Signal the main application stream controller IF it was a main tap or specific app open action
           if ((actionId == null || actionId.isEmpty || actionId == actionOpenApp) && payload != '<null>') {
-              _logger.debug("Signaling TapController from foreground callback for payload: $payload");
-             _notificationTapController.add(payload); // Payload is videoId
+            _logger.debug("Signaling TapController from foreground callback for payload: $payload");
+            _notificationTapController.add(payload);
           }
         },
-        // --- End Updated Foreground Callback ---
-        onDidReceiveBackgroundNotificationResponse: notificationTapBackground, // Keep background handler
+        onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
       );
       _logger.debug("_flutterLocalNotificationsPlugin.initialize() COMPLETED.");
 
-      // --- Request Permissions & Create Channels ---
       if (Platform.isAndroid) {
         await _requestAndroidPermissions();
         await _createAndroidChannels();
@@ -270,7 +219,6 @@ class LocalNotificationService implements INotificationService {
 
       _logger.info("LocalNotificationService initialized successfully.");
     } catch (e, s) {
-      // Reset init flag on failure
       await _initLock.synchronized(() {
         _isInitialized = false;
       });
@@ -278,7 +226,6 @@ class LocalNotificationService implements INotificationService {
       rethrow;
     }
   }
-
 
   Future<void> _requestAndroidPermissions() async {
     final plugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -298,7 +245,6 @@ class LocalNotificationService implements INotificationService {
   }
 
   Future<void> _createAndroidChannels() async {
-    // Default channel (Immediate: Live, New, Update, Mention)
     const AndroidNotificationChannel defaultChannel = AndroidNotificationChannel(
       defaultChannelId,
       defaultChannelName,
@@ -306,7 +252,6 @@ class LocalNotificationService implements INotificationService {
       importance: Importance.max,
       playSound: true,
     );
-    // Scheduled channel (Scheduled: Live)
     const AndroidNotificationChannel scheduledChannel = AndroidNotificationChannel(
       scheduledChannelId,
       scheduledChannelName,
@@ -314,72 +259,61 @@ class LocalNotificationService implements INotificationService {
       importance: Importance.high,
       playSound: true,
     );
-    // Reminder channel (Scheduled: Reminder)
-     const AndroidNotificationChannel reminderChannel = AndroidNotificationChannel(
+    const AndroidNotificationChannel reminderChannel = AndroidNotificationChannel(
       reminderChannelId,
       reminderChannelName,
       description: reminderChannelDesc,
-      importance: Importance.high, // << INCREASED from defaultImportance
+      importance: Importance.high,
       playSound: true,
-      // sound: RawResourceAndroidNotificationSound('notification_sound'), // Optional
     );
 
-    // ... (rest of the method) ...
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
     try {
-        await androidImplementation?.createNotificationChannel(defaultChannel);
-        await androidImplementation?.createNotificationChannel(scheduledChannel);
-        await androidImplementation?.createNotificationChannel(reminderChannel);
-        _logger.info("Android Notification Channels Created/Ensured.");
-    } catch (e,s) {
+      await androidImplementation?.createNotificationChannel(defaultChannel);
+      await androidImplementation?.createNotificationChannel(scheduledChannel);
+      await androidImplementation?.createNotificationChannel(reminderChannel);
+      _logger.info("Android Notification Channels Created/Ensured.");
+    } catch (e, s) {
       _logger.error("Failed to create Android notification channels", e, s);
     }
   }
 
-
   @override
-  Future<int?> showNotification(NotificationInstruction instruction) async { // {{ Change return type to Future<int?> }}
+  Future<int?> showNotification(NotificationInstruction instruction) async {
     _logger.debug("[ShowNotification] Start instruction: ${instruction.eventType}, videoId: ${instruction.videoId}");
     try {
-      // {{ --- Ensure Config is Loaded --- }}
       await _ensureConfigLoaded();
-      // Use the getter, which now ensures non-null or throws
       final config = _formatConfig;
-      // Find the specific format for this event type
       final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
       _logger.trace("[ShowNotification] Using format config: ${format.toJson()}");
 
-      // {{ --- 1. Format Title & Body --- }}
-      final formatted = _formatNotification(instruction, format); // Pass specific format
+      final formatted = _formatNotification(instruction, format);
       if (formatted == null) {
-          _logger.warning("[ShowNotification] Formatting failed for event type ${instruction.eventType}. Aborting show.");
-          return null;
+        _logger.warning("[ShowNotification] Formatting failed for event type ${instruction.eventType}. Aborting show.");
+        return null;
       }
       final title = formatted.title;
       final body = formatted.body;
       final payload = instruction.videoId;
       _logger.debug("[ShowNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
 
-      // {{ --- 2. Get Assets (Conditional Thumbnail) --- }}
       AndroidBitmap<Object>? largeIconBitmap;
       String? largeIconPath;
       StyleInformation? styleInformation;
       List<DarwinNotificationAttachment>? darwinAttachments;
 
-      // Fetch avatar (always attempted if URL present)
       if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
         try {
           final avatarFile = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
           largeIconPath = avatarFile.path;
           largeIconBitmap = FilePathAndroidBitmap(avatarFile.path);
-           _logger.debug("[ShowNotification] Avatar fetched for largeIcon: $largeIconPath");
+          _logger.debug("[ShowNotification] Avatar fetched for largeIcon: $largeIconPath");
         } catch (e) {
-           _logger.error("[ShowNotification] Failed fetch avatar",e);
+          _logger.error("[ShowNotification] Failed fetch avatar", e);
         }
       }
-      // Fetch thumbnail ONLY if format.showThumbnail is true AND URL is present
       if (format.showThumbnail && instruction.videoThumbnailUrl != null && instruction.videoThumbnailUrl!.isNotEmpty) {
         try {
           _logger.trace("[ShowNotification] Fetching thumbnail (showThumbnail=true): ${instruction.videoThumbnailUrl}");
@@ -389,225 +323,189 @@ class LocalNotificationService implements INotificationService {
             largeIcon: largeIconBitmap,
             hideExpandedLargeIcon: false,
           );
-           _logger.debug("[ShowNotification] Thumbnail fetched for BigPicture: ${thumbnailFile.path}");
+          _logger.debug("[ShowNotification] Thumbnail fetched for BigPicture: ${thumbnailFile.path}");
           darwinAttachments = [DarwinNotificationAttachment(thumbnailFile.path)];
         } catch (e) {
-           _logger.error("[ShowNotification] Failed fetch thumbnail",e);
-           // Fallback if thumbnail failed but avatar exists
-           if (largeIconPath != null) {
-             darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
-             _logger.debug("[ShowNotification] Using avatar as Darwin attachment due to thumbnail error.");
-           }
+          _logger.error("[ShowNotification] Failed fetch thumbnail", e);
+          if (largeIconPath != null) {
+            darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
+            _logger.debug("[ShowNotification] Using avatar as Darwin attachment due to thumbnail error.");
+          }
         }
       } else if (largeIconPath != null) {
-        // No thumbnail (due to flag or URL), use avatar for Darwin if available
         darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
         _logger.debug("[ShowNotification] Using avatar as Darwin attachment (thumbnail disabled or unavailable).");
       }
       if (!format.showThumbnail) {
-          _logger.debug("[ShowNotification] Thumbnail display skipped (showThumbnail=false).");
+        _logger.debug("[ShowNotification] Thumbnail display skipped (showThumbnail=false).");
       }
 
-      // {{ --- 3. Determine Channel and Details --- }}
-      // ... existing channel/importance/priority logic ...
-        final String channelId = _getChannelIdForInstruction(instruction);
-        final String channelName = _getChannelNameFromId(channelId);
-        final String channelDesc = _getChannelDescFromId(channelId);
-        final Importance importance = _getImportanceFromId(channelId);
-        final Priority priority = _getPriorityFromId(channelId);
-        _logger.debug("[ShowNotification] Using channel: $channelId");
+      final String channelId = _getChannelIdForInstruction(instruction);
+      final String channelName = _getChannelNameFromId(channelId);
+      final String channelDesc = _getChannelDescFromId(channelId);
+      final Importance importance = _getImportanceFromId(channelId);
+      final Priority priority = _getPriorityFromId(channelId);
+      _logger.debug("[ShowNotification] Using channel: $channelId");
 
-      // {{ --- 4. Define Actions (Conditional Logic) --- }}
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format); // Pass the format
+      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
 
-      // {{ --- 5. Build Notification Details --- }}
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-          channelId, channelName,
-          channelDescription: channelDesc,
-          importance: importance, priority: priority,
-          largeIcon: largeIconBitmap,
-          styleInformation: styleInformation, // BigPictureStyle if thumbnail shown, otherwise null
-          actions: androidActions, // Actions built by helper (respects flags)
-          ticker: title,
+        channelId,
+        channelName,
+        channelDescription: channelDesc,
+        importance: importance,
+        priority: priority,
+        largeIcon: largeIconBitmap,
+        styleInformation: styleInformation,
+        actions: androidActions,
+        ticker: title,
       );
-       final DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
-          presentAlert: true, presentBadge: true, presentSound: true,
-          attachments: darwinAttachments, // Thumbnail or avatar if shown
-       );
-       final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
-
-      // {{ --- 6. Generate ID and Show --- }}
-      // ... existing ID generation and show call ...
+      final DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        attachments: darwinAttachments,
+      );
+      final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
 
       final int notificationId = _generateImmediateNotificationId(instruction.videoId, instruction.eventType);
-        _logger.debug("[ShowNotification] Showing notification ID: $notificationId");
+      _logger.debug("[ShowNotification] Showing notification ID: $notificationId");
       await _flutterLocalNotificationsPlugin.show(notificationId, title, body, notificationDetails, payload: payload);
       _logger.info("[ShowNotification] Notification shown successfully. ID: $notificationId Type: ${instruction.eventType}");
-      return notificationId; // {{ Return the ID on success }}
-
+      return notificationId;
     } catch (e, s) {
-        _logger.error("[ShowNotification] Error for ${instruction.videoId}", e, s);
-        return null; // {{ Return null on failure }}
-        /* Rethrow or handle */
+      _logger.error("[ShowNotification] Error for ${instruction.videoId}", e, s);
+      return null;
+      /* Rethrow or handle */
     }
   }
 
   @override
-  Future<int?> scheduleNotification({
-    required NotificationInstruction instruction,
-    required DateTime scheduledTime,
-  }) async {
+  Future<int?> scheduleNotification({required NotificationInstruction instruction, required DateTime scheduledTime}) async {
     _logger.debug("[ScheduleNotification] Start instruction: ${instruction.eventType}, videoId: ${instruction.videoId}, time: $scheduledTime");
-       try {
-      // {{ --- Ensure Config is Loaded --- }}
+    try {
       await _ensureConfigLoaded();
       final config = _formatConfig;
-      // Find the specific format for this event type
       final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
-        _logger.trace("[ScheduleNotification] Using format config: ${format.toJson()}");
+      _logger.trace("[ScheduleNotification] Using format config: ${format.toJson()}");
 
-      // {{ --- 1. Format Title & Body --- }}
-      // {{ Pass specific format and scheduledTime }}
       final formatted = _formatNotification(instruction, format, scheduledTime: scheduledTime);
       if (formatted == null) {
-           _logger.warning("[ScheduleNotification] Formatting failed for event type ${instruction.eventType}. Aborting schedule.");
-           return null;
+        _logger.warning("[ScheduleNotification] Formatting failed for event type ${instruction.eventType}. Aborting schedule.");
+        return null;
       }
       final title = formatted.title;
       final body = formatted.body;
       final payload = instruction.videoId;
       _logger.debug("[ScheduleNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
 
-      // {{ --- 2. Determine Channel and Details --- }}
-      // ... existing logic ...
-        final String channelId = _getChannelIdForScheduleInstruction(instruction);
-        final String channelName = _getChannelNameFromId(channelId);
-        final String channelDesc = _getChannelDescFromId(channelId);
-        final Importance importance = _getImportanceFromId(channelId);
-        final Priority priority = _getPriorityFromId(channelId);
-         _logger.debug("[ScheduleNotification] Using channel: $channelId");
+      final String channelId = _getChannelIdForScheduleInstruction(instruction);
+      final String channelName = _getChannelNameFromId(channelId);
+      final String channelDesc = _getChannelDescFromId(channelId);
+      final Importance importance = _getImportanceFromId(channelId);
+      final Priority priority = _getPriorityFromId(channelId);
+      _logger.debug("[ScheduleNotification] Using channel: $channelId");
 
-      // {{ --- 3. Define Actions (Conditional) --- }}
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format); // Pass the format
+      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
 
-      // {{ --- 4. Get Assets (Avatar only, no thumbnail for scheduled) --- }}
-      // ... existing avatar fetching ...
-        AndroidBitmap<Object>? largeIconBitmap;
-        if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
-          try {
-             final file = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
-             largeIconBitmap = FilePathAndroidBitmap(file.path);
-          } catch (e) { _logger.warning("[ScheduleNotification] Failed fetch scheduled avatar", e); }
+      AndroidBitmap<Object>? largeIconBitmap;
+      if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
+        try {
+          final file = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
+          largeIconBitmap = FilePathAndroidBitmap(file.path);
+        } catch (e) {
+          _logger.warning("[ScheduleNotification] Failed fetch scheduled avatar", e);
         }
+      }
 
-      // {{ --- 5. Build Notification Details --- }}
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-          channelId, channelName,
-          channelDescription: channelDesc,
-          importance: importance, priority: priority,
-          largeIcon: largeIconBitmap,
-          actions: androidActions, // Actions based on flags
-          ticker: title,
+        channelId,
+        channelName,
+        channelDescription: channelDesc,
+        importance: importance,
+        priority: priority,
+        largeIcon: largeIconBitmap,
+        actions: androidActions,
+        ticker: title,
       );
-        const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
-          presentAlert: true, presentBadge: true, presentSound: true,
-        );
-       final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
+      const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true);
+      final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
 
-      // {{ --- 6. Convert time and Schedule --- }}
-      // ... existing tzDateTime and ID generation ...
-        final tz.TZDateTime scheduledTZTime = tz.TZDateTime.from(scheduledTime, tz.local);
-        final int notificationId = instruction.eventType == NotificationEventType.reminder
-                ? _generateReminderNotificationId(instruction.videoId)
-                : _generateScheduledNotificationId(instruction.videoId);
+      final tz.TZDateTime scheduledTZTime = tz.TZDateTime.from(scheduledTime, tz.local);
+      final int notificationId =
+          instruction.eventType == NotificationEventType.reminder
+              ? _generateReminderNotificationId(instruction.videoId)
+              : _generateScheduledNotificationId(instruction.videoId);
 
-      // ... existing cancel pre-schedule ...
-        await _flutterLocalNotificationsPlugin.cancel(notificationId);
-         _logger.debug("[ScheduleNotification] Pre-cancelled existing notification ID $notificationId before scheduling.");
+      await _flutterLocalNotificationsPlugin.cancel(notificationId);
+      _logger.debug("[ScheduleNotification] Pre-cancelled existing notification ID $notificationId before scheduling.");
 
+      _logger.debug("[ScheduleNotification] Scheduling notification ID: $notificationId for time: $scheduledTZTime");
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        title,
+        body,
+        scheduledTZTime,
+        notificationDetails,
+        payload: payload,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
 
-       _logger.debug("[ScheduleNotification] Scheduling notification ID: $notificationId for time: $scheduledTZTime");
-       await _flutterLocalNotificationsPlugin.zonedSchedule(
-          // ... existing parameters ...
-           notificationId, title, body, scheduledTZTime, notificationDetails,
-           payload: payload,
-           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-           matchDateTimeComponents: DateTimeComponents.time,
-        );
-
-       _logger.info("[ScheduleNotification] Notification scheduled successfully. ID: $notificationId for $scheduledTZTime Type: ${instruction.eventType}");
-       return notificationId;
-
+      _logger.info(
+        "[ScheduleNotification] Notification scheduled successfully. ID: $notificationId for $scheduledTZTime Type: ${instruction.eventType}",
+      );
+      return notificationId;
     } catch (e, s) {
-        _logger.error("[ScheduleNotification] Failed for ${instruction.videoId}", e, s);
-        return null;
+      _logger.error("[ScheduleNotification] Failed for ${instruction.videoId}", e, s);
+      return null;
     }
   }
 
-
-  // --- Helper to Build Actions CONDITIONALLY ---
   List<AndroidNotificationAction> _buildAndroidActions(NotificationInstruction instruction, NotificationFormat format) {
     final List<AndroidNotificationAction> actions = [];
     final String? sourceLink = instruction.videoSourceLink;
     final bool isPlaceholder = instruction.videoType == 'placeholder';
 
-    _logger.trace("[BuildActions] Building actions for Video ${instruction.videoId}. Format flags: YT=${format.showYoutubeLink}, HDX=${format.showHolodexLink}, SRC=${format.showSourceLink}");
+    _logger.trace(
+      "[BuildActions] Building actions for Video ${instruction.videoId}. Format flags: YT=${format.showYoutubeLink}, HDX=${format.showHolodexLink}, SRC=${format.showSourceLink}",
+    );
 
-    // Add Source Link action if:
-    // 1. It's a placeholder
-    // 2. Source link is non-empty
-    // 3. format.showSourceLink is true
     if (isPlaceholder && sourceLink != null && sourceLink.isNotEmpty && format.showSourceLink) {
       _logger.debug("[BuildActions] Adding 'Open Source' action for placeholder video ${instruction.videoId}.");
-      actions.add(AndroidNotificationAction(
-        actionOpenSource, 'Open Source', showsUserInterface: false,
-      ));
+      actions.add(AndroidNotificationAction(actionOpenSource, 'Open Source', showsUserInterface: false));
     } else if (!isPlaceholder) {
-      // Non-placeholder: Add YouTube/Holodex links if enabled
       if (format.showYoutubeLink) {
         _logger.debug("[BuildActions] Adding 'Open YouTube' action for regular video ${instruction.videoId}.");
-        actions.add(AndroidNotificationAction(
-          actionOpenYoutube, 'Open YouTube', showsUserInterface: false,
-        ));
+        actions.add(AndroidNotificationAction(actionOpenYoutube, 'Open YouTube', showsUserInterface: false));
       }
       if (format.showHolodexLink) {
-         _logger.debug("[BuildActions] Adding 'Open Holodex' action for regular video ${instruction.videoId}.");
-        actions.add(AndroidNotificationAction(
-          actionOpenHolodex, 'Open Holodex', showsUserInterface: false,
-        ));
+        _logger.debug("[BuildActions] Adding 'Open Holodex' action for regular video ${instruction.videoId}.");
+        actions.add(AndroidNotificationAction(actionOpenHolodex, 'Open Holodex', showsUserInterface: false));
       }
     } else if (isPlaceholder && !format.showSourceLink) {
       _logger.debug("[BuildActions] Skipping 'Open Source' action for ${instruction.videoId} (showSourceLink=false).");
     }
-    _logger.debug("[BuildActions] Final actions for ${instruction.videoId}: ${actions.map((a)=> a.id).join(', ')}");
+    _logger.debug("[BuildActions] Final actions for ${instruction.videoId}: ${actions.map((a) => a.id).join(', ')}");
     return actions;
   }
 
-  // {{ --- Formatting Helper --- }}
-  // {{ Modify to take specific NotificationFormat instead of full config }}
-  ({String title, String body})? _formatNotification(
-    NotificationInstruction instruction,
-    NotificationFormat format, { // Take the specific format
-    DateTime? scheduledTime, // Null for immediate, used only for finding relative time for REMINDERS
-  }) {
-    // Use the provided format directly
-     _logger.trace("[Format] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
+  ({String title, String body})? _formatNotification(NotificationInstruction instruction, NotificationFormat format, {DateTime? scheduledTime}) {
+    _logger.trace("[Format] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
 
-     DateTime baseTime = instruction.availableAt;
-     final localBaseTime = baseTime.toLocal();
+    DateTime baseTime = instruction.availableAt;
+    final localBaseTime = baseTime.toLocal();
 
-     String relativeTime = '';
-     // Calculate relative time based on the BASE time (availableAt)
-     try {
-       relativeTime = timeago.format(localBaseTime, locale: 'en_short', allowFromNow: true);
-     } catch (e) {
-       _logger.error("Error formatting relative time using baseTime: $localBaseTime", e);
-       relativeTime = (localBaseTime.isBefore(DateTime.now())) ? "just now" : "soon"; // fallback
-     }
+    String relativeTime = '';
+    try {
+      relativeTime = timeago.format(localBaseTime, locale: 'en_short', allowFromNow: true);
+    } catch (e) {
+      _logger.error("Error formatting relative time using baseTime: $localBaseTime", e);
+      relativeTime = (localBaseTime.isBefore(DateTime.now())) ? "just now" : "soon";
+    }
 
-    // Prepare other placeholders
-    final String mediaTime = DateFormat.jm().format(localBaseTime); // 1:30 PM
+    final String mediaTime = DateFormat.jm().format(localBaseTime);
     String mediaType = instruction.videoType ?? 'Media';
     if (mediaType.isEmpty || mediaType == 'placeholder') mediaType = 'Media';
     String mediaTypeCaps = mediaType.toUpperCase();
@@ -617,14 +515,14 @@ class LocalNotificationService implements INotificationService {
     String dateMDY = DateFormat('MM-dd-yyyy').format(localBaseTime);
     String dateMD = DateFormat('MM-dd').format(localBaseTime);
     String dateDM = DateFormat('dd-MM').format(localBaseTime);
-    String dateAsia = '${DateFormat('yyyy').format(localBaseTime)}年${DateFormat('MM').format(localBaseTime)}月${DateFormat('dd').format(localBaseTime)}日';
+    String dateAsia =
+        '${DateFormat('yyyy').format(localBaseTime)}年${DateFormat('MM').format(localBaseTime)}月${DateFormat('dd').format(localBaseTime)}日';
 
-    // Build replacement map
     Map<String, String> replacements = {
       '{channelName}': instruction.channelName,
       '{mediaTitle}': instruction.videoTitle,
       '{mediaTime}': mediaTime,
-      '{relativeTime}': relativeTime, // Always based on availableAt
+      '{relativeTime}': relativeTime,
       '{mediaType}': mediaType,
       '{mediaTypeCaps}': mediaTypeCaps,
       '{newLine}': '\n',
@@ -636,7 +534,6 @@ class LocalNotificationService implements INotificationService {
       '{mediaDateAsia}': dateAsia,
     };
 
-    // Apply replacements
     String title = format.titleTemplate;
     String body = format.bodyTemplate;
 
@@ -649,110 +546,87 @@ class LocalNotificationService implements INotificationService {
     return (title: title, body: body);
   }
 
-  // --- Channel Info Helpers ---
-
-   // Helper to determine channel for IMMEDIATE notifications
   String _getChannelIdForInstruction(NotificationInstruction instruction) {
     switch (instruction.eventType) {
-      // Immediate notifications (Live just started, new video, update, mention) use the default channel
       case NotificationEventType.live:
       case NotificationEventType.newMedia:
       case NotificationEventType.update:
       case NotificationEventType.mention:
-         _logger.trace("_getChannelIdForInstruction: Event ${instruction.eventType} -> defaultChannelId");
-         return defaultChannelId;
-      // Reminders should always be scheduled, triggering this would be unexpected.
+        _logger.trace("_getChannelIdForInstruction: Event ${instruction.eventType} -> defaultChannelId");
+        return defaultChannelId;
       case NotificationEventType.reminder:
-         _logger.warning("_getChannelIdForInstruction: Unexpected immediate REMINDER event -> defaultChannelId (fallback)");
-         return defaultChannelId; // Fallback, though should not happen
+        _logger.warning("_getChannelIdForInstruction: Unexpected immediate REMINDER event -> defaultChannelId (fallback)");
+        return defaultChannelId;
       // ignore: unreachable_switch_default
-      default: // Should not happen
+      default:
         _logger.warning("Unknown event type in _getChannelIdForInstruction: ${instruction.eventType} -> defaultChannelId (fallback)");
         return defaultChannelId;
     }
   }
 
-  // Separate helper to determine channel for SCHEDULED notifications
   String _getChannelIdForScheduleInstruction(NotificationInstruction instruction) {
-      switch (instruction.eventType) {
-          // Scheduled Live stream notifications use the scheduled channel
-          case NotificationEventType.live:
-            _logger.trace("_getChannelIdForScheduleInstruction: Event ${instruction.eventType} -> scheduledChannelId");
-            return scheduledChannelId;
-          // Scheduled Reminder notifications use the reminder channel
-          case NotificationEventType.reminder:
-            _logger.trace("_getChannelIdForScheduleInstruction: Event ${instruction.eventType} -> reminderChannelId");
-            return reminderChannelId;
-          // Other types (New, Update, Mention) are typically NOT scheduled. If they are, use default as fallback.
-          case NotificationEventType.newMedia:
-          case NotificationEventType.update:
-          case NotificationEventType.mention:
-          // ignore: unreachable_switch_default
-          default:
-              _logger.warning("Attempting to SCHEDULE unexpected notification type: ${instruction.eventType}. Using default channel.");
-              return defaultChannelId; // Fallback
-      }
+    switch (instruction.eventType) {
+      case NotificationEventType.live:
+        _logger.trace("_getChannelIdForScheduleInstruction: Event ${instruction.eventType} -> scheduledChannelId");
+        return scheduledChannelId;
+      case NotificationEventType.reminder:
+        _logger.trace("_getChannelIdForScheduleInstruction: Event ${instruction.eventType} -> reminderChannelId");
+        return reminderChannelId;
+      case NotificationEventType.newMedia:
+      case NotificationEventType.update:
+      case NotificationEventType.mention:
+      // ignore: unreachable_switch_default
+      default:
+        _logger.warning("Attempting to SCHEDULE unexpected notification type: ${instruction.eventType}. Using default channel.");
+        return defaultChannelId;
+    }
   }
 
-
-  // Add helpers to get name/desc/importance/priority from ID
   String _getChannelNameFromId(String id) {
     if (id == scheduledChannelId) return scheduledChannelName;
     if (id == reminderChannelId) return reminderChannelName;
-    return defaultChannelName; // Default
+    return defaultChannelName;
   }
 
   String _getChannelDescFromId(String id) {
     if (id == scheduledChannelId) return scheduledChannelDesc;
     if (id == reminderChannelId) return reminderChannelDesc;
-    return defaultChannelDesc; // Default
+    return defaultChannelDesc;
   }
 
   Importance _getImportanceFromId(String id) {
-    if (id == scheduledChannelId) return Importance.high;       // Scheduled Live
-    if (id == reminderChannelId) return Importance.high; // Reminders (INCREASED)
-    return Importance.max; // Default (Immediate Live, New, etc.)
+    if (id == scheduledChannelId) return Importance.high;
+    if (id == reminderChannelId) return Importance.high;
+    return Importance.max;
   }
 
   Priority _getPriorityFromId(String id) {
-    if (id == scheduledChannelId) return Priority.high;        // Scheduled Live
-    if (id == reminderChannelId) return Priority.high; // Reminders (INCREASED to match Importance.high)
-    return Priority.high; // Default (Immediate Live, New, etc.) - Changed from Max to High for consistency with Importance.Max
+    if (id == scheduledChannelId) return Priority.high;
+    if (id == reminderChannelId) return Priority.high;
+    return Priority.high;
   }
 
-  // Generates a stable 31-bit integer ID from a string.
-  // Needed because Android notification IDs are 32-bit signed integers.
   int _generateConsistentId(String uniqueString) {
-    // Simple hash: sum of character codes modulo max 31-bit int
-    const maxInt = 0x7FFFFFFF; // Max positive 32-bit signed int
+    const maxInt = 0x7FFFFFFF;
     var hash = 0;
     for (var i = 0; i < uniqueString.length; i++) {
       hash = (31 * hash + uniqueString.codeUnitAt(i)) & maxInt;
     }
-    // print("Generated ID for '$uniqueString': $hash"); // Debug logging if needed
     return hash;
   }
 
-  // Generate distinct IDs for immediate notifications based on video and type.
   int _generateImmediateNotificationId(String videoId, NotificationEventType type) {
-    // Prefix differentiates from scheduled/reminder IDs for the same videoId.
-    // Including type helps if we ever need to show e.g., an immediate 'live' AND an immediate 'mention' for the same video (unlikely but possible).
     return _generateConsistentId("immediate_${videoId}_${type.name}");
   }
 
-  // Generate distinct ID for a SCHEDULED 'live' notification.
   int _generateScheduledNotificationId(String videoId) {
-    // Different prefix from immediate and reminder. Only one scheduled 'live' per video expected.
     return _generateConsistentId("scheduled_live_$videoId");
   }
 
-  // Generate distinct ID for a SCHEDULED 'reminder' notification.
   int _generateReminderNotificationId(String videoId) {
-     // Different prefix from immediate and scheduled live. Only one reminder per video expected.
     return _generateConsistentId("scheduled_reminder_$videoId");
   }
 
-  // --- Other Methods (cancel, cancelAll) ---
   @override
   Future<void> cancelNotification(int notificationId) async {
     _logger.info("Cancelling notification/schedule with ID: $notificationId");
@@ -766,23 +640,20 @@ class LocalNotificationService implements INotificationService {
   @override
   Future<void> cancelAllNotifications() async {
     _logger.info("Cancelling ALL notifications");
-     try {
+    try {
       await _flutterLocalNotificationsPlugin.cancelAll();
     } catch (e, s) {
       _logger.error("Failed to cancel all notifications", e, s);
     }
   }
 
-  // Helper to cancel notification based on Video ID (for scheduled live start time)
   Future<void> cancelScheduledLiveNotification(String videoId) async {
-      final id = _generateScheduledNotificationId(videoId);
-      await cancelNotification(id);
+    final id = _generateScheduledNotificationId(videoId);
+    await cancelNotification(id);
   }
 
-  // Helper to cancel notification based on Video ID (for reminder)
   Future<void> cancelScheduledReminderNotification(String videoId) async {
-       final id = _generateReminderNotificationId(videoId);
-      await cancelNotification(id);
+    final id = _generateReminderNotificationId(videoId);
+    await cancelNotification(id);
   }
-
-} // End of class
+}

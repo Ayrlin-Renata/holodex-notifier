@@ -1,16 +1,15 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart'; // Import hooks
-import 'package:hooks_riverpod/hooks_riverpod.dart'; // Import hooks_riverpod
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/main.dart';
-import 'package:url_launcher/url_launcher.dart'; // For AppControllerProvider
+import 'package:url_launcher/url_launcher.dart';
 
-// Helper to format Duration
 String _formatDuration(Duration d) {
   if (d.inMinutes < 1) {
-    return "< 1 min"; // Handle very short durations if needed
+    return "< 1 min";
   }
   if (d.inMinutes < 60) {
     return "${d.inMinutes} min";
@@ -20,16 +19,13 @@ String _formatDuration(Duration d) {
     if (minutes == 0) {
       return "$hours hr";
     } else {
-      // Only show minutes if they exist
       return "$hours hr $minutes min";
     }
   }
 }
 
-// Define minimum and maximum poll frequencies in minutes
 const double _minPollFrequencyMinutes = 5.0;
-const double _maxPollFrequencyMinutes = 720.0; // 12 hours
-// {{ Power for logarithmic-like scaling (e.g., 2 = quadratic, higher = more compressed lower end) }}
+const double _maxPollFrequencyMinutes = 720.0;
 const double _sliderExponent = 2.0;
 
 double _durationToSliderValue(Duration duration) {
@@ -38,22 +34,19 @@ double _durationToSliderValue(Duration duration) {
   if (minutes >= _maxPollFrequencyMinutes) return 1.0;
 
   final normalized = (minutes - _minPollFrequencyMinutes) / (_maxPollFrequencyMinutes - _minPollFrequencyMinutes);
-  // Apply inverse of the power function
   return pow(normalized, 1.0 / _sliderExponent).toDouble();
 }
 
 Duration _sliderValueToDuration(double sliderValue) {
   final clampedValue = sliderValue.clamp(0.0, 1.0);
-  // Apply power function
   final scaledValue = pow(clampedValue, _sliderExponent);
   final minutes = _minPollFrequencyMinutes + (_maxPollFrequencyMinutes - _minPollFrequencyMinutes) * scaledValue;
-  // Round to nearest minute
   return Duration(minutes: minutes.round());
 }
 
-const double _minReminderLeadMinutes = 0.0; // 0 means disabled
-const double _maxReminderLeadMinutes = 1440.0; // 24 hours
-const double _reminderSliderExponent = 2.5; // Less aggressive curve than poll freq
+const double _minReminderLeadMinutes = 0.0;
+const double _maxReminderLeadMinutes = 1440.0;
+const double _reminderSliderExponent = 2.5;
 
 String _formatReminderDuration(Duration d) {
   if (d.inMinutes <= 0) {
@@ -78,7 +71,7 @@ double _reminderDurationToSliderValue(Duration duration) {
   if (minutes >= _maxReminderLeadMinutes) return 1.0;
 
   final range = _maxReminderLeadMinutes - _minReminderLeadMinutes;
-  if (range == 0) return 0.0; // Avoid division by zero if min == max
+  if (range == 0) return 0.0;
 
   final normalized = (minutes - _minReminderLeadMinutes) / range;
   return pow(normalized, 1.0 / _reminderSliderExponent).toDouble();
@@ -88,75 +81,60 @@ Duration _reminderSliderValueToDuration(double sliderValue) {
   final clampedValue = sliderValue.clamp(0.0, 1.0);
   final scaledValue = pow(clampedValue, _reminderSliderExponent);
   final totalMinutes = _minReminderLeadMinutes + (_maxReminderLeadMinutes - _minReminderLeadMinutes) * scaledValue;
-  // Round to sensible steps (e.g., nearest 5 minutes? Or 1 min?)
-  final roundedMinutes = (totalMinutes / 5).round() * 5; // Round to nearest 5 minutes
-  // Ensure 0 remains 0 after rounding
-  return Duration(minutes: max(0, roundedMinutes)); // Ensure non-negative
+  final roundedMinutes = (totalMinutes / 5).round() * 5;
+  return Duration(minutes: max(0, roundedMinutes));
 }
 
-// Change to HookConsumerWidget to use hooks
 class AppBehaviorSettingsCard extends HookConsumerWidget {
   const AppBehaviorSettingsCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch providers for current values
     final groupNotifications = ref.watch(notificationGroupingProvider);
     final delayNewMedia = ref.watch(delayNewMediaProvider);
     final pollFrequency = ref.watch(pollFrequencyProvider);
     final reminderLeadTime = ref.watch(reminderLeadTimeProvider);
-    final apiKeyAsyncValue = ref.watch(apiKeyProvider); // WATCH the key state (now AsyncValue)
+    final apiKeyAsyncValue = ref.watch(apiKeyProvider);
     final logger = ref.watch(loggingServiceProvider);
 
-    // Local state Hooks for API key visibility and editing
     final isApiKeyVisible = useState(false);
-    final apiKeyTextController = useTextEditingController(text: apiKeyAsyncValue.valueOrNull ?? ''); // Initialize with current key if exists
-    final isEditingApiKey = useState(false); // Track editing state
+    final apiKeyTextController = useTextEditingController(text: apiKeyAsyncValue.valueOrNull ?? '');
+    final isEditingApiKey = useState(false);
 
-    final String? apiKey = apiKeyAsyncValue.valueOrNull; // Get value safely
+    final String? apiKey = apiKeyAsyncValue.valueOrNull;
     final bool apiKeyIsLoading = apiKeyAsyncValue.isLoading;
     final Object? apiKeyError = apiKeyAsyncValue.error;
     logger.debug(
       "[AppBehaviorSettingsCard] Build - API Key AsyncValue: isLoading=$apiKeyIsLoading, hasError=${apiKeyError != null}, value='$apiKey'",
     );
 
-    final theme = Theme.of(context); // Get theme
+    final theme = Theme.of(context);
 
-    // Get AppController for persisting changes
     final appController = ref.watch(appControllerProvider);
 
-    // Update text field if API key provider changes (e.g., loaded after init)
     useEffect(() {
       if (!apiKeyIsLoading && apiKeyError == null && apiKeyTextController.text != (apiKey ?? '')) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           apiKeyTextController.text = apiKey ?? '';
         });
       }
-      return null; // No cleanup needed
+      return null;
     }, [apiKey, apiKeyIsLoading, apiKeyError]);
 
-    // Calculate the current slider value based on the duration
     final currentPollSliderValue = _durationToSliderValue(pollFrequency);
-    final currentReminderSliderValue = _reminderDurationToSliderValue(reminderLeadTime); // {{ Calc reminder slider value }}
+    final currentReminderSliderValue = _reminderDurationToSliderValue(reminderLeadTime);
 
     return Column(
       children: [
-        // --- Notification Grouping ---
         SwitchListTile(
           title: const Text('Group Collab Notifs'),
           subtitle: const Text('Combine notifications for collabs'),
           value: groupNotifications,
           onChanged: null,
-          // onChanged: (bool value) {
-          //   // Use AppController to update the setting
-          //   logger.info("[AppBehaviorSettingsCard] Grouping onChanged triggered with value: $value");
-          //   ref.read(notificationGroupingProvider.notifier).update((_) => value);
           //   appController.updateGlobalSetting('notificationGrouping', value);
-          // },
           secondary: const Icon(Icons.group_work_outlined),
         ),
 
-        // --- Delay New Media ---
         SwitchListTile(
           title: const Text('Delay New Media Notifs'),
           subtitle: const Text('Wait until we know the release/stream time.'),
@@ -180,7 +158,7 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
             value: currentReminderSliderValue,
             min: 0.0,
             max: 1.0,
-            divisions: 100, // Adjust divisions as needed
+            divisions: 100,
             label: _formatReminderDuration(_reminderSliderValueToDuration(currentReminderSliderValue)),
             onChanged: (double value) {
               final newDuration = _reminderSliderValueToDuration(value);
@@ -188,50 +166,39 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
             },
             onChangeEnd: (double value) async {
               final newDuration = _reminderSliderValueToDuration(value);
-              ref.read(reminderLeadTimeProvider.notifier).state = newDuration; // Ensure final state
+              ref.read(reminderLeadTimeProvider.notifier).state = newDuration;
               logger.info("Reminder Lead Time Slider onChangeEnd: Duration = $newDuration");
               await appController.updateGlobalSetting('reminderLeadTime', newDuration);
             },
           ),
         ),
-        const SizedBox(height: 8), // Spacing
-        // --- Poll Frequency ---
+        const SizedBox(height: 8),
         ListTile(
           leading: const Icon(Icons.timer_outlined),
           title: const Text('Poll Frequency'),
-          subtitle: Text('Current: ${_formatDuration(pollFrequency)}'), // Display the actual duration
+          subtitle: Text('Current: ${_formatDuration(pollFrequency)}'),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Slider(
-            // {{ Use the calculated slider value }}
             value: currentPollSliderValue,
-            min: 0.0, // Slider range is always 0.0 to 1.0
+            min: 0.0,
             max: 1.0,
-            // {{ Divisions on the 0-1 scale. Adjust for desired granularity }}
-            // E.g., 100 divisions provides fine control, but labels might overlap
             divisions: 100,
-            // {{ Label shows the *Duration* derived from the current slider position }}
             label: _formatDuration(_sliderValueToDuration(currentPollSliderValue)),
             onChanged: (double value) {
-              // {{ Convert slider value back to Duration and update provider }}
               final newDuration = _sliderValueToDuration(value);
               ref.read(pollFrequencyProvider.notifier).state = newDuration;
             },
-            // Persist value when user stops dragging
             onChangeEnd: (double value) async {
-              // {{ Convert final slider value to Duration }}
               final newDuration = _sliderValueToDuration(value);
-              // Ensure final provider state is accurate (might be slightly different due to rounding)
               ref.read(pollFrequencyProvider.notifier).state = newDuration;
               logger.info("Poll Frequency Slider onChangeEnd: Duration = $newDuration");
-              // Use AppController to update setting and notify background
               await appController.updateGlobalSetting('pollFrequency', newDuration);
             },
           ),
         ),
-        const SizedBox(height: 8), // Spacing
-        // --- API Key ---
+        const SizedBox(height: 8),
         ListTile(
           leading: const Icon(Icons.key_outlined),
           title: const Text('Holodex API Key'),
@@ -252,16 +219,10 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
                   : Text(
                     apiKey == null || apiKey.isEmpty
                         ? 'Not Set'
-                        : (isApiKeyVisible.value
-                            ? apiKey
-                            : '******${apiKey.length > 4 ? apiKey.substring(apiKey.length - 4) : ''}'), // Show last 4 chars or full if visible/short
+                        : (isApiKeyVisible.value ? apiKey : '******${apiKey.length > 4 ? apiKey.substring(apiKey.length - 4) : ''}'),
                     style: TextStyle(
-                      color:
-                          apiKey == null || apiKey.isEmpty
-                              ? Theme.of(context)
-                                  .disabledColor // Use theme disabled color
-                              : null,
-                      fontFamily: isApiKeyVisible.value ? null : 'monospace', // Hint at obscured content
+                      color: apiKey == null || apiKey.isEmpty ? Theme.of(context).disabledColor : null,
+                      fontFamily: isApiKeyVisible.value ? null : 'monospace',
                     ),
                   ),
           trailing:
@@ -269,13 +230,10 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
                   ? IconButton(
                     icon: const Icon(Icons.save_outlined),
                     tooltip: 'Save API Key',
-                    // Disable save button while notifier is saving (optional but good UX)
-                    // onPressed: apiKeyAsyncValue.isLoading ? null : () async { ... }, // Need to track notifier's internal state for this
                     onPressed: () async {
                       final newKeyValue = apiKeyTextController.text.trim();
                       logger.debug("[AppBehaviorSettingsCard] Save Button Pressed. Trimmed value from TextField: '$newKeyValue'");
                       try {
-                        // Use AppController to call notifier method
                         await appController.updateGlobalSetting('apiKey', newKeyValue);
 
                         isEditingApiKey.value = false;
@@ -283,7 +241,6 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('API Key saved'), duration: Duration(seconds: 2)));
                       } catch (e) {
-                        // Error is likely already handled/logged by the notifier, but show feedback anyway
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -295,7 +252,6 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
                     },
                   )
                   : Row(
-                    // Edit/Show Buttons - Disable Edit if loading/error
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (!apiKeyIsLoading && apiKeyError == null && apiKey != null && apiKey.isNotEmpty)
@@ -307,7 +263,6 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
                         tooltip: 'Edit API Key',
-                        // Disable Edit button if loading/error
                         onPressed:
                             apiKeyIsLoading || apiKeyError != null
                                 ? null

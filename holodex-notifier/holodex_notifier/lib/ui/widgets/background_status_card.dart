@@ -1,13 +1,9 @@
-// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\ui\widgets\background_status_card.dart
 import 'package:flutter/material.dart';
 import 'package:holodex_notifier/application/state/background_service_state.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:holodex_notifier/application/state/settings_providers.dart'; // For pollFrequencyProvider
-import 'package:holodex_notifier/main.dart'; // For backgroundServiceProvider, loggingServiceProvider
-import 'package:intl/intl.dart'; // For date formatting
-// {{ Add import for IBackgroundPollingService }}
-
-// ... existing code ...
+import 'package:holodex_notifier/application/state/settings_providers.dart';
+import 'package:holodex_notifier/main.dart';
+import 'package:intl/intl.dart';
 
 class BackgroundStatusCard extends HookConsumerWidget {
   const BackgroundStatusCard({super.key});
@@ -18,14 +14,12 @@ class BackgroundStatusCard extends HookConsumerWidget {
     final statusAsync = ref.watch(backgroundServiceStatusStreamProvider);
     final pollFrequency = ref.watch(pollFrequencyProvider);
 
-    final logger = ref.watch(loggingServiceProvider); // Get logger
+    final logger = ref.watch(loggingServiceProvider);
 
     return statusAsync.when(
       data: (status) {
         final nextPollTime = status.lastPollTime?.add(pollFrequency);
         final lastError = status.lastError;
-        // {{ Remove unused AppController }}
-        // final appController = ref.watch(appControllerProvider);
         final scaffoldMessenger = ScaffoldMessenger.of(context);
 
         return Card(
@@ -36,7 +30,7 @@ class BackgroundStatusCard extends HookConsumerWidget {
             side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0), // Adjusted padding
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,12 +63,12 @@ class BackgroundStatusCard extends HookConsumerWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
-                if (lastError != null) // {{ Cleaned up error display logic slightly }}
-                  Container( // ... Error Container ...
+                if (lastError != null)
+                  Container(
                     padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(8)),
-                    child: Row( // ... Error Row ...
-                      children: [ // ... Error children ...
+                    child: Row(
+                      children: [
                         Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer, size: 18),
                         const SizedBox(width: 8),
                         Expanded(
@@ -83,13 +77,12 @@ class BackgroundStatusCard extends HookConsumerWidget {
                             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
                           ),
                         ),
-                        IconButton( // ... Clear button ...
+                        IconButton(
                           icon: Icon(Icons.clear, size: 16, color: theme.colorScheme.onErrorContainer),
                           tooltip: 'Clear Error Message',
                           visualDensity: VisualDensity.compact,
                           onPressed: () {
                             ref.read(backgroundLastErrorProvider.notifier).state = null;
-                            // {{ Refresh provider directly }}
                             ref.invalidate(backgroundServiceStatusStreamProvider);
                           },
                         ),
@@ -98,55 +91,48 @@ class BackgroundStatusCard extends HookConsumerWidget {
                   ),
                 const SizedBox(height: 16),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Space buttons
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // Poll Now Button (Keep as TextButton)
                     TextButton.icon(
                       icon: const Icon(Icons.sync, size: 18),
                       label: const Text('Poll Now'),
-                      onPressed: !status.isRunning
-                          ? null
-                          : () {
-                              logger.info("[UI] Invoking manual poll...");
-                              // {{ Use backgroundServiceProvider to invoke }}
-                              ref.read(backgroundServiceProvider).triggerPoll();
-                              scaffoldMessenger.showSnackBar(
-                                const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)),
-                              );
-                              // {{ Refresh provider directly }}
-                              ref.invalidate(backgroundServiceStatusStreamProvider);
-                              // {{ Simplified refresh logic - rely on status stream updates }}
-                              // Future.delayed(...) // Consider removing this delay/refresh block if status stream updates are reliable
-                            },
+                      onPressed:
+                          !status.isRunning
+                              ? null
+                              : () {
+                                logger.info("[UI] Invoking manual poll...");
+                                ref.read(backgroundServiceProvider).triggerPoll();
+                                scaffoldMessenger.showSnackBar(
+                                  const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)),
+                                );
+                                ref.invalidate(backgroundServiceStatusStreamProvider);
+                              },
                     ),
 
-                    TextButton.icon( // Use ElevatedButton for primary action
+                    TextButton.icon(
                       icon: Icon(status.isRunning ? Icons.restart_alt : Icons.play_arrow_outlined, size: 18),
                       label: Text(status.isRunning ? 'Restart Service' : 'Start Service'),
                       onPressed: () async {
                         final service = ref.read(backgroundServiceProvider);
                         if (status.isRunning) {
                           logger.info("[UI] Attempting Background Service RESTART...");
-                          // No need for 'await' here if we trigger refresh immediately
                           service.stopPolling();
-                          await Future.delayed(const Duration(milliseconds: 500)); // Short delay to ensure stop command is processed
+                          await Future.delayed(const Duration(milliseconds: 500));
                           service.startPolling();
-                           scaffoldMessenger.showSnackBar(
+                          scaffoldMessenger.showSnackBar(
                             const SnackBar(content: Text('Restarting background service...'), duration: Duration(seconds: 2)),
                           );
                         } else {
-                           logger.info("[UI] Attempting Background Service START...");
-                           service.startPolling();
-                            scaffoldMessenger.showSnackBar(
+                          logger.info("[UI] Attempting Background Service START...");
+                          service.startPolling();
+                          scaffoldMessenger.showSnackBar(
                             const SnackBar(content: Text('Starting background service...'), duration: Duration(seconds: 2)),
-                           );
+                          );
                         }
-                        // Refresh status after a short delay to allow service state to update
                         await Future.delayed(const Duration(milliseconds: 1000));
-                         ref.invalidate(backgroundServiceStatusStreamProvider);
+                        ref.invalidate(backgroundServiceStatusStreamProvider);
                       },
                     ),
-                    // ****** END CHANGE ******
                   ],
                 ),
               ],
@@ -154,33 +140,29 @@ class BackgroundStatusCard extends HookConsumerWidget {
           ),
         );
       },
-      // ... loading & error states ...
-       loading: () => Card( // {{ Show card structure while loading }}
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        elevation: 1,
-         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+      loading:
+          () => Card(
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+            ),
+            child: const Padding(padding: EdgeInsets.all(16.0), child: Center(child: CircularProgressIndicator())),
           ),
-        child: const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ),
-      error: (error, stack) => Card( // {{ Show card structure on error }}
-         margin: const EdgeInsets.symmetric(vertical: 8.0),
-         elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.7)),
+      error:
+          (error, stack) => Card(
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.7)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(child: Text('Error loading status: $error', style: TextStyle(color: theme.colorScheme.error))),
+            ),
           ),
-         child: Padding(
-           padding: const EdgeInsets.all(16.0),
-           child: Center(
-              child: Text('Error loading status: $error', style: TextStyle(color: theme.colorScheme.error)),
-           ),
-         ),
-      ),
     );
   }
 }

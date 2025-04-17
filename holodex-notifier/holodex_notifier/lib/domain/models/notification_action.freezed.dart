@@ -1,77 +1,48 @@
-// coverage:ignore-file
-// GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint
-// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
-
 part of 'notification_action.dart';
-
-// **************************************************************************
-// FreezedGenerator
-// **************************************************************************
 
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
-/// @nodoc
 mixin _$NotificationAction {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)
-        schedule,
-    required TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)
-        cancel,
+    required TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId) schedule,
+    required TResult Function(int notificationId, String? videoId, NotificationEventType? type) cancel,
     required TResult Function(NotificationInstruction instruction) dispatch,
-    required TResult Function(String videoId, CachedVideosCompanion companion)
-        updateCache,
-  }) =>
-      throw _privateConstructorUsedError;
+    required TResult Function(String videoId, CachedVideosCompanion companion) updateCache,
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)?
-        schedule,
-    TResult? Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult? Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult? Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult? Function(NotificationInstruction instruction)? dispatch,
-    TResult? Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
-  }) =>
-      throw _privateConstructorUsedError;
+    TResult? Function(String videoId, CachedVideosCompanion companion)? updateCache,
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(NotificationInstruction instruction, DateTime scheduleTime,
-            String? videoId)?
-        schedule,
-    TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult Function(NotificationInstruction instruction)? dispatch,
-    TResult Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult Function(String videoId, CachedVideosCompanion companion)? updateCache,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(ScheduleNotificationAction value) schedule,
     required TResult Function(CancelNotificationAction value) cancel,
     required TResult Function(DispatchNotificationAction value) dispatch,
     required TResult Function(UpdateCacheAction value) updateCache,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(ScheduleNotificationAction value)? schedule,
     TResult? Function(CancelNotificationAction value)? cancel,
     TResult? Function(DispatchNotificationAction value)? dispatch,
     TResult? Function(UpdateCacheAction value)? updateCache,
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(ScheduleNotificationAction value)? schedule,
@@ -79,83 +50,47 @@ mixin _$NotificationAction {
     TResult Function(DispatchNotificationAction value)? dispatch,
     TResult Function(UpdateCacheAction value)? updateCache,
     required TResult orElse(),
-  }) =>
-      throw _privateConstructorUsedError;
+  }) => throw _privateConstructorUsedError;
 }
 
-/// @nodoc
 abstract class $NotificationActionCopyWith<$Res> {
-  factory $NotificationActionCopyWith(
-          NotificationAction value, $Res Function(NotificationAction) then) =
+  factory $NotificationActionCopyWith(NotificationAction value, $Res Function(NotificationAction) then) =
       _$NotificationActionCopyWithImpl<$Res, NotificationAction>;
 }
 
-/// @nodoc
-class _$NotificationActionCopyWithImpl<$Res, $Val extends NotificationAction>
-    implements $NotificationActionCopyWith<$Res> {
+class _$NotificationActionCopyWithImpl<$Res, $Val extends NotificationAction> implements $NotificationActionCopyWith<$Res> {
   _$NotificationActionCopyWithImpl(this._value, this._then);
 
-  // ignore: unused_field
   final $Val _value;
-  // ignore: unused_field
   final $Res Function($Val) _then;
-
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
 }
 
-/// @nodoc
 abstract class _$$ScheduleNotificationActionImplCopyWith<$Res> {
-  factory _$$ScheduleNotificationActionImplCopyWith(
-          _$ScheduleNotificationActionImpl value,
-          $Res Function(_$ScheduleNotificationActionImpl) then) =
+  factory _$$ScheduleNotificationActionImplCopyWith(_$ScheduleNotificationActionImpl value, $Res Function(_$ScheduleNotificationActionImpl) then) =
       __$$ScheduleNotificationActionImplCopyWithImpl<$Res>;
   @useResult
-  $Res call(
-      {NotificationInstruction instruction,
-      DateTime scheduleTime,
-      String? videoId});
+  $Res call({NotificationInstruction instruction, DateTime scheduleTime, String? videoId});
 
   $NotificationInstructionCopyWith<$Res> get instruction;
 }
 
-/// @nodoc
-class __$$ScheduleNotificationActionImplCopyWithImpl<$Res>
-    extends _$NotificationActionCopyWithImpl<$Res,
-        _$ScheduleNotificationActionImpl>
+class __$$ScheduleNotificationActionImplCopyWithImpl<$Res> extends _$NotificationActionCopyWithImpl<$Res, _$ScheduleNotificationActionImpl>
     implements _$$ScheduleNotificationActionImplCopyWith<$Res> {
-  __$$ScheduleNotificationActionImplCopyWithImpl(
-      _$ScheduleNotificationActionImpl _value,
-      $Res Function(_$ScheduleNotificationActionImpl) _then)
-      : super(_value, _then);
+  __$$ScheduleNotificationActionImplCopyWithImpl(_$ScheduleNotificationActionImpl _value, $Res Function(_$ScheduleNotificationActionImpl) _then)
+    : super(_value, _then);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? instruction = null,
-    Object? scheduleTime = null,
-    Object? videoId = freezed,
-  }) {
-    return _then(_$ScheduleNotificationActionImpl(
-      instruction: null == instruction
-          ? _value.instruction
-          : instruction // ignore: cast_nullable_to_non_nullable
-              as NotificationInstruction,
-      scheduleTime: null == scheduleTime
-          ? _value.scheduleTime
-          : scheduleTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      videoId: freezed == videoId
-          ? _value.videoId
-          : videoId // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
+  $Res call({Object? instruction = null, Object? scheduleTime = null, Object? videoId = freezed}) {
+    return _then(
+      _$ScheduleNotificationActionImpl(
+        instruction: null == instruction ? _value.instruction : instruction as NotificationInstruction,
+        scheduleTime: null == scheduleTime ? _value.scheduleTime : scheduleTime as DateTime,
+        videoId: freezed == videoId ? _value.videoId : videoId as String?,
+      ),
+    );
   }
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $NotificationInstructionCopyWith<$Res> get instruction {
@@ -165,11 +100,8 @@ class __$$ScheduleNotificationActionImplCopyWithImpl<$Res>
   }
 }
 
-/// @nodoc
-
 class _$ScheduleNotificationActionImpl implements ScheduleNotificationAction {
-  const _$ScheduleNotificationActionImpl(
-      {required this.instruction, required this.scheduleTime, this.videoId});
+  const _$ScheduleNotificationActionImpl({required this.instruction, required this.scheduleTime, this.videoId});
 
   @override
   final NotificationInstruction instruction;
@@ -188,38 +120,27 @@ class _$ScheduleNotificationActionImpl implements ScheduleNotificationAction {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ScheduleNotificationActionImpl &&
-            (identical(other.instruction, instruction) ||
-                other.instruction == instruction) &&
-            (identical(other.scheduleTime, scheduleTime) ||
-                other.scheduleTime == scheduleTime) &&
+            (identical(other.instruction, instruction) || other.instruction == instruction) &&
+            (identical(other.scheduleTime, scheduleTime) || other.scheduleTime == scheduleTime) &&
             (identical(other.videoId, videoId) || other.videoId == videoId));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, instruction, scheduleTime, videoId);
+  int get hashCode => Object.hash(runtimeType, instruction, scheduleTime, videoId);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$ScheduleNotificationActionImplCopyWith<_$ScheduleNotificationActionImpl>
-      get copyWith => __$$ScheduleNotificationActionImplCopyWithImpl<
-          _$ScheduleNotificationActionImpl>(this, _$identity);
+  _$$ScheduleNotificationActionImplCopyWith<_$ScheduleNotificationActionImpl> get copyWith =>
+      __$$ScheduleNotificationActionImplCopyWithImpl<_$ScheduleNotificationActionImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)
-        schedule,
-    required TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)
-        cancel,
+    required TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId) schedule,
+    required TResult Function(int notificationId, String? videoId, NotificationEventType? type) cancel,
     required TResult Function(NotificationInstruction instruction) dispatch,
-    required TResult Function(String videoId, CachedVideosCompanion companion)
-        updateCache,
+    required TResult Function(String videoId, CachedVideosCompanion companion) updateCache,
   }) {
     return schedule(instruction, scheduleTime, videoId);
   }
@@ -227,15 +148,10 @@ class _$ScheduleNotificationActionImpl implements ScheduleNotificationAction {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)?
-        schedule,
-    TResult? Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult? Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult? Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult? Function(NotificationInstruction instruction)? dispatch,
-    TResult? Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult? Function(String videoId, CachedVideosCompanion companion)? updateCache,
   }) {
     return schedule?.call(instruction, scheduleTime, videoId);
   }
@@ -243,15 +159,10 @@ class _$ScheduleNotificationActionImpl implements ScheduleNotificationAction {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(NotificationInstruction instruction, DateTime scheduleTime,
-            String? videoId)?
-        schedule,
-    TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult Function(NotificationInstruction instruction)? dispatch,
-    TResult Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult Function(String videoId, CachedVideosCompanion companion)? updateCache,
     required TResult orElse(),
   }) {
     if (schedule != null) {
@@ -299,79 +210,52 @@ class _$ScheduleNotificationActionImpl implements ScheduleNotificationAction {
 }
 
 abstract class ScheduleNotificationAction implements NotificationAction {
-  const factory ScheduleNotificationAction(
-      {required final NotificationInstruction instruction,
-      required final DateTime scheduleTime,
-      final String? videoId}) = _$ScheduleNotificationActionImpl;
+  const factory ScheduleNotificationAction({
+    required final NotificationInstruction instruction,
+    required final DateTime scheduleTime,
+    final String? videoId,
+  }) = _$ScheduleNotificationActionImpl;
 
   NotificationInstruction get instruction;
   DateTime get scheduleTime;
   String? get videoId;
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ScheduleNotificationActionImplCopyWith<_$ScheduleNotificationActionImpl>
-      get copyWith => throw _privateConstructorUsedError;
+  _$$ScheduleNotificationActionImplCopyWith<_$ScheduleNotificationActionImpl> get copyWith => throw _privateConstructorUsedError;
 }
 
-/// @nodoc
 abstract class _$$CancelNotificationActionImplCopyWith<$Res> {
-  factory _$$CancelNotificationActionImplCopyWith(
-          _$CancelNotificationActionImpl value,
-          $Res Function(_$CancelNotificationActionImpl) then) =
+  factory _$$CancelNotificationActionImplCopyWith(_$CancelNotificationActionImpl value, $Res Function(_$CancelNotificationActionImpl) then) =
       __$$CancelNotificationActionImplCopyWithImpl<$Res>;
   @useResult
   $Res call({int notificationId, String? videoId, NotificationEventType? type});
 }
 
-/// @nodoc
-class __$$CancelNotificationActionImplCopyWithImpl<$Res>
-    extends _$NotificationActionCopyWithImpl<$Res,
-        _$CancelNotificationActionImpl>
+class __$$CancelNotificationActionImplCopyWithImpl<$Res> extends _$NotificationActionCopyWithImpl<$Res, _$CancelNotificationActionImpl>
     implements _$$CancelNotificationActionImplCopyWith<$Res> {
-  __$$CancelNotificationActionImplCopyWithImpl(
-      _$CancelNotificationActionImpl _value,
-      $Res Function(_$CancelNotificationActionImpl) _then)
-      : super(_value, _then);
+  __$$CancelNotificationActionImplCopyWithImpl(_$CancelNotificationActionImpl _value, $Res Function(_$CancelNotificationActionImpl) _then)
+    : super(_value, _then);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? notificationId = null,
-    Object? videoId = freezed,
-    Object? type = freezed,
-  }) {
-    return _then(_$CancelNotificationActionImpl(
-      notificationId: null == notificationId
-          ? _value.notificationId
-          : notificationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      videoId: freezed == videoId
-          ? _value.videoId
-          : videoId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: freezed == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as NotificationEventType?,
-    ));
+  $Res call({Object? notificationId = null, Object? videoId = freezed, Object? type = freezed}) {
+    return _then(
+      _$CancelNotificationActionImpl(
+        notificationId: null == notificationId ? _value.notificationId : notificationId as int,
+        videoId: freezed == videoId ? _value.videoId : videoId as String?,
+        type: freezed == type ? _value.type : type as NotificationEventType?,
+      ),
+    );
   }
 }
 
-/// @nodoc
-
 class _$CancelNotificationActionImpl implements CancelNotificationAction {
-  const _$CancelNotificationActionImpl(
-      {required this.notificationId, this.videoId, this.type});
+  const _$CancelNotificationActionImpl({required this.notificationId, this.videoId, this.type});
 
   @override
   final int notificationId;
   @override
   final String? videoId;
-// For logging/context
   @override
   final NotificationEventType? type;
 
@@ -385,8 +269,7 @@ class _$CancelNotificationActionImpl implements CancelNotificationAction {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$CancelNotificationActionImpl &&
-            (identical(other.notificationId, notificationId) ||
-                other.notificationId == notificationId) &&
+            (identical(other.notificationId, notificationId) || other.notificationId == notificationId) &&
             (identical(other.videoId, videoId) || other.videoId == videoId) &&
             (identical(other.type, type) || other.type == type));
   }
@@ -394,27 +277,19 @@ class _$CancelNotificationActionImpl implements CancelNotificationAction {
   @override
   int get hashCode => Object.hash(runtimeType, notificationId, videoId, type);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$CancelNotificationActionImplCopyWith<_$CancelNotificationActionImpl>
-      get copyWith => __$$CancelNotificationActionImplCopyWithImpl<
-          _$CancelNotificationActionImpl>(this, _$identity);
+  _$$CancelNotificationActionImplCopyWith<_$CancelNotificationActionImpl> get copyWith =>
+      __$$CancelNotificationActionImplCopyWithImpl<_$CancelNotificationActionImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)
-        schedule,
-    required TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)
-        cancel,
+    required TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId) schedule,
+    required TResult Function(int notificationId, String? videoId, NotificationEventType? type) cancel,
     required TResult Function(NotificationInstruction instruction) dispatch,
-    required TResult Function(String videoId, CachedVideosCompanion companion)
-        updateCache,
+    required TResult Function(String videoId, CachedVideosCompanion companion) updateCache,
   }) {
     return cancel(notificationId, videoId, type);
   }
@@ -422,15 +297,10 @@ class _$CancelNotificationActionImpl implements CancelNotificationAction {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)?
-        schedule,
-    TResult? Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult? Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult? Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult? Function(NotificationInstruction instruction)? dispatch,
-    TResult? Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult? Function(String videoId, CachedVideosCompanion companion)? updateCache,
   }) {
     return cancel?.call(notificationId, videoId, type);
   }
@@ -438,15 +308,10 @@ class _$CancelNotificationActionImpl implements CancelNotificationAction {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(NotificationInstruction instruction, DateTime scheduleTime,
-            String? videoId)?
-        schedule,
-    TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult Function(NotificationInstruction instruction)? dispatch,
-    TResult Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult Function(String videoId, CachedVideosCompanion companion)? updateCache,
     required TResult orElse(),
   }) {
     if (cancel != null) {
@@ -494,27 +359,19 @@ class _$CancelNotificationActionImpl implements CancelNotificationAction {
 }
 
 abstract class CancelNotificationAction implements NotificationAction {
-  const factory CancelNotificationAction(
-      {required final int notificationId,
-      final String? videoId,
-      final NotificationEventType? type}) = _$CancelNotificationActionImpl;
+  const factory CancelNotificationAction({required final int notificationId, final String? videoId, final NotificationEventType? type}) =
+      _$CancelNotificationActionImpl;
 
   int get notificationId;
-  String? get videoId; // For logging/context
+  String? get videoId;
   NotificationEventType? get type;
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$CancelNotificationActionImplCopyWith<_$CancelNotificationActionImpl>
-      get copyWith => throw _privateConstructorUsedError;
+  _$$CancelNotificationActionImplCopyWith<_$CancelNotificationActionImpl> get copyWith => throw _privateConstructorUsedError;
 }
 
-/// @nodoc
 abstract class _$$DispatchNotificationActionImplCopyWith<$Res> {
-  factory _$$DispatchNotificationActionImplCopyWith(
-          _$DispatchNotificationActionImpl value,
-          $Res Function(_$DispatchNotificationActionImpl) then) =
+  factory _$$DispatchNotificationActionImplCopyWith(_$DispatchNotificationActionImpl value, $Res Function(_$DispatchNotificationActionImpl) then) =
       __$$DispatchNotificationActionImplCopyWithImpl<$Res>;
   @useResult
   $Res call({NotificationInstruction instruction});
@@ -522,33 +379,17 @@ abstract class _$$DispatchNotificationActionImplCopyWith<$Res> {
   $NotificationInstructionCopyWith<$Res> get instruction;
 }
 
-/// @nodoc
-class __$$DispatchNotificationActionImplCopyWithImpl<$Res>
-    extends _$NotificationActionCopyWithImpl<$Res,
-        _$DispatchNotificationActionImpl>
+class __$$DispatchNotificationActionImplCopyWithImpl<$Res> extends _$NotificationActionCopyWithImpl<$Res, _$DispatchNotificationActionImpl>
     implements _$$DispatchNotificationActionImplCopyWith<$Res> {
-  __$$DispatchNotificationActionImplCopyWithImpl(
-      _$DispatchNotificationActionImpl _value,
-      $Res Function(_$DispatchNotificationActionImpl) _then)
-      : super(_value, _then);
+  __$$DispatchNotificationActionImplCopyWithImpl(_$DispatchNotificationActionImpl _value, $Res Function(_$DispatchNotificationActionImpl) _then)
+    : super(_value, _then);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? instruction = null,
-  }) {
-    return _then(_$DispatchNotificationActionImpl(
-      instruction: null == instruction
-          ? _value.instruction
-          : instruction // ignore: cast_nullable_to_non_nullable
-              as NotificationInstruction,
-    ));
+  $Res call({Object? instruction = null}) {
+    return _then(_$DispatchNotificationActionImpl(instruction: null == instruction ? _value.instruction : instruction as NotificationInstruction));
   }
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $NotificationInstructionCopyWith<$Res> get instruction {
@@ -557,8 +398,6 @@ class __$$DispatchNotificationActionImplCopyWithImpl<$Res>
     });
   }
 }
-
-/// @nodoc
 
 class _$DispatchNotificationActionImpl implements DispatchNotificationAction {
   const _$DispatchNotificationActionImpl({required this.instruction});
@@ -576,34 +415,25 @@ class _$DispatchNotificationActionImpl implements DispatchNotificationAction {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$DispatchNotificationActionImpl &&
-            (identical(other.instruction, instruction) ||
-                other.instruction == instruction));
+            (identical(other.instruction, instruction) || other.instruction == instruction));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, instruction);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$DispatchNotificationActionImplCopyWith<_$DispatchNotificationActionImpl>
-      get copyWith => __$$DispatchNotificationActionImplCopyWithImpl<
-          _$DispatchNotificationActionImpl>(this, _$identity);
+  _$$DispatchNotificationActionImplCopyWith<_$DispatchNotificationActionImpl> get copyWith =>
+      __$$DispatchNotificationActionImplCopyWithImpl<_$DispatchNotificationActionImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)
-        schedule,
-    required TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)
-        cancel,
+    required TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId) schedule,
+    required TResult Function(int notificationId, String? videoId, NotificationEventType? type) cancel,
     required TResult Function(NotificationInstruction instruction) dispatch,
-    required TResult Function(String videoId, CachedVideosCompanion companion)
-        updateCache,
+    required TResult Function(String videoId, CachedVideosCompanion companion) updateCache,
   }) {
     return dispatch(instruction);
   }
@@ -611,15 +441,10 @@ class _$DispatchNotificationActionImpl implements DispatchNotificationAction {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)?
-        schedule,
-    TResult? Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult? Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult? Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult? Function(NotificationInstruction instruction)? dispatch,
-    TResult? Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult? Function(String videoId, CachedVideosCompanion companion)? updateCache,
   }) {
     return dispatch?.call(instruction);
   }
@@ -627,15 +452,10 @@ class _$DispatchNotificationActionImpl implements DispatchNotificationAction {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(NotificationInstruction instruction, DateTime scheduleTime,
-            String? videoId)?
-        schedule,
-    TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult Function(NotificationInstruction instruction)? dispatch,
-    TResult Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult Function(String videoId, CachedVideosCompanion companion)? updateCache,
     required TResult orElse(),
   }) {
     if (dispatch != null) {
@@ -683,62 +503,39 @@ class _$DispatchNotificationActionImpl implements DispatchNotificationAction {
 }
 
 abstract class DispatchNotificationAction implements NotificationAction {
-  const factory DispatchNotificationAction(
-          {required final NotificationInstruction instruction}) =
-      _$DispatchNotificationActionImpl;
+  const factory DispatchNotificationAction({required final NotificationInstruction instruction}) = _$DispatchNotificationActionImpl;
 
   NotificationInstruction get instruction;
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$DispatchNotificationActionImplCopyWith<_$DispatchNotificationActionImpl>
-      get copyWith => throw _privateConstructorUsedError;
+  _$$DispatchNotificationActionImplCopyWith<_$DispatchNotificationActionImpl> get copyWith => throw _privateConstructorUsedError;
 }
 
-/// @nodoc
 abstract class _$$UpdateCacheActionImplCopyWith<$Res> {
-  factory _$$UpdateCacheActionImplCopyWith(_$UpdateCacheActionImpl value,
-          $Res Function(_$UpdateCacheActionImpl) then) =
+  factory _$$UpdateCacheActionImplCopyWith(_$UpdateCacheActionImpl value, $Res Function(_$UpdateCacheActionImpl) then) =
       __$$UpdateCacheActionImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String videoId, CachedVideosCompanion companion});
 }
 
-/// @nodoc
-class __$$UpdateCacheActionImplCopyWithImpl<$Res>
-    extends _$NotificationActionCopyWithImpl<$Res, _$UpdateCacheActionImpl>
+class __$$UpdateCacheActionImplCopyWithImpl<$Res> extends _$NotificationActionCopyWithImpl<$Res, _$UpdateCacheActionImpl>
     implements _$$UpdateCacheActionImplCopyWith<$Res> {
-  __$$UpdateCacheActionImplCopyWithImpl(_$UpdateCacheActionImpl _value,
-      $Res Function(_$UpdateCacheActionImpl) _then)
-      : super(_value, _then);
+  __$$UpdateCacheActionImplCopyWithImpl(_$UpdateCacheActionImpl _value, $Res Function(_$UpdateCacheActionImpl) _then) : super(_value, _then);
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? videoId = null,
-    Object? companion = freezed,
-  }) {
-    return _then(_$UpdateCacheActionImpl(
-      videoId: null == videoId
-          ? _value.videoId
-          : videoId // ignore: cast_nullable_to_non_nullable
-              as String,
-      companion: freezed == companion
-          ? _value.companion
-          : companion // ignore: cast_nullable_to_non_nullable
-              as CachedVideosCompanion,
-    ));
+  $Res call({Object? videoId = null, Object? companion = freezed}) {
+    return _then(
+      _$UpdateCacheActionImpl(
+        videoId: null == videoId ? _value.videoId : videoId as String,
+        companion: freezed == companion ? _value.companion : companion as CachedVideosCompanion,
+      ),
+    );
   }
 }
 
-/// @nodoc
-
 class _$UpdateCacheActionImpl implements UpdateCacheAction {
-  const _$UpdateCacheActionImpl(
-      {required this.videoId, required this.companion});
+  const _$UpdateCacheActionImpl({required this.videoId, required this.companion});
 
   @override
   final String videoId;
@@ -760,30 +557,21 @@ class _$UpdateCacheActionImpl implements UpdateCacheAction {
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType, videoId, const DeepCollectionEquality().hash(companion));
+  int get hashCode => Object.hash(runtimeType, videoId, const DeepCollectionEquality().hash(companion));
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$UpdateCacheActionImplCopyWith<_$UpdateCacheActionImpl> get copyWith =>
-      __$$UpdateCacheActionImplCopyWithImpl<_$UpdateCacheActionImpl>(
-          this, _$identity);
+      __$$UpdateCacheActionImplCopyWithImpl<_$UpdateCacheActionImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)
-        schedule,
-    required TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)
-        cancel,
+    required TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId) schedule,
+    required TResult Function(int notificationId, String? videoId, NotificationEventType? type) cancel,
     required TResult Function(NotificationInstruction instruction) dispatch,
-    required TResult Function(String videoId, CachedVideosCompanion companion)
-        updateCache,
+    required TResult Function(String videoId, CachedVideosCompanion companion) updateCache,
   }) {
     return updateCache(videoId, companion);
   }
@@ -791,15 +579,10 @@ class _$UpdateCacheActionImpl implements UpdateCacheAction {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(NotificationInstruction instruction,
-            DateTime scheduleTime, String? videoId)?
-        schedule,
-    TResult? Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult? Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult? Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult? Function(NotificationInstruction instruction)? dispatch,
-    TResult? Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult? Function(String videoId, CachedVideosCompanion companion)? updateCache,
   }) {
     return updateCache?.call(videoId, companion);
   }
@@ -807,15 +590,10 @@ class _$UpdateCacheActionImpl implements UpdateCacheAction {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(NotificationInstruction instruction, DateTime scheduleTime,
-            String? videoId)?
-        schedule,
-    TResult Function(
-            int notificationId, String? videoId, NotificationEventType? type)?
-        cancel,
+    TResult Function(NotificationInstruction instruction, DateTime scheduleTime, String? videoId)? schedule,
+    TResult Function(int notificationId, String? videoId, NotificationEventType? type)? cancel,
     TResult Function(NotificationInstruction instruction)? dispatch,
-    TResult Function(String videoId, CachedVideosCompanion companion)?
-        updateCache,
+    TResult Function(String videoId, CachedVideosCompanion companion)? updateCache,
     required TResult orElse(),
   }) {
     if (updateCache != null) {
@@ -863,17 +641,11 @@ class _$UpdateCacheActionImpl implements UpdateCacheAction {
 }
 
 abstract class UpdateCacheAction implements NotificationAction {
-  const factory UpdateCacheAction(
-          {required final String videoId,
-          required final CachedVideosCompanion companion}) =
-      _$UpdateCacheActionImpl;
+  const factory UpdateCacheAction({required final String videoId, required final CachedVideosCompanion companion}) = _$UpdateCacheActionImpl;
 
   String get videoId;
   CachedVideosCompanion get companion;
 
-  /// Create a copy of NotificationAction
-  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$UpdateCacheActionImplCopyWith<_$UpdateCacheActionImpl> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$UpdateCacheActionImplCopyWith<_$UpdateCacheActionImpl> get copyWith => throw _privateConstructorUsedError;
 }

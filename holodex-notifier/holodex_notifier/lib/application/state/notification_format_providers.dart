@@ -2,18 +2,14 @@ import 'package:holodex_notifier/application/state/scheduled_notifications_state
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
-import 'package:holodex_notifier/domain/interfaces/settings_service.dart'; // Import SettingsService
-// {{ Add import for IBackgroundPollingService }}
-import 'package:holodex_notifier/main.dart'; // For settingsServiceProvider etc.
+import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
+import 'package:holodex_notifier/main.dart';
 
-/// Provider to hold the currently selected NotificationEventType in the editor UI.
-// {{ Remove .autoDispose to persist state across page navigations }}
 final selectedNotificationFormatTypeProvider = StateProvider<NotificationEventType>(
-  (ref) => NotificationEventType.live, // Default selection
+  (ref) => NotificationEventType.live,
   name: 'selectedNotificationFormatTypeProvider',
 );
 
-/// State Notifier for managing the NotificationFormatConfig during editing.
 class NotificationFormatEditorNotifier extends StateNotifier<AsyncValue<NotificationFormatConfig>> {
   final ISettingsService _settingsService;
   final Ref _ref;
@@ -22,7 +18,6 @@ class NotificationFormatEditorNotifier extends StateNotifier<AsyncValue<Notifica
     _loadInitialConfig();
   }
 
-  // Load initial config from settings
   Future<void> _loadInitialConfig() async {
     state = const AsyncValue.loading();
     try {
@@ -34,47 +29,36 @@ class NotificationFormatEditorNotifier extends StateNotifier<AsyncValue<Notifica
     }
   }
 
-  // Update the format for a specific event type
   Future<void> updateFormat(NotificationEventType type, NotificationFormat newFormat) async {
-    // Ensure we have data before proceeding
     final currentConfig = state.valueOrNull;
-    if (currentConfig == null) return; // Cannot update if not loaded
+    if (currentConfig == null) return;
 
     _ref.read(loggingServiceProvider).debug("Updating format for type $type: $newFormat");
 
-    // Create a new map with the updated format
     final newFormats = Map<NotificationEventType, NotificationFormat>.from(currentConfig.formats);
     newFormats[type] = newFormat;
 
-    // Create the new config state
     final updatedConfig = currentConfig.copyWith(formats: newFormats);
 
-    // Update the state optimistically
     state = AsyncValue.data(updatedConfig);
 
-    // Persist the change using SettingsService
     try {
       await _settingsService.setNotificationFormatConfig(updatedConfig);
       _ref.read(loggingServiceProvider).info("Successfully saved updated NotificationFormatConfig.");
-      // Invalidate the global provider so other parts of the app pick it up
       _ref.invalidate(notificationFormatConfigProvider);
 
-      // ****** {{ Add this line back }} ******
       _ref.read(backgroundServiceProvider).notifySettingChanged('notificationFormat', null);
-      // ****** END CHANGE ******
-
     } catch (e, s) {
-       _ref.read(loggingServiceProvider).error("Failed to save updated NotificationFormatConfig", e, s);
-       // Revert state on failure? Or show error? For now, log and keep optimistic update.
-       // state = AsyncValue.data(currentConfig); // Example: revert state
-       state = AsyncValue.error(e, s).copyWithPrevious(state) as AsyncValue<NotificationFormatConfig>; // Show error but keep previous data
-       rethrow; // Rethrow to allow UI to catch and display error
+      _ref.read(loggingServiceProvider).error("Failed to save updated NotificationFormatConfig", e, s);
+      state = AsyncValue.error(e, s).copyWithPrevious(state) as AsyncValue<NotificationFormatConfig>;
+      rethrow;
     }
   }
 }
 
-/// Provider for the NotificationFormatEditorNotifier.
-final notificationFormatEditorProvider = StateNotifierProvider.autoDispose<NotificationFormatEditorNotifier, AsyncValue<NotificationFormatConfig>>((ref) {
+final notificationFormatEditorProvider = StateNotifierProvider.autoDispose<NotificationFormatEditorNotifier, AsyncValue<NotificationFormatConfig>>((
+  ref,
+) {
   final settingsService = ref.watch(settingsServiceProvider);
   return NotificationFormatEditorNotifier(settingsService, ref);
 }, name: 'notificationFormatEditorProvider');

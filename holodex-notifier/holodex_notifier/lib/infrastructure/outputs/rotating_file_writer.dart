@@ -9,28 +9,22 @@ class RotatingFileWriter {
   final String baseFilename;
   final int maxFileSizeInBytes;
   final int maxFilesToKeep;
-  final Lock _lock = Lock(); // Prevent race conditions during rotation
+  final Lock _lock = Lock();
 
   String? _logDirectoryPath;
   File? _currentLogFile;
   IOSink? _currentSink;
   int _currentFileSize = 0;
 
-  // {{ Add a public getter for the current log file path }}
   Future<String> get currentLogFilePath async {
-    final file = await _getLogFile(); // Ensure file is determined
+    final file = await _getLogFile();
     return file.path;
   }
 
-  RotatingFileWriter({
-    this.baseFilename = 'app_log',
-    this.maxFileSizeInBytes = 5 * 1024 * 1024, // 5 MB default
-    this.maxFilesToKeep = 3, // Keep current + 2 old files
-  });
+  RotatingFileWriter({this.baseFilename = 'app_log', this.maxFileSizeInBytes = 5 * 1024 * 1024, this.maxFilesToKeep = 3});
 
   Future<String> _getLogDirectory() async {
     if (_logDirectoryPath == null) {
-      // Use cache directory as it's less critical than documents
       final directory = await getTemporaryDirectory();
       _logDirectoryPath = p.join(directory.path, 'logs');
       await Directory(_logDirectoryPath!).create(recursive: true);
@@ -60,18 +54,16 @@ class RotatingFileWriter {
       final sink = await _getSink();
       final bytes = text.codeUnits;
 
-      // Check if rotation is needed before writing
       if (_currentFileSize + bytes.length > maxFileSizeInBytes) {
         await _rotateLogs();
-        // Need to re-get sink after rotation
         final newSink = await _getSink();
         newSink.writeln(text);
-        _currentFileSize += bytes.length + 1; // +1 for newline
+        _currentFileSize += bytes.length + 1;
       } else {
         sink.writeln(text);
-        _currentFileSize += bytes.length + 1; // +1 for newline
+        _currentFileSize += bytes.length + 1;
       }
-      await sink.flush(); // Ensure it's written
+      await sink.flush();
     });
   }
 
@@ -79,17 +71,15 @@ class RotatingFileWriter {
     print("[RotatingFileWriter] Rotating logs...");
     await _currentSink?.close();
     _currentSink = null;
-    _currentLogFile = null; // Force re-evaluation of current log file path
+    _currentLogFile = null;
     _currentFileSize = 0;
 
     final dir = await _getLogDirectory();
     final List<FileSystemEntity> files =
         Directory(dir).listSync()..sort((a, b) {
-          // Sort by last modified time, newest first
           return b.statSync().modified.compareTo(a.statSync().modified);
         });
 
-    // Rename current log file (which is now the newest 'old' one)
     final File currentFileBeforeRotation = File(p.join(dir, '$baseFilename.log'));
     if (await currentFileBeforeRotation.exists()) {
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
@@ -97,9 +87,8 @@ class RotatingFileWriter {
       print("[RotatingFileWriter] Renamed previous log file.");
     }
 
-    // Delete oldest files if exceeding limit
     if (files.length >= maxFilesToKeep) {
-      final filesToDelete = files.skip(maxFilesToKeep - 1); // Keep N-1 oldest + the newly renamed one
+      final filesToDelete = files.skip(maxFilesToKeep - 1);
       for (final file in filesToDelete) {
         if (file is File) {
           try {
@@ -111,8 +100,6 @@ class RotatingFileWriter {
         }
       }
     }
-
-    // We will create a new sink/file on the next call to _getSink/_getLogFile
   }
 
   Future<void> close() async {
@@ -124,9 +111,8 @@ class RotatingFileWriter {
   }
 
   Future<String?> getMostRecentLogFileContent({int? maxBytes}) async {
-    // {{ Add maxBytes parameter }}
     final file = await _getLogFile();
-    print("[RotatingFileWriter] Reading content from: ${file.path}${maxBytes != null ? ' (max: $maxBytes bytes)' : ''}"); // Add logging
+    print("[RotatingFileWriter] Reading content from: ${file.path}${maxBytes != null ? ' (max: $maxBytes bytes)' : ''}");
 
     if (await file.exists()) {
       try {
@@ -134,27 +120,24 @@ class RotatingFileWriter {
 
         if (fileLength == 0) {
           print("[RotatingFileWriter] Log file is empty.");
-          return ""; // Return empty string for empty file
+          return "";
         }
 
         if (maxBytes != null && fileLength > maxBytes) {
           print("[RotatingFileWriter] Log file size ($fileLength) exceeds maxBytes ($maxBytes). Reading tail.");
-          // Read only the last maxBytes
           final stream = file.openRead(fileLength - maxBytes, fileLength);
-          // Decode potentially partial UTF-8 sequence safely
           return await utf8.decodeStream(stream.cast<List<int>>());
         } else {
-          // Read the whole file if within limit or no limit specified
           print("[RotatingFileWriter] Reading full file ($fileLength bytes).");
           return await file.readAsString();
         }
       } catch (e) {
         print("[RotatingFileWriter] Error reading ${maxBytes != null ? 'tail of' : ''} log file content: $e");
-        return null; // Indicate failure
+        return null;
       }
     } else {
       print("[RotatingFileWriter] Log file does not exist: ${file.path}");
-      return null; // Indicate file not found
+      return null;
     }
   }
 }

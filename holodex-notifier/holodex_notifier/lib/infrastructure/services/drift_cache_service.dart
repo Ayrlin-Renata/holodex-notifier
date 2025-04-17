@@ -27,13 +27,11 @@ class DriftCacheService implements ICacheService {
     final now = DateTime.now().toUtc();
     final cutoff = now.subtract(maxAge);
 
-    // Delegate to AppDatabase internal methods
     final countPast = await _db.prunePastVideos();
     final countOld = await _db.pruneOldVideos(cutoff);
 
-    // TODO: Use an injected logger service
     print("[DriftCacheService] Pruned $countPast 'past' videos and $countOld videos older than $cutoff.");
-    return countPast + countOld; // Return total deleted count
+    return countPast + countOld;
   }
 
   @override

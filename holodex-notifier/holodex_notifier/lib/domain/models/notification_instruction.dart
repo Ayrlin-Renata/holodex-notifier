@@ -20,6 +20,6 @@ class NotificationInstruction with _$NotificationInstruction {
     String? mentionTargetChannelName,
 
     String? videoThumbnailUrl,
-    String? videoSourceLink, // For placeholder 'link' field
+    String? videoSourceLink,
   }) = _NotificationInstruction;
 }

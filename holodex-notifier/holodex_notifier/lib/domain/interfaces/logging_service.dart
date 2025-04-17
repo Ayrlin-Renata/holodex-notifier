@@ -5,6 +5,4 @@ abstract class ILoggingService {
   void warning(String message, [dynamic error, StackTrace? stackTrace]);
   void error(String message, [dynamic error, StackTrace? stackTrace]);
   void fatal(String message, [dynamic error, StackTrace? stackTrace]);
-  // TODO: Method to get logs for export/display?
-  // Future<List<String>> getLogs();
 }

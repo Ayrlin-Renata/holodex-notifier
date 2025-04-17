@@ -1,16 +1,14 @@
-// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\infrastructure\services\shared_prefs_settings_service.dart
-import 'dart:convert'; // For jsonEncode/Decode
+import 'dart:convert';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart'; // For kDebugMode
+import 'package:flutter/foundation.dart';
 import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
-import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart'; // Import Secure Storage Interface
-import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart'; // Import the model
+import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart';
+import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 
-// Define keys for SharedPreferences
 const String _keyPollFrequencyMinutes = 'settings_pollFrequencyMinutes';
 const String _keyNotificationGrouping = 'settings_notificationGrouping';
 const String _keyDelayNewMedia = 'settings_delayNewMedia';
@@ -18,23 +16,19 @@ const String _keyReminderLeadTimeMinutes = 'settings_reminderLeadTimeMinutes';
 const String _keyLastPollTime = 'settings_lastPollTime';
 const String _keyChannelSubscriptions = 'settings_channelSubscriptions';
 const String _apiKeySecureStorageKey = 'holodex_api_key';
-const String _keyMainServicesReady = 'app_main_services_ready'; // Key for readiness flag
-const String _keyIsFirstLaunch = 'app_is_first_launch'; // Key for first launch flag
-const String _keyNotificationFormatConfig = 'settings_notificationFormatConfig'; 
-
+const String _keyMainServicesReady = 'app_main_services_ready';
+const String _keyIsFirstLaunch = 'app_is_first_launch';
+const String _keyNotificationFormatConfig = 'settings_notificationFormatConfig';
 
 class SharedPrefsSettingsService implements ISettingsService {
-  // Dependencies
   late final SharedPreferences _prefs;
-  final ISecureStorageService _secureStorageService; // Inject Secure Storage
+  final ISecureStorageService _secureStorageService;
 
-  // Defaults
   static const Duration _defaultPollFrequency = Duration(minutes: 10);
   static const bool _defaultNotificationGrouping = false;
   static const bool _defaultDelayNewMedia = false;
   static const Duration _defaultReminderLeadTime = Duration.zero;
 
-  // Inject ISecureStorageService
   SharedPrefsSettingsService(this._secureStorageService);
 
   @override
@@ -45,14 +39,9 @@ class SharedPrefsSettingsService implements ISettingsService {
     }
   }
 
-  // --- Helper to reload prefs ---
   Future<void> _ensureFreshPrefs() async {
-    // This reload might be expensive if called very frequently,
-    // but necessary if background updates are possible.
     await _prefs.reload();
   }
-
-  // --- Simple Settings ---
 
   @override
   Future<Duration> getPollFrequency() async {
@@ -97,7 +86,6 @@ class SharedPrefsSettingsService implements ISettingsService {
 
   @override
   Future<void> setReminderLeadTime(Duration leadTime) async {
-    // Store 0 if duration is zero or negative
     final minutesToStore = leadTime.isNegative ? 0 : leadTime.inMinutes;
     await _prefs.setInt(_keyReminderLeadTimeMinutes, minutesToStore);
   }
@@ -114,29 +102,23 @@ class SharedPrefsSettingsService implements ISettingsService {
     await _prefs.setInt(_keyLastPollTime, time.millisecondsSinceEpoch);
   }
 
-  // --- API Key (Delegated) ---
-
   @override
   Future<String?> getApiKey() async {
-    // Read from secure storage
     return await _secureStorageService.read(_apiKeySecureStorageKey);
   }
 
   @override
   Future<void> setApiKey(String? apiKey) async {
-    // Write to secure storage
     final String? valueToStore = (apiKey != null && apiKey.isEmpty) ? null : apiKey;
     await _secureStorageService.write(_apiKeySecureStorageKey, valueToStore);
   }
-
-  // --- Channel Subscriptions ---
 
   @override
   Future<List<ChannelSubscriptionSetting>> getChannelSubscriptions() async {
     await _ensureFreshPrefs();
     final List<String>? jsonList = _prefs.getStringList(_keyChannelSubscriptions);
     if (jsonList == null) {
-      return []; // Return empty list if no data saved
+      return [];
     }
 
     final List<ChannelSubscriptionSetting> settings = [];
@@ -145,7 +127,6 @@ class SharedPrefsSettingsService implements ISettingsService {
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         settings.add(ChannelSubscriptionSetting.fromJson(jsonMap));
       } catch (e) {
-        // TODO: Use logging service
         print('Error decoding channel subscription setting: $e. Skipping invalid entry: $jsonString');
       }
     }
@@ -160,20 +141,19 @@ class SharedPrefsSettingsService implements ISettingsService {
               try {
                 return jsonEncode(setting.toJson());
               } catch (e) {
-                // TODO: Use logging service
                 print('Error encoding channel subscription setting: $e for channel ${setting.channelId}');
-                return null; // Return null for invalid entries
+                return null;
               }
             })
             .whereType<String>()
-            .toList(); // Filter out nulls from failed encodings
+            .toList();
 
     await _prefs.setStringList(_keyChannelSubscriptions, jsonList);
   }
 
   @override
   Future<void> updateChannelAvatar(String channelId, String? newAvatarUrl) async {
-    await _ensureFreshPrefs(); // Ensure we have latest data if called concurrently
+    await _ensureFreshPrefs();
 
     final List<ChannelSubscriptionSetting> currentSettings = await getChannelSubscriptions();
     int foundIndex = -1;
@@ -186,34 +166,27 @@ class SharedPrefsSettingsService implements ISettingsService {
 
     if (foundIndex != -1) {
       final currentSetting = currentSettings[foundIndex];
-      // Only update and save if the URL has actually changed
       if (currentSetting.avatarUrl != newAvatarUrl) {
         if (kDebugMode) {
           print("[SharedPrefsSettingsService] Updating avatar for $channelId from ${currentSetting.avatarUrl} to $newAvatarUrl");
         }
-        // Create updated list
         final updatedSettings = List<ChannelSubscriptionSetting>.from(currentSettings);
         updatedSettings[foundIndex] = currentSetting.copyWith(avatarUrl: newAvatarUrl);
-        // Save the updated list
         await saveChannelSubscriptions(updatedSettings);
       } else {
-        // Log that no update was needed (optional)
         if (kDebugMode) {
           print("[SharedPrefsSettingsService] Avatar URL for $channelId is already up-to-date ($newAvatarUrl). No save needed.");
         }
       }
     } else {
-      // Log warning: Attempted to update avatar for a non-existent channel subscription
       print("[SharedPrefsSettingsService] WARNING: Attempted to update avatar for non-subscribed channel ID: $channelId");
     }
   }
 
-  // --- Initialization Readiness Flag ---
-
   @override
   Future<bool> getMainServicesReady() async {
-    await _ensureFreshPrefs(); // Reload before reading
-    final bool ready = _prefs.getBool(_keyMainServicesReady) ?? false; // Default to false if not found
+    await _ensureFreshPrefs();
+    final bool ready = _prefs.getBool(_keyMainServicesReady) ?? false;
     if (kDebugMode) {
       print("[SharedPrefsSettingsService] Main Services Ready flag READ as: $ready");
     }
@@ -222,18 +195,15 @@ class SharedPrefsSettingsService implements ISettingsService {
 
   @override
   Future<void> setMainServicesReady(bool ready) async {
-    // No need to reload before write
     await _prefs.setBool(_keyMainServicesReady, ready);
     if (kDebugMode) {
       print("[SharedPrefsSettingsService] Main Services Ready flag SET to: $ready");
     }
   }
 
-  // --- First Launch Flag ---
   @override
   Future<bool> getIsFirstLaunch() async {
     await _ensureFreshPrefs();
-    // Default to true if the key doesn't exist yet
     return _prefs.getBool(_keyIsFirstLaunch) ?? true;
   }
 
@@ -245,41 +215,34 @@ class SharedPrefsSettingsService implements ISettingsService {
     }
   }
 
-  // --- Config Export/Import ---
   @override
   Future<AppConfig> exportConfiguration() async {
-    // Read current settings
     final freq = await getPollFrequency();
     final grouping = await getNotificationGrouping();
     final delay = await getDelayNewMedia();
-    final reminderLead = await getReminderLeadTime(); // {{ Get reminder lead time }}
+    final reminderLead = await getReminderLeadTime();
     final channels = await getChannelSubscriptions();
 
     return AppConfig(
       pollFrequencyMinutes: freq.inMinutes,
       notificationGrouping: grouping,
       delayNewMedia: delay,
-      reminderLeadTimeMinutes: reminderLead.inMinutes, // {{ Export reminder lead time }}
+      reminderLeadTimeMinutes: reminderLead.inMinutes,
       channelSubscriptions: channels,
-      version: 1, // Current version
+      version: 1,
     );
   }
 
   @override
   Future<bool> importConfiguration(AppConfig config) async {
-
     print("[SharedPrefsSettingsService] Importing configuration version ${config.version}...");
     try {
-      // Apply settings
       await setPollFrequency(Duration(minutes: config.pollFrequencyMinutes));
       await setNotificationGrouping(config.notificationGrouping);
       await setDelayNewMedia(config.delayNewMedia);
-       // {{ Import reminder lead time }}
-      await setReminderLeadTime(Duration(minutes: max(0, config.reminderLeadTimeMinutes))); // Ensure non-negative
+      await setReminderLeadTime(Duration(minutes: max(0, config.reminderLeadTimeMinutes)));
 
-      // Overwrite channel subscriptions
       await saveChannelSubscriptions(config.channelSubscriptions);
-      // DO NOT import API key or last poll time etc.
 
       print("[SharedPrefsSettingsService] Config import successful.");
       return true;
@@ -289,7 +252,7 @@ class SharedPrefsSettingsService implements ISettingsService {
     }
   }
 
-    @override
+  @override
   Future<NotificationFormatConfig> getNotificationFormatConfig() async {
     await _ensureFreshPrefs();
     final String? jsonString = _prefs.getString(_keyNotificationFormatConfig);
@@ -299,10 +262,8 @@ class SharedPrefsSettingsService implements ISettingsService {
         return NotificationFormatConfig.fromJson(jsonMap);
       } catch (e) {
         print("Error decoding NotificationFormatConfig JSON: $e. Returning default.");
-        // Fall through to return default
       }
     }
-    // Return default if not found or decoding failed
     return NotificationFormatConfig.defaultConfig();
   }
 
@@ -313,7 +274,6 @@ class SharedPrefsSettingsService implements ISettingsService {
       await _prefs.setString(_keyNotificationFormatConfig, jsonString);
     } catch (e) {
       print("Error encoding NotificationFormatConfig JSON: $e");
-      // Decide how to handle error (e.g., rethrow?)
     }
   }
 }

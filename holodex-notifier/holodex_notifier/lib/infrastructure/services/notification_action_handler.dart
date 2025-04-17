@@ -20,16 +20,13 @@ class NotificationActionHandler implements INotificationActionHandler {
     }
     _logger.info("ActionHandler: Executing ${actions.length} actions...");
 
-    // Consider potential batching for cache updates
     List<UpdateCacheAction> cacheUpdates = actions.whereType<UpdateCacheAction>().toList();
     List<NotificationAction> otherActions = actions.where((a) => a is! UpdateCacheAction).toList();
-    // Execute non-cache actions first
-    Map<String, int> scheduledNotificationIds = {}; // {{ Store successfully scheduled IDs }}
+    Map<String, int> scheduledNotificationIds = {};
     for (final action in otherActions) {
-      // {{ Capture the returned ID from schedule action }}
       int? returnedId = await _executeSingleAction(action);
       if (action is ScheduleNotificationAction && returnedId != null && action.videoId != null) {
-        scheduledNotificationIds[action.videoId!] = returnedId; // Store ID by videoId
+        scheduledNotificationIds[action.videoId!] = returnedId;
       }
     }
 
@@ -37,16 +34,11 @@ class NotificationActionHandler implements INotificationActionHandler {
       _logger.debug("ActionHandler: Applying ${cacheUpdates.length} cache updates...");
       for (var updateAction in cacheUpdates) {
         final videoId = updateAction.videoId;
-        var companionToUpdate = updateAction.companion; // Start with the companion from the action
+        var companionToUpdate = updateAction.companion;
 
-        // Check if this update corresponds to a video for which we just scheduled a notification
-        // NOTE: This assumes DecisionService uses placeholder (-1) for schedule intent.
         bool updatedIdFromSchedule = false;
         if (scheduledNotificationIds.containsKey(videoId)) {
           int actualId = scheduledNotificationIds[videoId]!;
-          // Determine if it was Live or Reminder based on placeholder/other fields
-          // This is fragile. Ideally DecisionService would provide type context in Schedule action.
-          // Let's assume for now: If scheduledLiveNotificationId was -1, update it. If scheduledReminderNotificationId was -1, update it.
           if (companionToUpdate.scheduledLiveNotificationId.present && companionToUpdate.scheduledLiveNotificationId.value == -1) {
             _logger.debug("ActionHandler: Injecting actual SCHEDULED LIVE ID $actualId into cache update for $videoId");
             companionToUpdate = companionToUpdate.copyWith(scheduledLiveNotificationId: Value(actualId));
@@ -57,7 +49,6 @@ class NotificationActionHandler implements INotificationActionHandler {
             updatedIdFromSchedule = true;
           }
         }
-        // If we didn't inject an ID, ensure placeholders are nulled out if they exist
         if (!updatedIdFromSchedule) {
           if (companionToUpdate.scheduledLiveNotificationId.present && companionToUpdate.scheduledLiveNotificationId.value == -1) {
             companionToUpdate = companionToUpdate.copyWith(scheduledLiveNotificationId: const Value(null));
@@ -72,11 +63,9 @@ class NotificationActionHandler implements INotificationActionHandler {
           if (updatedRows > 0) {
             _logger.debug("ActionHandler: Cache updated for video $videoId.");
           } else {
-            // This might happen if the base record insert failed earlier but the poll cycle continued
             _logger.warning("ActionHandler: Cache update for $videoId affected 0 rows. Record might not exist.");
           }
         } catch (e, s) {
-          // Logging error remains the same
           _logger.error("ActionHandler: Failed to execute cache update for video $videoId", e, s);
         }
       }
@@ -86,17 +75,16 @@ class NotificationActionHandler implements INotificationActionHandler {
   }
 
   Future<int?> _executeSingleAction(NotificationAction action) async {
-    int? newNotificationId; // Variable to store the ID from schedule action
+    int? newNotificationId;
     try {
       switch (action) {
         case ScheduleNotificationAction(:final instruction, :final scheduleTime, :final videoId):
           _logger.debug("ActionHandler: Scheduling notification for $videoId at $scheduleTime.");
-          // {{ Store the result }}
           newNotificationId = await _notificationService.scheduleNotification(instruction: instruction, scheduledTime: scheduleTime);
           if (newNotificationId == null) {
             _logger.warning("ActionHandler: Scheduling returned null ID for $videoId.");
           }
-          break; // Return ID below
+          break;
 
         case CancelNotificationAction(:final notificationId, :final videoId, :final type):
           _logger.debug("ActionHandler: Cancelling notification ID $notificationId (Type: ${type?.name ?? 'Unknown'}) for video $videoId.");
@@ -109,13 +97,11 @@ class NotificationActionHandler implements INotificationActionHandler {
           break;
 
         case UpdateCacheAction():
-          // Already handled in the calling loop
           break;
       }
     } catch (e, s) {
-      // Logging remains the same
       _logger.error("ActionHandler: Failed to execute action $action", e, s);
     }
-    return newNotificationId; // Return the captured ID (or null)
+    return newNotificationId;
   }
 }

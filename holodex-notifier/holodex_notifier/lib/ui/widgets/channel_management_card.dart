@@ -3,9 +3,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
-import 'package:holodex_notifier/main.dart'; // For appControllerProvider
+import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/ui/widgets/channel_settings_tile.dart';
-// import 'package:holodex_notifier/ui/widgets/settings_card.dart'; // Remove SettingsCard import
 
 class ChannelManagementCard extends HookConsumerWidget {
   const ChannelManagementCard({super.key});
@@ -14,18 +13,14 @@ class ChannelManagementCard extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    // State for channel search input
     final searchQueryController = useTextEditingController();
 
-    // Watch Riverpod providers for search state and results
     final searchQuery = ref.watch(channelSearchQueryProvider);
     final asyncSearchResults = ref.watch(debouncedChannelSearchProvider);
 
-    // Watch channel list
     final channelList = ref.watch(channelListProvider);
     final channelListNotifier = ref.watch(channelListProvider.notifier);
 
-    // Watch global defaults
     final globalNew = ref.watch(globalNewMediaDefaultProvider);
     final globalMention = ref.watch(globalMentionsDefaultProvider);
     final globalLive = ref.watch(globalLiveDefaultProvider);
@@ -33,25 +28,19 @@ class ChannelManagementCard extends HookConsumerWidget {
     final globalMembers = ref.watch(globalMembersOnlyDefaultProvider);
     final globalClips = ref.watch(globalClipsDefaultProvider);
 
-    // Access AppController needed for add/remove actions
     final appController = ref.watch(appControllerProvider);
 
-    // Update text controller if riverpod state changes externally (less likely now)
     useEffect(() {
       if (searchQueryController.text != searchQuery) {
         searchQueryController.text = searchQuery;
-        // Move cursor to end
         searchQueryController.selection = TextSelection.fromPosition(TextPosition(offset: searchQueryController.text.length));
       }
       return null;
     }, [searchQuery]);
 
-    // REMOVED: SettingsCard wrapper
-    // Return the Column containing the card content directly
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, // Align content to start
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // --- Global Switches ---
         Text('Notification Type Defaults', style: theme.textTheme.labelLarge),
         Wrap(
           spacing: 8.0,
@@ -81,7 +70,6 @@ class ChannelManagementCard extends HookConsumerWidget {
             icon: const Icon(Icons.sync_outlined),
             label: const Text('Apply Defaults to All'),
             onPressed: () {
-              // Use AppController method
               appController.applyGlobalDefaultsToAllChannels();
               ScaffoldMessenger.of(
                 context,
@@ -91,7 +79,6 @@ class ChannelManagementCard extends HookConsumerWidget {
         ),
         const Divider(height: 24.0),
 
-        // --- Channel Search ---
         TextField(
           controller: searchQueryController,
           decoration: InputDecoration(
@@ -99,8 +86,7 @@ class ChannelManagementCard extends HookConsumerWidget {
             hintText: 'Enter channel name',
             prefixIcon: const Icon(Icons.search),
             suffixIcon:
-                asyncSearchResults
-                        .isLoading // Check loading state from FutureProvider
+                asyncSearchResults.isLoading
                     ? const Padding(
                       padding: EdgeInsets.all(12.0),
                       child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -109,32 +95,25 @@ class ChannelManagementCard extends HookConsumerWidget {
                         ? IconButton(
                           icon: const Icon(Icons.clear),
                           onPressed: () {
-                            // Clear the riverpod state, which clears the text field via useEffect
                             ref.read(channelSearchQueryProvider.notifier).state = '';
                           },
                         )
                         : null),
           ),
-          // Update the Riverpod provider on change
           onChanged: (value) => ref.read(channelSearchQueryProvider.notifier).state = value,
         ),
-        // --- Search Results ---
-        // Use AsyncValue widget builder for cleaner loading/error handling
         asyncSearchResults.when(
           data: (currentResults) {
             if (currentResults.isEmpty) {
-              // Show 'No results' only if query is long enough & not loading
               if (searchQuery.length >= 3) {
                 return const Padding(padding: EdgeInsets.all(8.0), child: Center(child: Text('No channels found.')));
               } else {
-                return const SizedBox.shrink(); // Nothing to show if query too short
+                return const SizedBox.shrink();
               }
             }
 
-            // Display results list
             return SizedBox(
-              // Limit height of results box
-              height: 200, // Adjust as needed
+              height: 200,
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: currentResults.length,
@@ -152,12 +131,10 @@ class ChannelManagementCard extends HookConsumerWidget {
                               icon: const Icon(Icons.add_circle_outline, color: Colors.green),
                               tooltip: 'Add Channel',
                               onPressed: () {
-                                // Use AppController method
                                 appController.addChannel(channel);
                                 ScaffoldMessenger.of(
                                   context,
                                 ).showSnackBar(SnackBar(content: Text('Added ${channel.name}'), duration: Duration(seconds: 2)));
-                                // Clear search by clearing provider state
                                 ref.read(channelSearchQueryProvider.notifier).state = '';
                               },
                             ),
@@ -168,50 +145,34 @@ class ChannelManagementCard extends HookConsumerWidget {
           },
           error: (error, stackTrace) {
             String errorMessage;
-            // --- ADD: Specific check for our custom exception ---
             if (error is ApiKeyRequiredException) {
-              errorMessage = error.message; // Use the specific message
+              errorMessage = error.message;
             } else {
-              // --- END ADD ---
-              errorMessage = 'Search failed. Please try again.'; // Generic fallback
-              // Log the actual error for debugging
+              errorMessage = 'Search failed. Please try again.';
               print("Channel Search Error: $error\n$stackTrace");
             }
             return Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Center(
-                child: Text(
-                  errorMessage, // Display specific or generic message
-                  style: TextStyle(color: theme.colorScheme.error),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              child: Center(child: Text(errorMessage, style: TextStyle(color: theme.colorScheme.error), textAlign: TextAlign.center)),
             );
           },
-          // Keep loading spinner centered
           loading: () => const Padding(padding: EdgeInsets.symmetric(vertical: 20.0), child: Center(child: CircularProgressIndicator())),
         ),
 
         const Divider(height: 24.0),
         Text('Added Channels (${channelList.length})', style: theme.textTheme.titleMedium),
 
-        // --- Channel List ---
         if (channelList.isEmpty)
           const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No channels added yet. Use the search bar above to add channels.')))
         else
-          // --- Ensure the key is ValueKey for ReorderableListView ---
           ReorderableListView.builder(
             key: ValueKey('reorderable_channel_list_${channelList.length}'),
             shrinkWrap: true,
-            // Disable internal scrolling for this list. The parent page will handle overall scrolling.
             physics: const NeverScrollableScrollPhysics(),
             itemCount: channelList.length,
             itemBuilder: (context, index) {
               final channelSetting = channelList[index];
-              return ChannelSettingsTile(
-                key: ValueKey(channelSetting.channelId), // Key required for reorderable items
-                channelSetting: channelSetting,
-              );
+              return ChannelSettingsTile(key: ValueKey(channelSetting.channelId), channelSetting: channelSetting);
             },
             onReorder: (int oldIndex, int newIndex) {
               channelListNotifier.reorderChannels(oldIndex, newIndex);
