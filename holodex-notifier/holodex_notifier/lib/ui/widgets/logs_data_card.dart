@@ -1,8 +1,10 @@
+import 'dart:io'; // Add dart:io import
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/infrastructure/services/logger_service.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart'; // Add path_provider import
 import 'package:share_plus/share_plus.dart';
 
 class LogsDataCard extends ConsumerWidget {
@@ -57,33 +59,74 @@ class LogsDataCard extends ConsumerWidget {
             label: const Text('Share Full Log'),
             onPressed: () async {
               if (loggerService is ILoggingServiceWithOutput) {
+                String? tempLogFilePath; // To store path for cleanup
                 try {
+                  // Get log content
                   final logContent = await loggerService.getLogFileContent();
-                  if (logContent == null) {
-                    throw Exception("Failed to retrieve log content.");
-                  }
-
-                  final result = await Share.share(logContent, subject: 'Holodex Notifier Logs');
-
-                  if (result.status == ShareResultStatus.success) {
-                    loggerService.info('Log content shared successfully.');
-                  } else if (result.status == ShareResultStatus.dismissed) {
-                    loggerService.info('Log sharing dismissed by user.');
-                  } else {
-                    loggerService.warning('Log sharing failed: ${result.status}');
+                  if (logContent == null || logContent.isEmpty) {
+                    loggerService.warning('Log content is empty or unavailable for sharing.');
                     if (context.mounted) {
-                      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Failed to share log: ${result.status}')));
+                      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Log content is empty or could not be retrieved.')));
+                    }
+                    return; // Exit if no content
+                  }
+                  loggerService.debug("Log content length for sharing: ${logContent.length} characters");
+
+                  // Get temporary directory
+                  final tempDir = await getTemporaryDirectory();
+                  final fileName = 'holodex_notifier_logs_${DateTime.now().millisecondsSinceEpoch}.txt';
+                  final logFile = File('${tempDir.path}/$fileName');
+                  tempLogFilePath = logFile.path; // Store path for potential cleanup
+
+                  // Write content to the file
+                  await logFile.writeAsString(logContent);
+                  loggerService.info("Log content written to temporary file: ${logFile.path}");
+
+                  // Prepare file for sharing
+                  final xFile = XFile(logFile.path, mimeType: 'text/plain'); // Specify MIME type
+                  final shareSubject = 'Holodex Notifier Logs ${DateTime.now().toIso8601String().substring(0, 10)}';
+
+                  // Share the file using shareXFiles
+                  final result = await Share.shareXFiles([xFile], subject: shareSubject);
+
+                  // Handle the result status
+                  if (result.status == ShareResultStatus.success) {
+                    loggerService.info('Log file shared successfully: ${logFile.path}');
+                  } else if (result.status == ShareResultStatus.dismissed) {
+                    loggerService.info('Log file sharing dismissed by user.');
+                  } else {
+                     // Log the specific raw status value if available for more info
+                    loggerService.warning('Log file sharing failed: Status=${result.status}, RawValue=${result.raw}');
+                    if (context.mounted) {
+                       // Show more informative message, including the specific status
+                      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Failed to share log file. Status: ${result.status}')));
                     }
                   }
                 } catch (e, s) {
-                  loggerService.error('Error sharing log content', e, s);
+                  loggerService.error('Error preparing or sharing log file', e, s);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error preparing log for sharing: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error preparing log file for sharing: $e')));
+                  }
+                } finally {
+                  // Optional: Attempt to clean up the temporary file
+                  if (tempLogFilePath != null) {
+                    try {
+                      final fileToDelete = File(tempLogFilePath);
+                      if (await fileToDelete.exists()) {
+                        await fileToDelete.delete();
+                        loggerService.debug("Temporary log file deleted: $tempLogFilePath");
+                      }
+                    } catch (e) {
+                       loggerService.warning("Failed to delete temporary log file: $tempLogFilePath. Error: $e");
+                    }
                   }
                 }
               } else {
+                // Handle case where logger service doesn't support file output
                 loggerService.error("Attempted to share logs, but logger service is not ILoggingServiceWithOutput");
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log service error: Cannot share logs.')));
+                if (context.mounted){
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log service error: Cannot retrieve logs for sharing.')));
+                }
               }
             },
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
