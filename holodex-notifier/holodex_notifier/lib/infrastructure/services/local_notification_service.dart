@@ -348,94 +348,95 @@ class LocalNotificationService implements INotificationService {
       final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
       _logger.trace("[ShowNotification] Using format config: ${format.toJson()}");
 
-      final formatted = _formatNotification(instruction, format);
+      // Pass null for scheduledTime as this is an immediate notification
+      final formatted = _formatNotification(instruction, format, scheduledTime: null);
       if (formatted == null) {
         _logger.warning("[ShowNotification] Formatting failed for event type ${instruction.eventType}. Aborting show.");
         return null;
       }
-      final title = formatted.title;
-      final body = formatted.body;
-      final payload = instruction.videoId;
-      _logger.debug("[ShowNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
-
-      AndroidBitmap<Object>? largeIconBitmap;
-      String? largeIconPath;
-      StyleInformation? styleInformation;
-      List<DarwinNotificationAttachment>? darwinAttachments;
-
-      if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
-        try {
-          final avatarFile = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
-          largeIconPath = avatarFile.path;
-          largeIconBitmap = FilePathAndroidBitmap(avatarFile.path);
-          _logger.debug("[ShowNotification] Avatar fetched for largeIcon: $largeIconPath");
-        } catch (e) {
-          _logger.error("[ShowNotification] Failed fetch avatar", e);
-        }
-      }
-      if (format.showThumbnail && instruction.videoThumbnailUrl != null && instruction.videoThumbnailUrl!.isNotEmpty) {
-        try {
-          _logger.trace("[ShowNotification] Fetching thumbnail (showThumbnail=true): ${instruction.videoThumbnailUrl}");
-          final thumbnailFile = await _cacheManager.getSingleFile(instruction.videoThumbnailUrl!);
-          styleInformation = BigPictureStyleInformation(
-            FilePathAndroidBitmap(thumbnailFile.path),
-            largeIcon: largeIconBitmap,
-            hideExpandedLargeIcon: false,
-          );
-          _logger.debug("[ShowNotification] Thumbnail fetched for BigPicture: ${thumbnailFile.path}");
-          darwinAttachments = [DarwinNotificationAttachment(thumbnailFile.path)];
-        } catch (e) {
-          _logger.error("[ShowNotification] Failed fetch thumbnail", e);
-          if (largeIconPath != null) {
-            darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
-            _logger.debug("[ShowNotification] Using avatar as Darwin attachment due to thumbnail error.");
+      // ... rest of showNotification logic (fetching images, building details, showing notification) ...
+        final title = formatted.title;
+        final body = formatted.body;
+        final payload = instruction.videoId;
+        _logger.debug("[ShowNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
+  
+        AndroidBitmap<Object>? largeIconBitmap;
+        String? largeIconPath;
+        StyleInformation? styleInformation;
+        List<DarwinNotificationAttachment>? darwinAttachments;
+  
+        if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
+          try {
+            final avatarFile = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
+            largeIconPath = avatarFile.path;
+            largeIconBitmap = FilePathAndroidBitmap(avatarFile.path);
+            _logger.debug("[ShowNotification] Avatar fetched for largeIcon: $largeIconPath");
+          } catch (e) {
+            _logger.error("[ShowNotification] Failed fetch avatar", e);
           }
         }
-      } else if (largeIconPath != null) {
-        darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
-        _logger.debug("[ShowNotification] Using avatar as Darwin attachment (thumbnail disabled or unavailable).");
-      }
-      if (!format.showThumbnail) {
-        _logger.debug("[ShowNotification] Thumbnail display skipped (showThumbnail=false).");
-      }
-
-      final String channelId = _getChannelIdForInstruction(instruction);
-      final String channelName = _getChannelNameFromId(channelId);
-      final String channelDesc = _getChannelDescFromId(channelId);
-      final Importance importance = _getImportanceFromId(channelId);
-      final Priority priority = _getPriorityFromId(channelId);
-      _logger.debug("[ShowNotification] Using channel: $channelId");
-
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
-
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        channelId,
-        channelName,
-        channelDescription: channelDesc,
-        importance: importance,
-        priority: priority,
-        largeIcon: largeIconBitmap,
-        styleInformation: styleInformation,
-        actions: androidActions,
-        ticker: title,
-      );
-      final DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-        attachments: darwinAttachments,
-      );
-      final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
-
-      final int notificationId = _generateImmediateNotificationId(instruction.videoId, instruction.eventType);
-      _logger.debug("[ShowNotification] Showing notification ID: $notificationId");
-      await _flutterLocalNotificationsPlugin.show(notificationId, title, body, notificationDetails, payload: payload);
-      _logger.info("[ShowNotification] Notification shown successfully. ID: $notificationId Type: ${instruction.eventType}");
-      return notificationId;
+        if (format.showThumbnail && instruction.videoThumbnailUrl != null && instruction.videoThumbnailUrl!.isNotEmpty) {
+          try {
+            _logger.trace("[ShowNotification] Fetching thumbnail (showThumbnail=true): ${instruction.videoThumbnailUrl}");
+            final thumbnailFile = await _cacheManager.getSingleFile(instruction.videoThumbnailUrl!);
+            styleInformation = BigPictureStyleInformation(
+              FilePathAndroidBitmap(thumbnailFile.path),
+              largeIcon: largeIconBitmap,
+              hideExpandedLargeIcon: false,
+            );
+            _logger.debug("[ShowNotification] Thumbnail fetched for BigPicture: ${thumbnailFile.path}");
+            darwinAttachments = [DarwinNotificationAttachment(thumbnailFile.path)];
+          } catch (e) {
+            _logger.error("[ShowNotification] Failed fetch thumbnail", e);
+            if (largeIconPath != null) {
+              darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
+              _logger.debug("[ShowNotification] Using avatar as Darwin attachment due to thumbnail error.");
+            }
+          }
+        } else if (largeIconPath != null) {
+          darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
+          _logger.debug("[ShowNotification] Using avatar as Darwin attachment (thumbnail disabled or unavailable).");
+        }
+        if (!format.showThumbnail) {
+          _logger.debug("[ShowNotification] Thumbnail display skipped (showThumbnail=false).");
+        }
+  
+        final String channelId = _getChannelIdForInstruction(instruction);
+        final String channelName = _getChannelNameFromId(channelId);
+        final String channelDesc = _getChannelDescFromId(channelId);
+        final Importance importance = _getImportanceFromId(channelId);
+        final Priority priority = _getPriorityFromId(channelId);
+        _logger.debug("[ShowNotification] Using channel: $channelId");
+  
+        final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
+  
+        final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+          channelId,
+          channelName,
+          channelDescription: channelDesc,
+          importance: importance,
+          priority: priority,
+          largeIcon: largeIconBitmap,
+          styleInformation: styleInformation,
+          actions: androidActions,
+          ticker: title,
+        );
+        final DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          attachments: darwinAttachments,
+        );
+        final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
+  
+        final int notificationId = _generateImmediateNotificationId(instruction.videoId, instruction.eventType);
+        _logger.debug("[ShowNotification] Showing notification ID: $notificationId");
+        await _flutterLocalNotificationsPlugin.show(notificationId, title, body, notificationDetails, payload: payload);
+        _logger.info("[ShowNotification] Notification shown successfully. ID: $notificationId Type: ${instruction.eventType}");
+        return notificationId;
     } catch (e, s) {
       _logger.error("[ShowNotification] Error for ${instruction.videoId}", e, s);
       return null;
-      /* Rethrow or handle */
     }
   }
 
@@ -448,77 +449,90 @@ class LocalNotificationService implements INotificationService {
       final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
       _logger.trace("[ScheduleNotification] Using format config: ${format.toJson()}");
 
+      // Pass the actual scheduledTime here
       final formatted = _formatNotification(instruction, format, scheduledTime: scheduledTime);
-      if (formatted == null) {
+       if (formatted == null) {
         _logger.warning("[ScheduleNotification] Formatting failed for event type ${instruction.eventType}. Aborting schedule.");
         return null;
       }
-      final title = formatted.title;
-      final body = formatted.body;
-      final payload = instruction.videoId;
-      _logger.debug("[ScheduleNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
-
-      final String channelId = _getChannelIdForScheduleInstruction(instruction);
-      final String channelName = _getChannelNameFromId(channelId);
-      final String channelDesc = _getChannelDescFromId(channelId);
-      final Importance importance = _getImportanceFromId(channelId);
-      final Priority priority = _getPriorityFromId(channelId);
-      _logger.debug("[ScheduleNotification] Using channel: $channelId");
-
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
-
-      AndroidBitmap<Object>? largeIconBitmap;
-      if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
-        try {
-          final file = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
-          largeIconBitmap = FilePathAndroidBitmap(file.path);
-        } catch (e) {
-          _logger.warning("[ScheduleNotification] Failed fetch scheduled avatar", e);
+      // ... rest of scheduleNotification logic (building details, scheduling with zonedSchedule) ...
+        final title = formatted.title;
+        final body = formatted.body;
+        final payload = instruction.videoId;
+        _logger.debug("[ScheduleNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
+  
+        final String channelId = _getChannelIdForScheduleInstruction(instruction);
+        final String channelName = _getChannelNameFromId(channelId);
+        final String channelDesc = _getChannelDescFromId(channelId);
+        final Importance importance = _getImportanceFromId(channelId);
+        final Priority priority = _getPriorityFromId(channelId);
+        _logger.debug("[ScheduleNotification] Using channel: $channelId");
+  
+        final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
+  
+        AndroidBitmap<Object>? largeIconBitmap;
+        if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
+          try {
+            final file = await _cacheManager.getSingleFile(instruction.channelAvatarUrl!);
+            largeIconBitmap = FilePathAndroidBitmap(file.path);
+          } catch (e) {
+            _logger.warning("[ScheduleNotification] Failed fetch scheduled avatar", e);
+          }
         }
-      }
-
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        channelId,
-        channelName,
-        channelDescription: channelDesc,
-        importance: importance,
-        priority: priority,
-        largeIcon: largeIconBitmap,
-        actions: androidActions,
-        ticker: title,
-      );
-      const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true);
-      final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
-
-      final tz.TZDateTime scheduledTZTime = tz.TZDateTime.from(scheduledTime, tz.local);
-      final int notificationId =
-          instruction.eventType == NotificationEventType.reminder
-              ? _generateReminderNotificationId(instruction.videoId)
-              : _generateScheduledNotificationId(instruction.videoId);
-
-      await _flutterLocalNotificationsPlugin.cancel(notificationId);
-      _logger.debug("[ScheduleNotification] Pre-cancelled existing notification ID $notificationId before scheduling.");
-
-      _logger.debug("[ScheduleNotification] Scheduling notification ID: $notificationId for time: $scheduledTZTime");
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        notificationId,
-        title,
-        body,
-        scheduledTZTime,
-        notificationDetails,
-        payload: payload,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
-
-      _logger.info(
-        "[ScheduleNotification] Notification scheduled successfully. ID: $notificationId for $scheduledTZTime Type: ${instruction.eventType}",
-      );
-      return notificationId;
+        // TODO: Add thumbnail fetching/display for scheduled notifications if desired
+        // Currently, thumbnails are only fetched/shown for immediate notifications.
+        // You would need logic similar to showNotification to fetch the thumbnail
+        // and potentially use BigPictureStyleInformation here if the platform supports it
+        // for scheduled notifications. Darwin attachments might also be applicable.
+  
+        final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+          channelId,
+          channelName,
+          channelDescription: channelDesc,
+          importance: importance,
+          priority: priority,
+          largeIcon: largeIconBitmap,
+          actions: androidActions,
+          ticker: title,
+          // styleInformation could be added here if thumbnail is implemented
+        );
+        const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true
+            // attachments could be added here if thumbnail is implemented
+            );
+        final NotificationDetails notificationDetails = NotificationDetails(android: androidDetails, iOS: darwinDetails, macOS: darwinDetails);
+  
+        final tz.TZDateTime scheduledTZTime = tz.TZDateTime.from(scheduledTime, tz.local);
+        final int notificationId =
+            instruction.eventType == NotificationEventType.reminder
+                ? _generateReminderNotificationId(instruction.videoId)
+                : _generateScheduledNotificationId(instruction.videoId);
+  
+        await _flutterLocalNotificationsPlugin.cancel(notificationId);
+        _logger.debug("[ScheduleNotification] Pre-cancelled existing notification ID $notificationId before scheduling.");
+  
+        _logger.debug("[ScheduleNotification] Scheduling notification ID: $notificationId for time: $scheduledTZTime");
+        await _flutterLocalNotificationsPlugin.zonedSchedule(
+          notificationId,
+          title,
+          body,
+          scheduledTZTime,
+          notificationDetails,
+          payload: payload,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: DateTimeComponents.time, // Consider if date component match is needed
+        );
+  
+        _logger.info(
+          "[ScheduleNotification] Notification scheduled successfully. ID: $notificationId for $scheduledTZTime Type: ${instruction.eventType}",
+        );
+        return notificationId;
     } catch (e, s) {
-      _logger.error("[ScheduleNotification] Failed for ${instruction.videoId}", e, s);
-      return null;
+       _logger.error("[ScheduleNotification] Failed for ${instruction.videoId}", e, s);
+       return null;
     }
   }
 
@@ -550,38 +564,66 @@ class LocalNotificationService implements INotificationService {
     return actions;
   }
 
-  ({String title, String body})? _formatNotification(NotificationInstruction instruction, NotificationFormat format, {DateTime? scheduledTime}) {
+  ({String title, String body})? _formatNotification(
+    NotificationInstruction instruction,
+    NotificationFormat format, {
+    required DateTime? scheduledTime, // Make this required but nullable
+  }) {
+    _logger.trace("[Format] Input: type=${instruction.eventType}, videoId=${instruction.videoId}, scheduledTime=$scheduledTime");
     _logger.trace("[Format] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
 
-    DateTime baseTime = instruction.availableAt;
-    final localBaseTime = baseTime.toLocal();
+    final DateTime now = DateTime.now();
+    final DateTime eventTime = instruction.availableAt; // This is the actual event time
+    final DateTime localEventTime = eventTime.toLocal();
 
-    String relativeTime = '';
+    String timeToEventString = '';
+    String timeToNotifString = '';
+
+    // Calculate timeToEventString
     try {
-      relativeTime = timeago.format(localBaseTime, locale: 'en_short', allowFromNow: true);
+      timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
+       _logger.trace("[Format] Calculated timeToEventString: '$timeToEventString' (from $localEventTime)");
     } catch (e) {
-      _logger.error("Error formatting relative time using baseTime: $localBaseTime", e);
-      relativeTime = (localBaseTime.isBefore(DateTime.now())) ? "just now" : "soon";
+      _logger.error("Error formatting timeToEventString using eventTime: $localEventTime", e);
+      timeToEventString = (localEventTime.isBefore(now)) ? "just now" : "soon";
     }
 
-    final String mediaTime = DateFormat.jm().format(localBaseTime);
+    // Calculate timeToNotifString
+    if (scheduledTime != null) {
+      final DateTime localScheduledTime = scheduledTime.toLocal();
+      try {
+        timeToNotifString = timeago.format(localScheduledTime, locale: 'en_short', allowFromNow: true);
+        _logger.trace("[Format] Calculated timeToNotifString: '$timeToNotifString' (from $localScheduledTime)");
+      } catch (e) {
+        _logger.error("Error formatting timeToNotifString using scheduledTime: $localScheduledTime", e);
+        timeToNotifString = (localScheduledTime.isBefore(now)) ? "now" : "soon";
+      }
+    } else {
+      timeToNotifString = "Now"; // For immediate notifications
+      _logger.trace("[Format] timeToNotifString set to 'Now' (immediate notification)");
+    }
+
+
+    final String mediaTime = DateFormat.jm().format(localEventTime);
     String mediaType = instruction.videoType ?? 'Media';
     if (mediaType.isEmpty || mediaType == 'placeholder') mediaType = 'Media';
     String mediaTypeCaps = mediaType.toUpperCase();
 
-    String dateYMD = DateFormat('yyyy-MM-dd').format(localBaseTime);
-    String dateDMY = DateFormat('dd-MM-yyyy').format(localBaseTime);
-    String dateMDY = DateFormat('MM-dd-yyyy').format(localBaseTime);
-    String dateMD = DateFormat('MM-dd').format(localBaseTime);
-    String dateDM = DateFormat('dd-MM').format(localBaseTime);
+    String dateYMD = DateFormat('yyyy-MM-dd').format(localEventTime);
+    String dateDMY = DateFormat('dd-MM-yyyy').format(localEventTime);
+    String dateMDY = DateFormat('MM-dd-yyyy').format(localEventTime);
+    String dateMD = DateFormat('MM-dd').format(localEventTime);
+    String dateDM = DateFormat('dd-MM').format(localEventTime);
     String dateAsia =
-        '${DateFormat('yyyy').format(localBaseTime)}年${DateFormat('MM').format(localBaseTime)}月${DateFormat('dd').format(localBaseTime)}日';
+        '${DateFormat('yyyy').format(localEventTime)}年${DateFormat('MM').format(localEventTime)}月${DateFormat('dd').format(localEventTime)}日';
 
     Map<String, String> replacements = {
       '{channelName}': instruction.channelName,
       '{mediaTitle}': instruction.videoTitle,
       '{mediaTime}': mediaTime,
-      '{relativeTime}': relativeTime,
+      // '{relativeTime}': relativeTime, // REMOVED
+      '{timeToEvent}': timeToEventString, // ADDED
+      '{timeToNotif}': timeToNotifString, // ADDED
       '{mediaType}': mediaType,
       '{mediaTypeCaps}': mediaTypeCaps,
       '{newLine}': '\n',

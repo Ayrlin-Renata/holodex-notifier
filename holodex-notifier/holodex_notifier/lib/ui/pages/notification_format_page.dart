@@ -248,7 +248,8 @@ class NotificationFormatPage extends HookConsumerWidget {
                   ListTile(title: Text('{channelName}'), subtitle: Text('Name of the channel')),
                   ListTile(title: Text('{mediaTitle}'), subtitle: Text('Title of the video/stream')),
                   ListTile(title: Text('{mediaTime}'), subtitle: Text('Actual/scheduled start time (e.g., 7:30 PM). Excludes date.')),
-                  ListTile(title: Text('{relativeTime}'), subtitle: Text('Time relative to now (e.g., "in 5 mins", "10 mins ago")')),
+                  ListTile(title: Text('{timeToEvent}'), subtitle: Text('Time until the start of the scheduled media.')),
+                  ListTile(title: Text('{timeToNotif}'), subtitle: Text('Time until the scheduled dispatch of the notification.')),
                   ListTile(title: Text('{mediaType}'), subtitle: Text('Type (e.g., "Stream", "Clip")')),
                   ListTile(title: Text('{mediaTypeCaps}'), subtitle: Text('Type in ALL CAPS (e.g., "STREAM")')),
                   ListTile(title: Text('{newLine}'), subtitle: Text('Inserts a line break')),
@@ -258,7 +259,6 @@ class NotificationFormatPage extends HookConsumerWidget {
                   ListTile(title: Text('{mediaDateMD}'), subtitle: Text('Date (MM-DD)')),
                   ListTile(title: Text('{mediaDateDM}'), subtitle: Text('Date (DD-MM)')),
                   ListTile(title: Text('{mediaDateAsia}'), subtitle: Text('Date (YYYY年MM月DD日)')),
-                  /* ... list tiles ... */
                 ],
               ),
             ],

@@ -34,23 +34,23 @@ class NotificationFormatConfig with _$NotificationFormatConfig {
     return NotificationFormatConfig(
       formats: {
         NotificationEventType.newMedia: const NotificationFormat(
-          titleTemplate: 'New {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
+          titleTemplate: 'New {mediaType} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
         NotificationEventType.mention: const NotificationFormat(
-          titleTemplate: 'Mentioned in {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
+          titleTemplate: 'Mentioned in {mediaType} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
         NotificationEventType.live: const NotificationFormat(
-          titleTemplate: '🔴 {mediaTypeCaps} LIVE NOW - {mediaTime} - {channelName}',
+          titleTemplate: '🔴 {mediaTypeCaps} LIVE - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
         NotificationEventType.reminder: const NotificationFormat(
-          titleTemplate: 'Live in {relativeTime}: {mediaType} - {mediaTime} - {channelName}',
+          titleTemplate: 'Live in {timeToEvent}: {mediaType} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
         NotificationEventType.update: const NotificationFormat(
-          titleTemplate: '⚠️ Update for {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
+          titleTemplate: '⚠️ Update for {mediaType} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
       },

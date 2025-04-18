@@ -103,34 +103,59 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
   final selectedChannelId = ref.watch(scheduledFilterChannelProvider);
   final logger = ref.watch(loggingServiceProvider);
 
-  if (baseAsyncValue.isLoading || formatConfigAsyncValue.isLoading) {
-    return const AsyncLoading<List<ScheduledNotificationItem>>();
-  }
-
   if (baseAsyncValue.hasError) {
     return AsyncError<List<ScheduledNotificationItem>>(baseAsyncValue.error!, baseAsyncValue.stackTrace!);
   }
   if (formatConfigAsyncValue.hasError) {
+     logger.error("[FilteredScheduled] Error loading formatConfig: ${formatConfigAsyncValue.error}");
     return AsyncError<List<ScheduledNotificationItem>>(formatConfigAsyncValue.error!, formatConfigAsyncValue.stackTrace!);
   }
 
-  ({String title, String body}) formatItem(CachedVideo video, NotificationEventType type, DateTime scheduledTime, NotificationFormatConfig config) {
+  if (baseAsyncValue.isLoading || formatConfigAsyncValue.isLoading) {
+    return const AsyncLoading<List<ScheduledNotificationItem>>();
+  }
+
+
+  ({String title, String body}) formatItem(
+    CachedVideo video,
+    NotificationEventType type,
+    DateTime notificationScheduledTime,
+    NotificationFormatConfig config,
+  ) {
     final format = config.formats[type];
     if (format == null) {
       logger.warning("No format found for event type $type in UI provider");
       return (title: video.channelName, body: video.videoTitle);
     }
 
-    final localScheduledTime = scheduledTime.toLocal();
-    final String mediaTime = DateFormat.jm().format(localScheduledTime);
-    String relativeTime = 'soon';
-    if (type == NotificationEventType.reminder) {
-      try {
-        relativeTime = timeago.format(scheduledTime, locale: 'en_short', allowFromNow: true);
-      } catch (e) {
-        logger.error("Error formatting relative time in UI provider", e);
-      }
+    final DateTime now = DateTime.now();
+    final DateTime? eventActualStartTime = DateTime.tryParse(video.startScheduled ?? video.availableAt);
+    final DateTime localNotificationScheduledTime = notificationScheduledTime.toLocal();
+    final DateTime? localEventActualStartTime = eventActualStartTime?.toLocal();
+
+
+    String timeToNotifString = '';
+    String timeToEventString = '';
+
+    try {
+      timeToNotifString = timeago.format(localNotificationScheduledTime, locale: 'en_short', allowFromNow: true);
+    } catch (e) {
+      logger.error("Error formatting timeToNotifString in UI provider for $localNotificationScheduledTime", e);
+       timeToNotifString = (localNotificationScheduledTime.isBefore(now)) ? "now" : "soon";
     }
+
+    if (localEventActualStartTime != null) {
+       try {
+         timeToEventString = timeago.format(localEventActualStartTime, locale: 'en_short', allowFromNow: true);
+       } catch (e) {
+         logger.error("Error formatting timeToEventString in UI provider for $localEventActualStartTime", e);
+         timeToEventString = (localEventActualStartTime.isBefore(now)) ? "started" : "soon";
+       }
+    } else {
+        logger.warning("[$video.videoId] Missing eventActualStartTime for calculating timeToEventString in UI provider.");
+        timeToEventString = "N/A";
+    }
+
 
     String videoType = video.videoType ?? 'Media';
     if (videoType.isEmpty || videoType == 'placeholder') {
@@ -138,19 +163,25 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
     }
     String mediaTypeCaps = videoType.toUpperCase();
 
-    String dateYMD = DateFormat('yyyy-MM-dd').format(localScheduledTime);
-    String dateDMY = DateFormat('dd-MM-yyyy').format(localScheduledTime);
-    String dateMDY = DateFormat('MM-dd-yyyy').format(localScheduledTime);
-    String dateMD = DateFormat('MM-dd').format(localScheduledTime);
-    String dateDM = DateFormat('dd-MM').format(localScheduledTime);
+
+    final DateTime timeForFormatting = localEventActualStartTime ?? localNotificationScheduledTime;
+
+
+    String mediaTime = DateFormat.jm().format(timeForFormatting);
+    String dateYMD = DateFormat('yyyy-MM-dd').format(timeForFormatting);
+    String dateDMY = DateFormat('dd-MM-yyyy').format(timeForFormatting);
+    String dateMDY = DateFormat('MM-dd-yyyy').format(timeForFormatting);
+    String dateMD = DateFormat('MM-dd').format(timeForFormatting);
+    String dateDM = DateFormat('dd-MM').format(timeForFormatting);
     String dateAsia =
-        '${DateFormat('yyyy').format(localScheduledTime)}年${DateFormat('MM').format(localScheduledTime)}月${DateFormat('dd').format(localScheduledTime)}日';
+        '${DateFormat('yyyy').format(timeForFormatting)}年${DateFormat('MM').format(timeForFormatting)}月${DateFormat('dd').format(timeForFormatting)}日';
 
     final replacements = {
       '{channelName}': video.channelName,
       '{mediaTitle}': video.videoTitle,
       '{mediaTime}': mediaTime,
-      '{relativeTime}': relativeTime,
+      '{timeToEvent}': timeToEventString, 
+      '{timeToNotif}': timeToNotifString, 
       '{mediaType}': videoType,
       '{mediaTypeCaps}': mediaTypeCaps,
       '{newLine}': '\n',
@@ -162,6 +193,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       '{mediaDateAsia}': dateAsia,
     };
 
+
     String title = format.titleTemplate;
     String body = format.bodyTemplate;
     replacements.forEach((key, value) {
@@ -172,15 +204,21 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
   }
 
   final videoList = baseAsyncValue.requireValue;
-  final NotificationFormatConfig formatConfig = formatConfigAsyncValue.requireValue;
+  final NotificationFormatConfig? formatConfig = formatConfigAsyncValue.valueOrNull;
+  if (formatConfig == null) {
+     logger.error("[FilteredScheduled] Format config is null after loading check. Cannot format items.");
+    return const AsyncValue.data([]);
+  }
+
 
   final List<ScheduledNotificationItem> expandedItems = [];
+  final DateTime now = DateTime.now();
 
   for (final video in videoList) {
     if (video.scheduledReminderNotificationId != null && video.scheduledReminderTime != null) {
       try {
         final reminderTime = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!);
-        if (reminderTime.isAfter(DateTime.now())) {
+        if (reminderTime.isAfter(now)) {
           final formatted = formatItem(video, NotificationEventType.reminder, reminderTime, formatConfig);
           expandedItems.add(
             ScheduledNotificationItem(
@@ -192,15 +230,15 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
             ),
           );
         }
-      } catch (e) {
-        logger.error("Error processing reminder item ${video.videoId}", e);
+      } catch (e,s) {
+        logger.error("Error processing reminder item ${video.videoId}", e, s);
       }
     }
 
     if (video.scheduledLiveNotificationId != null && video.startScheduled != null) {
-      try {
-        final liveTime = DateTime.parse(video.startScheduled!);
-        if (liveTime.isAfter(DateTime.now())) {
+       try {
+        final liveTime = DateTime.tryParse(video.startScheduled!);
+        if (liveTime != null && liveTime.isAfter(now)) {
           final formatted = formatItem(video, NotificationEventType.live, liveTime, formatConfig);
           expandedItems.add(
             ScheduledNotificationItem(
@@ -211,9 +249,11 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
               formattedBody: formatted.body,
             ),
           );
+        } else if (liveTime == null){
+            logger.warning("[FilteredScheduled] Failed to parse liveTime for video ${video.videoId}: ${video.startScheduled}");
         }
-      } catch (e) {
-        logger.error("Error processing live item ${video.videoId}", e);
+      } catch (e, s) {
+        logger.error("Error processing live item ${video.videoId}", e, s);
       }
     }
   }
@@ -228,6 +268,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       }).toList();
 
   filteredItems.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
 
   return AsyncData(filteredItems);
 }, name: 'filteredScheduledNotificationsProvider');
