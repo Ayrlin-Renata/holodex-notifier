@@ -98,7 +98,7 @@ class LocalNotificationService implements INotificationService {
 
   final StreamController<String?> _notificationTapController = StreamController<String?>.broadcast();
 
-  static const String _androidIconReference = '@mipmap/ic_launcher';
+  static const String _androidIconReference = '@mipmap/notification_icon';
 
   final ILoggingService _logger;
   final ISettingsService _settingsService;

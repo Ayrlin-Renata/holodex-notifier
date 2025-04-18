@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 
 typedef ApiKeyGetter = Future<String?> Function();
@@ -14,6 +13,7 @@ class ApiKeyInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     String? apiKey = await _apiKeyGetter();
+    _logger.debug('[Dio Interceptor] Retrieved API Key: ${apiKey != null ? 'present' : 'null'}');
 
     if (apiKey != null && apiKey.isNotEmpty) {
       options.headers['X-APIKEY'] = apiKey;
@@ -38,24 +38,23 @@ class DioClient {
       baseUrl: 'https://holodex.net/api/v2',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'User-Agent': 'HolodexNotifierApp'},
     );
     _dio = Dio(options);
 
     _dio.interceptors.add(ApiKeyInterceptor(_apiKeyGetter, _logger));
 
-    if (kDebugMode) {
-      _dio.interceptors.add(
-        LogInterceptor(
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          error: true,
-          logPrint: (object) => _logger.debug('[Dio Log] $object'),
-        ),
-      );
-    }
+    // Always add LogInterceptor, removing the kDebugMode check
+    _dio.interceptors.add(
+      LogInterceptor(
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
+        responseBody: true,
+        error: true,
+        logPrint: (object) => _logger.debug('[Dio Log] $object'), // Using debug level for Dio logs
+      ),
+    );
   }
 
   Dio get instance => _dio;

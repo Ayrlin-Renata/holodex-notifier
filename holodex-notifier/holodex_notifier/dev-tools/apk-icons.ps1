@@ -1,7 +1,3 @@
-# Define input file paths
-$backgroundImagePath = "F:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\assets\images\holodex-notifier-icon-bg-full.png"
-$foregroundImagePath = "F:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\assets\images\holodex-notifier-icon-fg-full.png"
-
 # Define output base directory
 $outputBaseDir = "F:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\android\app\src\main\res"
 
@@ -14,7 +10,23 @@ $iconSizes = @{
     "mipmap-xxxhdpi" = 192
 }
 
-# Loop through each density and resize/save the images
+# Define input image configurations
+$imageConfigurations = @(
+    @{
+        ImagePath = "F:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\assets\images\holodex-notifier-icon-bg-full.png"
+        OutputFileName = "ic_launcher_background"
+    }
+    @{
+        ImagePath = "F:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\assets\images\holodex-notifier-icon-fg-full.png"
+        OutputFileName = "ic_launcher_foreground"
+    }
+    @{
+        ImagePath = "F:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\assets\images\holodex-notifier-notification-icon.png"
+        OutputFileName = "notification_icon"
+    }
+)
+
+# Loop through each density and resize/save the images for each configuration
 foreach ($densityFolder in $iconSizes.Keys) {
     $iconSize = $iconSizes[$densityFolder]
 
@@ -24,34 +36,25 @@ foreach ($densityFolder in $iconSizes.Keys) {
         New-Item -ItemType Directory -Path $fullDensityDir -Force | Out-Null
     }
 
-    # Load background image and resize
-    $backgroundBitmap = New-Object System.Drawing.Bitmap($backgroundImagePath)
-    $resizedBackgroundBitmap = New-Object System.Drawing.Bitmap($iconSize, $iconSize)
-    $graphics = [System.Drawing.Graphics]::FromImage($resizedBackgroundBitmap)
-    $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $graphics.DrawImage($backgroundBitmap, 0, 0, $iconSize, $iconSize)
-    $graphics.Dispose()
+    # Loop through each image configuration
+    foreach ($imageConfig in $imageConfigurations) {
+        $imagePath = $imageConfig.ImagePath
+        $outputFileName = $imageConfig.OutputFileName
 
-    # Save resized background image
-    $backgroundOutputPath = Join-Path -Path $fullDensityDir -ChildPath "ic_launcher_background.png"
-    $resizedBackgroundBitmap.Save($backgroundOutputPath, [System.Drawing.Imaging.ImageFormat]::Png)
-    $resizedBackgroundBitmap.Dispose()
-    $backgroundBitmap.Dispose()
+        # Load image and resize
+        $sourceBitmap = New-Object System.Drawing.Bitmap($imagePath)
+        $resizedBitmap = New-Object System.Drawing.Bitmap($iconSize, $iconSize)
+        $graphics = [System.Drawing.Graphics]::FromImage($resizedBitmap)
+        $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $graphics.DrawImage($sourceBitmap, 0, 0, $iconSize, $iconSize)
+        $graphics.Dispose()
 
-
-    # Load foreground image and resize
-    $foregroundBitmap = New-Object System.Drawing.Bitmap($foregroundImagePath)
-    $resizedForegroundBitmap = New-Object System.Drawing.Bitmap($iconSize, $iconSize)
-    $graphics = [System.Drawing.Graphics]::FromImage($resizedForegroundBitmap)
-    $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $graphics.DrawImage($foregroundBitmap, 0, 0, $iconSize, $iconSize)
-    $graphics.Dispose()
-
-    # Save resized foreground image
-    $foregroundOutputPath = Join-Path -Path $fullDensityDir -ChildPath "ic_launcher_foreground.png"
-    $resizedForegroundBitmap.Save($foregroundOutputPath, [System.Drawing.Imaging.ImageFormat]::Png)
-    $resizedForegroundBitmap.Dispose()
-    $foregroundBitmap.Dispose()
+        # Save resized image
+        $outputPath = Join-Path -Path $fullDensityDir -ChildPath "$outputFileName.png"
+        $resizedBitmap.Save($outputPath, [System.Drawing.Imaging.ImageFormat]::Png)
+        $resizedBitmap.Dispose()
+        $sourceBitmap.Dispose()
+    }
 }
 
 Write-Host "Successfully resized and placed app icons in Android resource folders."

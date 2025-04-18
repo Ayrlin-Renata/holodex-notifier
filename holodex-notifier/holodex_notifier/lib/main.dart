@@ -73,7 +73,8 @@ final cacheServiceProvider = Provider<ICacheService>((ref) {
 });
 
 final connectivityServiceProvider = Provider<IConnectivityService>((ref) {
-  return ConnectivityPlusService();
+  final log = ref.watch(loggingServiceProvider);
+  return ConnectivityPlusService(log);
 });
 
 final dioProvider = Provider<Dio>((ref) {
