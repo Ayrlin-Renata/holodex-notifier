@@ -116,13 +116,18 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
 
                 bool showHeader = index == 0 || !_isSameDay(item.scheduledTime.toLocal(), filteredItems[index - 1].scheduledTime.toLocal());
 
-                String? imageUrl;
-                if (videoData.videoType != 'placeholder') {
-                  imageUrl = 'https://i.ytimg.com/vi/${videoData.videoId}/mqdefault.jpg';
-                } else {}
+                // Use the thumbnail URL directly from videoData (which now comes from the database)
+                String? imageUrl = videoData.thumbnailUrl;
+                
+                // Log if the URL is null for debugging
+                if (imageUrl == null || imageUrl.isEmpty) {
+                  logger.warning("[ScheduledNotificationsCard] imageURL is null or empty for video ${videoData.videoId} (Type: ${videoData.videoType}, Title: ${videoData.videoTitle})");
+                }
+
 
                 final bool isPlaceholder = videoData.videoType == 'placeholder';
-                final String? sourceLink = null;
+                // Placeholder source link logic needs adjustment if needed - currently not used
+                final String? sourceLink = null; // Adjust if sourceLink logic is needed for placeholders later.
                 final String youtubeLink = 'https://www.youtube.com/watch?v=${videoData.videoId}';
                 final String holodexLink = 'https://holodex.net/watch/${videoData.videoId}';
 
@@ -156,7 +161,8 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (imageUrl != null)
+                            // Check if imageUrl is valid before building the image widget
+                            if (imageUrl != null && imageUrl.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
                                 child: ClipRRect(
@@ -168,17 +174,26 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                       fit: BoxFit.cover,
                                       placeholder:
                                           (context, url) => Container(
-                                            color: Colors.grey[300],
+                                            color: theme.colorScheme.surfaceContainerHighest, // Use theme color for placeholder bg
                                             child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                           ),
                                       errorWidget:
                                           (context, url, error) =>
-                                              Container(color: Colors.grey[300], child: const Center(child: Icon(Icons.broken_image_outlined))),
+                                              Container(
+                                                color: theme.colorScheme.surfaceContainerHighest, // Use theme color for error bg
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.broken_image_outlined,
+                                                    color: theme.colorScheme.onSurfaceVariant, // Use theme color for error icon
+                                                  ),
+                                                ),
+                                              ),
                                     ),
                                   ),
                                 ),
                               )
                             else
+                              // Fallback for when imageUrl is null or empty
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
                                 child: AspectRatio(

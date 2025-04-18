@@ -51,6 +51,7 @@ class CachedVideos extends Table {
   TextColumn? get startActual => text().named('start_actual').nullable()();
   TextColumn get availableAt => text().named('available_at')();
   TextColumn? get videoType => text().named('video_type').nullable()();
+  TextColumn? get thumbnailUrl => text().named('thumbnail_url').nullable()();
   TextColumn? get certainty => text().named('certainty').nullable()();
   TextColumn get mentionedChannelIds => text().named('mentioned_channel_ids').map(const StringListConverter()).withDefault(const Constant('[]'))();
   TextColumn get videoTitle => text().named('video_title').withDefault(const Constant('Unknown Title'))();
@@ -74,7 +75,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e, this._logger);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,7 +85,10 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (Migrator m, int from, int to) async {
       _logger.info("Drift DB: Upgrading schema from v$from to v$to...");
-      if (from == 1 && to == 2) {}
+      if (from == 1 && to == 2) {
+        await m.addColumn(cachedVideos, cachedVideos.thumbnailUrl);
+        _logger.info("Drift DB v1->v2: Added thumbnailUrl column.");
+      }
     },
     beforeOpen: (details) async {
       _logger.info(

@@ -58,6 +58,12 @@ class $CachedVideosTable extends CachedVideos
   late final GeneratedColumn<String> videoType = GeneratedColumn<String>(
       'video_type', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _thumbnailUrlMeta =
+      const VerificationMeta('thumbnailUrl');
+  @override
+  late final GeneratedColumn<String> thumbnailUrl = GeneratedColumn<String>(
+      'thumbnail_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _certaintyMeta =
       const VerificationMeta('certainty');
   @override
@@ -150,6 +156,7 @@ class $CachedVideosTable extends CachedVideos
         startActual,
         availableAt,
         videoType,
+        thumbnailUrl,
         certainty,
         mentionedChannelIds,
         videoTitle,
@@ -215,6 +222,12 @@ class $CachedVideosTable extends CachedVideos
     if (data.containsKey('video_type')) {
       context.handle(_videoTypeMeta,
           videoType.isAcceptableOrUnknown(data['video_type']!, _videoTypeMeta));
+    }
+    if (data.containsKey('thumbnail_url')) {
+      context.handle(
+          _thumbnailUrlMeta,
+          thumbnailUrl.isAcceptableOrUnknown(
+              data['thumbnail_url']!, _thumbnailUrlMeta));
     }
     if (data.containsKey('certainty')) {
       context.handle(_certaintyMeta,
@@ -307,6 +320,8 @@ class $CachedVideosTable extends CachedVideos
           .read(DriftSqlType.string, data['${effectivePrefix}available_at'])!,
       videoType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}video_type']),
+      thumbnailUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}thumbnail_url']),
       certainty: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}certainty']),
       mentionedChannelIds: $CachedVideosTable.$convertermentionedChannelIds
@@ -355,6 +370,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
   final String? startActual;
   final String availableAt;
   final String? videoType;
+  final String? thumbnailUrl;
   final String? certainty;
   final List<String> mentionedChannelIds;
   final String videoTitle;
@@ -375,6 +391,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       this.startActual,
       required this.availableAt,
       this.videoType,
+      this.thumbnailUrl,
       this.certainty,
       required this.mentionedChannelIds,
       required this.videoTitle,
@@ -404,6 +421,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     map['available_at'] = Variable<String>(availableAt);
     if (!nullToAbsent || videoType != null) {
       map['video_type'] = Variable<String>(videoType);
+    }
+    if (!nullToAbsent || thumbnailUrl != null) {
+      map['thumbnail_url'] = Variable<String>(thumbnailUrl);
     }
     if (!nullToAbsent || certainty != null) {
       map['certainty'] = Variable<String>(certainty);
@@ -457,6 +477,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       videoType: videoType == null && nullToAbsent
           ? const Value.absent()
           : Value(videoType),
+      thumbnailUrl: thumbnailUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thumbnailUrl),
       certainty: certainty == null && nullToAbsent
           ? const Value.absent()
           : Value(certainty),
@@ -498,6 +521,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       startActual: serializer.fromJson<String?>(json['startActual']),
       availableAt: serializer.fromJson<String>(json['availableAt']),
       videoType: serializer.fromJson<String?>(json['videoType']),
+      thumbnailUrl: serializer.fromJson<String?>(json['thumbnailUrl']),
       certainty: serializer.fromJson<String?>(json['certainty']),
       mentionedChannelIds:
           serializer.fromJson<List<String>>(json['mentionedChannelIds']),
@@ -529,6 +553,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       'startActual': serializer.toJson<String?>(startActual),
       'availableAt': serializer.toJson<String>(availableAt),
       'videoType': serializer.toJson<String?>(videoType),
+      'thumbnailUrl': serializer.toJson<String?>(thumbnailUrl),
       'certainty': serializer.toJson<String?>(certainty),
       'mentionedChannelIds':
           serializer.toJson<List<String>>(mentionedChannelIds),
@@ -557,6 +582,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           Value<String?> startActual = const Value.absent(),
           String? availableAt,
           Value<String?> videoType = const Value.absent(),
+          Value<String?> thumbnailUrl = const Value.absent(),
           Value<String?> certainty = const Value.absent(),
           List<String>? mentionedChannelIds,
           String? videoTitle,
@@ -578,6 +604,8 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
         startActual: startActual.present ? startActual.value : this.startActual,
         availableAt: availableAt ?? this.availableAt,
         videoType: videoType.present ? videoType.value : this.videoType,
+        thumbnailUrl:
+            thumbnailUrl.present ? thumbnailUrl.value : this.thumbnailUrl,
         certainty: certainty.present ? certainty.value : this.certainty,
         mentionedChannelIds: mentionedChannelIds ?? this.mentionedChannelIds,
         videoTitle: videoTitle ?? this.videoTitle,
@@ -615,6 +643,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       availableAt:
           data.availableAt.present ? data.availableAt.value : this.availableAt,
       videoType: data.videoType.present ? data.videoType.value : this.videoType,
+      thumbnailUrl: data.thumbnailUrl.present
+          ? data.thumbnailUrl.value
+          : this.thumbnailUrl,
       certainty: data.certainty.present ? data.certainty.value : this.certainty,
       mentionedChannelIds: data.mentionedChannelIds.present
           ? data.mentionedChannelIds.value
@@ -659,6 +690,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           ..write('startActual: $startActual, ')
           ..write('availableAt: $availableAt, ')
           ..write('videoType: $videoType, ')
+          ..write('thumbnailUrl: $thumbnailUrl, ')
           ..write('certainty: $certainty, ')
           ..write('mentionedChannelIds: $mentionedChannelIds, ')
           ..write('videoTitle: $videoTitle, ')
@@ -687,6 +719,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       startActual,
       availableAt,
       videoType,
+      thumbnailUrl,
       certainty,
       mentionedChannelIds,
       videoTitle,
@@ -710,6 +743,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           other.startActual == this.startActual &&
           other.availableAt == this.availableAt &&
           other.videoType == this.videoType &&
+          other.thumbnailUrl == this.thumbnailUrl &&
           other.certainty == this.certainty &&
           other.mentionedChannelIds == this.mentionedChannelIds &&
           other.videoTitle == this.videoTitle &&
@@ -736,6 +770,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   final Value<String?> startActual;
   final Value<String> availableAt;
   final Value<String?> videoType;
+  final Value<String?> thumbnailUrl;
   final Value<String?> certainty;
   final Value<List<String>> mentionedChannelIds;
   final Value<String> videoTitle;
@@ -757,6 +792,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     this.startActual = const Value.absent(),
     this.availableAt = const Value.absent(),
     this.videoType = const Value.absent(),
+    this.thumbnailUrl = const Value.absent(),
     this.certainty = const Value.absent(),
     this.mentionedChannelIds = const Value.absent(),
     this.videoTitle = const Value.absent(),
@@ -779,6 +815,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     this.startActual = const Value.absent(),
     required String availableAt,
     this.videoType = const Value.absent(),
+    this.thumbnailUrl = const Value.absent(),
     this.certainty = const Value.absent(),
     this.mentionedChannelIds = const Value.absent(),
     this.videoTitle = const Value.absent(),
@@ -804,6 +841,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     Expression<String>? startActual,
     Expression<String>? availableAt,
     Expression<String>? videoType,
+    Expression<String>? thumbnailUrl,
     Expression<String>? certainty,
     Expression<String>? mentionedChannelIds,
     Expression<String>? videoTitle,
@@ -826,6 +864,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       if (startActual != null) 'start_actual': startActual,
       if (availableAt != null) 'available_at': availableAt,
       if (videoType != null) 'video_type': videoType,
+      if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
       if (certainty != null) 'certainty': certainty,
       if (mentionedChannelIds != null)
         'mentioned_channel_ids': mentionedChannelIds,
@@ -856,6 +895,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       Value<String?>? startActual,
       Value<String>? availableAt,
       Value<String?>? videoType,
+      Value<String?>? thumbnailUrl,
       Value<String?>? certainty,
       Value<List<String>>? mentionedChannelIds,
       Value<String>? videoTitle,
@@ -877,6 +917,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       startActual: startActual ?? this.startActual,
       availableAt: availableAt ?? this.availableAt,
       videoType: videoType ?? this.videoType,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       certainty: certainty ?? this.certainty,
       mentionedChannelIds: mentionedChannelIds ?? this.mentionedChannelIds,
       videoTitle: videoTitle ?? this.videoTitle,
@@ -923,6 +964,9 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     }
     if (videoType.present) {
       map['video_type'] = Variable<String>(videoType.value);
+    }
+    if (thumbnailUrl.present) {
+      map['thumbnail_url'] = Variable<String>(thumbnailUrl.value);
     }
     if (certainty.present) {
       map['certainty'] = Variable<String>(certainty.value);
@@ -981,6 +1025,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
           ..write('startActual: $startActual, ')
           ..write('availableAt: $availableAt, ')
           ..write('videoType: $videoType, ')
+          ..write('thumbnailUrl: $thumbnailUrl, ')
           ..write('certainty: $certainty, ')
           ..write('mentionedChannelIds: $mentionedChannelIds, ')
           ..write('videoTitle: $videoTitle, ')
@@ -1022,6 +1067,7 @@ typedef $$CachedVideosTableCreateCompanionBuilder = CachedVideosCompanion
   Value<String?> startActual,
   required String availableAt,
   Value<String?> videoType,
+  Value<String?> thumbnailUrl,
   Value<String?> certainty,
   Value<List<String>> mentionedChannelIds,
   Value<String> videoTitle,
@@ -1045,6 +1091,7 @@ typedef $$CachedVideosTableUpdateCompanionBuilder = CachedVideosCompanion
   Value<String?> startActual,
   Value<String> availableAt,
   Value<String?> videoType,
+  Value<String?> thumbnailUrl,
   Value<String?> certainty,
   Value<List<String>> mentionedChannelIds,
   Value<String> videoTitle,
@@ -1084,6 +1131,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             Value<String?> startActual = const Value.absent(),
             Value<String> availableAt = const Value.absent(),
             Value<String?> videoType = const Value.absent(),
+            Value<String?> thumbnailUrl = const Value.absent(),
             Value<String?> certainty = const Value.absent(),
             Value<List<String>> mentionedChannelIds = const Value.absent(),
             Value<String> videoTitle = const Value.absent(),
@@ -1106,6 +1154,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             startActual: startActual,
             availableAt: availableAt,
             videoType: videoType,
+            thumbnailUrl: thumbnailUrl,
             certainty: certainty,
             mentionedChannelIds: mentionedChannelIds,
             videoTitle: videoTitle,
@@ -1128,6 +1177,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             Value<String?> startActual = const Value.absent(),
             required String availableAt,
             Value<String?> videoType = const Value.absent(),
+            Value<String?> thumbnailUrl = const Value.absent(),
             Value<String?> certainty = const Value.absent(),
             Value<List<String>> mentionedChannelIds = const Value.absent(),
             Value<String> videoTitle = const Value.absent(),
@@ -1150,6 +1200,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             startActual: startActual,
             availableAt: availableAt,
             videoType: videoType,
+            thumbnailUrl: thumbnailUrl,
             certainty: certainty,
             mentionedChannelIds: mentionedChannelIds,
             videoTitle: videoTitle,
@@ -1206,6 +1257,11 @@ class $$CachedVideosTableFilterComposer
 
   ColumnFilters<String> get videoType => $state.composableBuilder(
       column: $state.table.videoType,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get thumbnailUrl => $state.composableBuilder(
+      column: $state.table.thumbnailUrl,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -1311,6 +1367,11 @@ class $$CachedVideosTableOrderingComposer
 
   ColumnOrderings<String> get videoType => $state.composableBuilder(
       column: $state.table.videoType,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get thumbnailUrl => $state.composableBuilder(
+      column: $state.table.thumbnailUrl,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

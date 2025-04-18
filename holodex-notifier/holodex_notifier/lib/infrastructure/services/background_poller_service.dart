@@ -413,6 +413,17 @@ Future<void> _executePollCycle(ProviderContainer container) async {
         try {
           final cachedVideo = await cacheService.getVideo(videoId);
 
+          // Determine thumbnail URL
+          String? videoThumbnailUrl;
+          if (fetchedVideo.type == 'placeholder' && fetchedVideo.thumbnail != null && fetchedVideo.thumbnail!.isNotEmpty) {
+            videoThumbnailUrl = fetchedVideo.thumbnail;
+            logger.trace("[$videoId] Using placeholder thumbnail URL: $videoThumbnailUrl");
+          } else {
+            videoThumbnailUrl = 'https://i.ytimg.com/vi/${fetchedVideo.id}/mqdefault.jpg';
+            logger.trace("[$videoId] Using YouTube thumbnail URL: $videoThumbnailUrl");
+          }
+
+
           final baseCompanion = CachedVideosCompanion(
             videoId: Value(videoId),
             channelId: Value(fetchedVideo.channel.id),
@@ -421,6 +432,7 @@ Future<void> _executePollCycle(ProviderContainer container) async {
             startActual: Value(fetchedVideo.startActual?.toIso8601String()),
             availableAt: Value(fetchedVideo.availableAt.toIso8601String()),
             videoType: Value(fetchedVideo.type),
+            thumbnailUrl: Value(videoThumbnailUrl),
             topicId: Value(fetchedVideo.topicId),
             certainty: Value(fetchedVideo.certainty),
             mentionedChannelIds: Value(fetchedVideo.mentions?.map((m) => m.id).whereType<String>().toList() ?? []),
