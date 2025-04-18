@@ -3,15 +3,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- This permission corresponds to the dataSync type -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
-    <!-- Add RECEIVE_BOOT_COMPLETED if autoStartOnBoot is true -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Optional: WAKE_LOCK if needed, though foreground service usually handles this -->
-    <!-- <uses-permission android:name="android.permission.WAKE_LOCK" /> -->
-    <!-- Internet permission is implicitly added by Flutter? Double-check if needed. -->
-    <!-- <uses-permission android:name="android.permission.INTERNET"/> -->
-    <!-- Needed for connectivity_plus -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:label="Holodex Notifier"
