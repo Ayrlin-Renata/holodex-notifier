@@ -55,3 +55,7 @@ flutter:
   assets:
     - assets/images/ # Keep existing images asset declaration
     - assets/config/ # Add declaration for the config directory
+
+android:
+  minSdkVersion: 26
+  targetSdkVersion: 33
