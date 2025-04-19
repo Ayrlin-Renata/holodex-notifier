@@ -160,7 +160,7 @@ class LoggerService implements ILoggingServiceWithOutput {
   }
 }
 
-final recentLogsProvider = StreamProvider.autoDispose<List<OutputEvent>>((ref) {
+final recentLogsProvider = StreamProvider<List<OutputEvent>>((ref) {
   final loggerService = ref.watch(loggingServiceProvider);
   if (loggerService is ILoggingServiceWithOutput) {
     return loggerService.logStream;

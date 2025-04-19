@@ -88,11 +88,15 @@ final scheduledFilterTypeProvider = StateProvider.autoDispose<Set<NotificationEv
 
   try {
     final savedTypes = settingsService.getScheduledFilterTypesSync();
+    if (savedTypes.isEmpty) {
+      logger.debug("No saved scheduled filter types found, defaulting to 'live' and 'reminder'.");
+      return {NotificationEventType.live, NotificationEventType.reminder};
+    }
     logger.debug("Scheduled filter types initialized from saved settings: ${savedTypes.map((e) => e.name).join(',')}");
     return savedTypes;
   } catch (e, s) {
-    logger.error("Error loading saved scheduled filter types, defaulting to empty set.", e, s);
-    return <NotificationEventType>{};
+    logger.error("Error loading saved scheduled filter types, defaulting to 'live' and 'reminder'.", e, s);
+    return {NotificationEventType.live, NotificationEventType.reminder};
   }
 });
 
@@ -109,20 +113,9 @@ final dismissedNotificationsProvider = StateNotifierProvider.autoDispose<Dismiss
   (ref) {
     final logger = ref.watch(loggingServiceProvider);
     final cacheService = ref.watch(cacheServiceProvider);
-
     final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
 
-    return formatConfigAsyncValue.when(
-      data: (formatConfig) {
-        return DismissedNotificationsNotifier(logger, cacheService, formatConfig);
-      },
-      loading: () {
-        return DismissedNotificationsNotifier(logger, cacheService, null)..state = const AsyncValue.loading();
-      },
-      error: (error, stackTrace) {
-        return DismissedNotificationsNotifier(logger, cacheService, null)..state = AsyncValue.error(error, stackTrace);
-      },
-    );
+    return DismissedNotificationsNotifier(logger, cacheService, formatConfigAsyncValue);
   },
   name: 'dismissedNotificationsProvider',
 );
@@ -130,14 +123,23 @@ final dismissedNotificationsProvider = StateNotifierProvider.autoDispose<Dismiss
 class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<ScheduledNotificationItem>>> {
   final ILoggingService _logger;
   final ICacheService _cacheService;
-  final NotificationFormatConfig? _formatConfig;
+  NotificationFormatConfig? _formatConfig;
 
-  DismissedNotificationsNotifier(this._logger, this._cacheService, this._formatConfig) : super(const AsyncValue.loading()) {
-    if (_formatConfig != null) {
-      _loadDismissedItems();
-    } else {
-      _logger.warning("[DismissedNotifier] Format config not yet available, delaying item load.");
-    }
+  DismissedNotificationsNotifier(this._logger, this._cacheService, AsyncValue<NotificationFormatConfig> formatConfigAsyncValue)
+    : super(const AsyncValue.loading()) {
+    formatConfigAsyncValue.when(
+      data: (formatConfig) {
+        _formatConfig = formatConfig;
+        _loadDismissedItems();
+      },
+      loading: () {
+        state = const AsyncValue.loading();
+      },
+      error: (error, stackTrace) {
+        state = AsyncValue.error(error, stackTrace);
+        _logger.error("[DismissedNotifier] Error fetching notification format config during init.", error, stackTrace);
+      },
+    );
   }
 
   Future<void> _loadDismissedItems() async {

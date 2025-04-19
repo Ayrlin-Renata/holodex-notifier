@@ -446,7 +446,15 @@ Future<void> _executePollCycle(ProviderContainer container) async {
             scheduledReminderTime: const Value.absent(),
             lastLiveNotificationSentTime: const Value.absent(),
           );
-          companionsToUpsert.add(baseCompanion);
+          CachedVideosCompanion finalCompanion;
+          if (cachedVideo != null) {
+            finalCompanion = baseCompanion.copyWith(userDismissedAt: Value(cachedVideo.userDismissedAt));
+            logger.debug("[$videoId] Saving userDismissedAt=${cachedVideo.userDismissedAt} on update.");
+          } else {
+            finalCompanion = baseCompanion;
+            logger.debug("[$videoId] Existing video not found, not preserving userDismissedAt.");
+          }
+          companionsToUpsert.add(finalCompanion);
 
           final List<NotificationAction> videoActions = await decisionService.determineActionsForVideoUpdate(
             fetchedVideo: fetchedVideo,

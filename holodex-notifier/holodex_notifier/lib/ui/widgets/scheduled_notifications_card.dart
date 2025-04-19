@@ -243,31 +243,6 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                               ),
                             ),
                           ),
-                          confirmDismiss: (direction) async {
-                            return showDialog<bool>(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: const Text('Confirm Dismiss'),
-                                  content: const Text('Are you sure you want to dismiss this notification?'),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      child: const Text('Cancel'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop(false);
-                                      },
-                                    ),
-                                    TextButton(
-                                      child: const Text('Dismiss'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop(true);
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
                           onDismissed: (direction) async {
                             logger.info("Dismissed item UI, STARTING dismissal process for video: ${videoData.videoId} (${item.type.name})");
 
