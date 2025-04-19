@@ -1,15 +1,15 @@
 # PowerShell script to remove Dart comments from .dart files in the lib directory, except for // ignore and // TODO: comments.
-# This script now correctly handles string literals, URLs, and keeps ignore and TODO comments.
+# This script now correctly handles string literals, URLs, keeps ignore and TODO comments, and excludes .g.dart and .freezed.dart files.
 
 # Set the root directory of your Flutter project
 $projectRoot = 'f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier'
 $libDir = Join-Path -Path $projectRoot -ChildPath 'lib'
 
-# Get all .dart files in the lib directory and its subdirectories
-$dartFiles = Get-ChildItem -Path $libDir -Filter "*.dart" -Recurse
+# Get all .dart files in the lib directory and its subdirectories, excluding .g.dart and .freezed.dart files
+$dartFiles = Get-ChildItem -Path $libDir -Filter "*.dart" -Recurse | Where-Object { $_.Name -notlike "*.g.dart" -and $_.Name -notlike "*.freezed.dart" }
 
 if (-not $dartFiles) {
-    Write-Host "No .dart files found in '$libDir'."
+    Write-Host "No eligible .dart files found in '$libDir'."
     exit
 }
 

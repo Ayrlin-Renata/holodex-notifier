@@ -149,7 +149,7 @@ class LoggerService implements ILoggingServiceWithOutput {
       final logFilePaths = await _rotatingFileWriter.getAllLogFilePaths();
       if (logFilePaths.isEmpty) {
         _logger.w('LoggerService: No log file paths found.');
-        return []; // Or handle no logs scenario in UI
+        return [];
       }
 
       return logFilePaths;

@@ -27,11 +27,11 @@ class RotatingFileWriter {
     List<FileSystemEntity> files = logDir.listSync();
     List<String> logPaths = [];
     for (final file in files) {
-      if (file is File && file.path.endsWith('.log')) { // Ensure it's a log file
+      if (file is File && file.path.endsWith('.log')) {
         logPaths.add(file.path);
       }
     }
-    // Add the current log file path too, if different from rotated ones
+
     final currentPath = await currentLogFilePath;
     if (!logPaths.contains(currentPath)) {
       logPaths.add(currentPath);

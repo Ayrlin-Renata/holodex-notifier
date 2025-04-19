@@ -92,8 +92,8 @@ class LogsDataCard extends ConsumerWidget {
                   final zipFile = File(zipFilePath);
 
                   ZipFileEncoder encoder = ZipFileEncoder();
-                  encoder.create(zipFilePath); // Create the zip file
-                  encoder.addFile(zipFile); // Add the archive into the zip file
+                  encoder.create(zipFilePath);
+                  encoder.addFile(zipFile);
                   encoder.close();
 
                   loggerService.debug('AppController: ZIP archive created at: $zipFilePath');
@@ -110,7 +110,7 @@ class LogsDataCard extends ConsumerWidget {
                 } catch (e, s) {
                   loggerService.error('AppController: Failed to create and share log ZIP archive.', e, s);
                   return;
-                } 
+                }
               } else {
                 loggerService.error("Attempted to share logs, but logger service is not ILoggingServiceWithOutput");
                 if (context.mounted) {

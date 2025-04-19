@@ -105,21 +105,55 @@ final notificationFormatConfigProvider = FutureProvider.autoDispose<Notification
   return await settingsService.getNotificationFormatConfig();
 }, name: 'notificationFormatConfigProvider');
 
+final dismissedNotificationsProvider = StateNotifierProvider.autoDispose<DismissedNotificationsNotifier, AsyncValue<List<ScheduledNotificationItem>>>(
+  (ref) {
+    final logger = ref.watch(loggingServiceProvider);
+    final cacheService = ref.watch(cacheServiceProvider);
+
+    final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
+
+    return formatConfigAsyncValue.when(
+      data: (formatConfig) {
+        return DismissedNotificationsNotifier(logger, cacheService, formatConfig);
+      },
+      loading: () {
+        return DismissedNotificationsNotifier(logger, cacheService, null)..state = const AsyncValue.loading();
+      },
+      error: (error, stackTrace) {
+        return DismissedNotificationsNotifier(logger, cacheService, null)..state = AsyncValue.error(error, stackTrace);
+      },
+    );
+  },
+  name: 'dismissedNotificationsProvider',
+);
+
 class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<ScheduledNotificationItem>>> {
   final ILoggingService _logger;
   final ICacheService _cacheService;
   final NotificationFormatConfig? _formatConfig;
 
   DismissedNotificationsNotifier(this._logger, this._cacheService, this._formatConfig) : super(const AsyncValue.loading()) {
-    _loadDismissedItems();
+    if (_formatConfig != null) {
+      _loadDismissedItems();
+    } else {
+      _logger.warning("[DismissedNotifier] Format config not yet available, delaying item load.");
+    }
   }
 
   Future<void> _loadDismissedItems() async {
     _logger.info("[DismissedNotifier] Loading dismissed items from CacheService...");
     if (!mounted) return;
-    state = const AsyncValue.loading();
+
     try {
       final dismissedVideos = await _cacheService.getDismissedScheduledVideos();
+
+      if (_formatConfig == null) {
+        _logger.error("[DismissedNotifier:_loadDismissedItems] Cannot format items, formatConfig is unexpectedly null during item load.");
+        if (mounted) {
+          state = const AsyncValue.data([]);
+        }
+        return;
+      }
 
       final formattedItems = _formatItems(dismissedVideos, _formatConfig, _logger);
       if (mounted) {
@@ -184,21 +218,6 @@ class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<Sched
     await _loadDismissedItems();
   }
 }
-
-final dismissedNotificationsProvider = StateNotifierProvider.autoDispose<DismissedNotificationsNotifier, AsyncValue<List<ScheduledNotificationItem>>>(
-  (ref) {
-    final logger = ref.watch(loggingServiceProvider);
-    final cacheService = ref.watch(cacheServiceProvider);
-
-    final formatConfig = ref.watch(notificationFormatConfigProvider).valueOrNull;
-
-    ref.watch(notificationFormatConfigProvider);
-
-    final notifier = DismissedNotificationsNotifier(logger, cacheService, formatConfig);
-    return notifier;
-  },
-  name: 'dismissedNotificationsProvider',
-);
 
 ({String title, String body}) formatItem(
   CachedVideo video,
