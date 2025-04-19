@@ -1,6 +1,14 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'channel_subscription_setting.dart';
 
-_$ChannelSubscriptionSettingImpl _$$ChannelSubscriptionSettingImplFromJson(Map<String, dynamic> json) => _$ChannelSubscriptionSettingImpl(
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_ChannelSubscriptionSetting _$ChannelSubscriptionSettingFromJson(
+  Map<String, dynamic> json,
+) => _ChannelSubscriptionSetting(
   channelId: json['channelId'] as String,
   name: json['name'] as String,
   avatarUrl: json['avatarUrl'] as String?,
@@ -12,7 +20,9 @@ _$ChannelSubscriptionSettingImpl _$$ChannelSubscriptionSettingImplFromJson(Map<S
   notifyClips: json['notifyClips'] as bool? ?? true,
 );
 
-Map<String, dynamic> _$$ChannelSubscriptionSettingImplToJson(_$ChannelSubscriptionSettingImpl instance) => <String, dynamic>{
+Map<String, dynamic> _$ChannelSubscriptionSettingToJson(
+  _ChannelSubscriptionSetting instance,
+) => <String, dynamic>{
   'channelId': instance.channelId,
   'name': instance.name,
   'avatarUrl': instance.avatarUrl,

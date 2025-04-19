@@ -1,6 +1,12 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'channel_min.dart';
 
-_$ChannelMinImpl _$$ChannelMinImplFromJson(Map<String, dynamic> json) => _$ChannelMinImpl(
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_ChannelMin _$ChannelMinFromJson(Map<String, dynamic> json) => _ChannelMin(
   id: json['id'] as String,
   name: json['name'] as String,
   englishName: json['english_name'] as String?,
@@ -8,10 +14,11 @@ _$ChannelMinImpl _$$ChannelMinImplFromJson(Map<String, dynamic> json) => _$Chann
   photo: json['photo'] as String?,
 );
 
-Map<String, dynamic> _$$ChannelMinImplToJson(_$ChannelMinImpl instance) => <String, dynamic>{
-  'id': instance.id,
-  'name': instance.name,
-  'english_name': instance.englishName,
-  'type': instance.type,
-  'photo': instance.photo,
-};
+Map<String, dynamic> _$ChannelMinToJson(_ChannelMin instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'english_name': instance.englishName,
+      'type': instance.type,
+      'photo': instance.photo,
+    };

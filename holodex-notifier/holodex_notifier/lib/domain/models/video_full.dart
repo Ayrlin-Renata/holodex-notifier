@@ -10,7 +10,7 @@ DateTime? _dateTimeFromString(String? dateString) => dateString == null ? null :
 DateTime _dateTimeFromStringRequired(String dateString) => DateTime.parse(dateString).toUtc();
 
 @freezed
-class VideoFull with _$VideoFull {
+abstract class VideoFull with _$VideoFull {
   @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
   const factory VideoFull({
     required String id,

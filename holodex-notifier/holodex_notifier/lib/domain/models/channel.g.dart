@@ -1,6 +1,12 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'channel.dart';
 
-_$ChannelImpl _$$ChannelImplFromJson(Map<String, dynamic> json) => _$ChannelImpl(
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_Channel _$ChannelFromJson(Map<String, dynamic> json) => _Channel(
   id: json['id'] as String,
   name: json['name'] as String,
   englishName: json['english_name'] as String?,
@@ -20,7 +26,7 @@ _$ChannelImpl _$$ChannelImplFromJson(Map<String, dynamic> json) => _$ChannelImpl
   description: json['description'] as String?,
 );
 
-Map<String, dynamic> _$$ChannelImplToJson(_$ChannelImpl instance) => <String, dynamic>{
+Map<String, dynamic> _$ChannelToJson(_Channel instance) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
   'english_name': instance.englishName,

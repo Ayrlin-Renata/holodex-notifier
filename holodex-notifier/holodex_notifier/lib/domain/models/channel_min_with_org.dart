@@ -4,7 +4,7 @@ part 'channel_min_with_org.freezed.dart';
 part 'channel_min_with_org.g.dart';
 
 @freezed
-class ChannelMinWithOrg with _$ChannelMinWithOrg {
+abstract class ChannelMinWithOrg with _$ChannelMinWithOrg {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ChannelMinWithOrg({
     required String id,

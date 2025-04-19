@@ -5,7 +5,7 @@ part 'notification_format_config.freezed.dart';
 part 'notification_format_config.g.dart';
 
 @freezed
-class NotificationFormat with _$NotificationFormat {
+abstract class NotificationFormat with _$NotificationFormat {
   @JsonSerializable()
   const factory NotificationFormat({
     required String titleTemplate,
@@ -20,7 +20,7 @@ class NotificationFormat with _$NotificationFormat {
 }
 
 @freezed
-class NotificationFormatConfig with _$NotificationFormatConfig {
+abstract class NotificationFormatConfig with _$NotificationFormatConfig {
   @JsonSerializable(explicitToJson: true)
   const factory NotificationFormatConfig({
     @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)

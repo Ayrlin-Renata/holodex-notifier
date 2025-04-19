@@ -5,7 +5,7 @@ part 'notification_instruction.freezed.dart';
 enum NotificationEventType { newMedia, live, update, mention, reminder }
 
 @freezed
-class NotificationInstruction with _$NotificationInstruction {
+abstract class NotificationInstruction with _$NotificationInstruction {
   const factory NotificationInstruction({
     required String videoId,
     required NotificationEventType eventType,

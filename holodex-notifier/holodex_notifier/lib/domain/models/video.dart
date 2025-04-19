@@ -9,7 +9,7 @@ DateTime? _dateTimeFromString(String? dateString) => dateString == null ? null :
 DateTime _dateTimeFromStringRequired(String dateString) => DateTime.parse(dateString);
 
 @freezed
-class Video with _$Video {
+abstract class Video with _$Video {
   @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
   const factory Video({
     required String id,
@@ -34,7 +34,7 @@ class Video with _$Video {
 }
 
 @freezed
-class VideoWithChannel with _$VideoWithChannel {
+abstract class VideoWithChannel with _$VideoWithChannel {
   @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
   const factory VideoWithChannel({
     required String id,

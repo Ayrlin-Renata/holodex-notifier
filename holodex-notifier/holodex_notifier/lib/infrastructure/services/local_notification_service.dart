@@ -200,11 +200,6 @@ class LocalNotificationService implements INotificationService {
         requestAlertPermission: true,
         requestBadgePermission: true,
         requestSoundPermission: true,
-        onDidReceiveLocalNotification: (int id, String? title, String? body, String? payload) async {
-          _logger.info("[iOS Legacy] Notification Received (id=$id, payload=$payload)");
-          _handleTap(payload: payload, actionId: null, isBackground: false);
-          _notificationTapController.add(payload);
-        },
       );
       const LinuxInitializationSettings initializationSettingsLinux = LinuxInitializationSettings(defaultActionName: 'Open');
 
@@ -476,7 +471,6 @@ class LocalNotificationService implements INotificationService {
           _logger.warning("[ScheduleNotification] Failed fetch scheduled avatar", e);
         }
       }
-      // TODO: Add thumbnail fetching/display for scheduled notifications if desired
 
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         channelId,
@@ -509,7 +503,6 @@ class LocalNotificationService implements INotificationService {
         notificationDetails,
         payload: payload,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
