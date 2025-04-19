@@ -7,10 +7,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
+import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:drift/drift.dart' show Value;
 
 class ScheduledNotificationsCard extends HookConsumerWidget {
   const ScheduledNotificationsCard({super.key});
@@ -48,22 +50,6 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
     );
   }
 
-  Future<bool?> _showCancelConfirmation(BuildContext context, String itemTitle) {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          title: const Text('Cancel Scheduled Notification?'),
-          content: Text('Are you sure you want to cancel the scheduled notification for "$itemTitle"?'),
-          actions: <Widget>[
-            TextButton(child: const Text('Keep'), onPressed: () => Navigator.of(ctx).pop(false)),
-            TextButton(child: const Text('Cancel It', style: TextStyle(color: Colors.red)), onPressed: () => Navigator.of(ctx).pop(true)),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -73,6 +59,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
     final cacheService = ref.watch(cacheServiceProvider);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final isExpanded = useState(false);
+    final dismissedNotifier = ref.read(dismissedNotificationsProvider.notifier);
 
     logger.trace(
       "[ScheduledNotificationsCard] Build. Filtered Async state: isRefreshing=${scheduledListAsync.isRefreshing}, isLoading=${scheduledListAsync.isLoading}, hasValue=${scheduledListAsync.hasValue}, hasError=${scheduledListAsync.hasError}",
@@ -116,18 +103,16 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
 
                 bool showHeader = index == 0 || !_isSameDay(item.scheduledTime.toLocal(), filteredItems[index - 1].scheduledTime.toLocal());
 
-                // Use the thumbnail URL directly from videoData (which now comes from the database)
                 String? imageUrl = videoData.thumbnailUrl;
-                
-                // Log if the URL is null for debugging
+
                 if (imageUrl == null || imageUrl.isEmpty) {
-                  logger.warning("[ScheduledNotificationsCard] imageURL is null or empty for video ${videoData.videoId} (Type: ${videoData.videoType}, Title: ${videoData.videoTitle})");
+                  logger.warning(
+                    "[ScheduledNotificationsCard] imageURL is null or empty for video ${videoData.videoId} (Type: ${videoData.videoType}, Title: ${videoData.videoTitle})",
+                  );
                 }
 
-
                 final bool isPlaceholder = videoData.videoType == 'placeholder';
-                // Placeholder source link logic needs adjustment if needed - currently not used
-                final String? sourceLink = null; // Adjust if sourceLink logic is needed for placeholders later.
+                final String? sourceLink = null;
                 final String youtubeLink = 'https://www.youtube.com/watch?v=${videoData.videoId}';
                 final String holodexLink = 'https://holodex.net/watch/${videoData.videoId}';
 
@@ -161,7 +146,6 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Check if imageUrl is valid before building the image widget
                             if (imageUrl != null && imageUrl.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -174,26 +158,19 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                       fit: BoxFit.cover,
                                       placeholder:
                                           (context, url) => Container(
-                                            color: theme.colorScheme.surfaceContainerHighest, // Use theme color for placeholder bg
+                                            color: theme.colorScheme.surfaceContainerHighest,
                                             child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                                           ),
                                       errorWidget:
-                                          (context, url, error) =>
-                                              Container(
-                                                color: theme.colorScheme.surfaceContainerHighest, // Use theme color for error bg
-                                                child: Center(
-                                                  child: Icon(
-                                                    Icons.broken_image_outlined,
-                                                    color: theme.colorScheme.onSurfaceVariant, // Use theme color for error icon
-                                                  ),
-                                                ),
-                                              ),
+                                          (context, url, error) => Container(
+                                            color: theme.colorScheme.surfaceContainerHighest,
+                                            child: Center(child: Icon(Icons.broken_image_outlined, color: theme.colorScheme.onSurfaceVariant)),
+                                          ),
                                     ),
                                   ),
                                 ),
                               )
                             else
-                              // Fallback for when imageUrl is null or empty
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
                                 child: AspectRatio(
@@ -250,7 +227,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
 
                       if (notificationId != null) {
                         final dismissibleWidget = Dismissible(
-                          key: ValueKey('${item.videoData.videoId}_${item.type.name}'),
+                          key: ValueKey('${item.videoData.videoId}_${item.type.name}_${item.scheduledTime.millisecondsSinceEpoch}'),
                           direction: DismissDirection.startToEnd,
                           behavior: HitTestBehavior.translucent,
                           background: Container(
@@ -265,32 +242,45 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                               ),
                             ),
                           ),
-                          confirmDismiss: (direction) async {
-                            if (!context.mounted) return false;
-                            final confirm = await _showCancelConfirmation(context, videoData.videoTitle);
-                            return confirm ?? false;
-                          },
                           onDismissed: (direction) async {
-                            logger.info("Dismissed item, cancelling ID: $notificationId for video: ${videoData.videoId}");
+                            logger.info("Dismissed item UI, cancelling ID: $notificationId for video: ${videoData.videoId} (${item.type.name})");
+                            final dismissedItemData = ScheduledNotificationItem(
+                              videoData: videoData,
+                              type: item.type,
+                              scheduledTime: item.scheduledTime,
+                              formattedTitle: item.formattedTitle,
+                              formattedBody: item.formattedBody,
+                            );
+                            dismissedNotifier.add(dismissedItemData);
+
+                            final dismissalTime = DateTime.now().millisecondsSinceEpoch;
+
                             try {
                               await notificationService.cancelNotification(notificationId);
+
                               if (item.type == NotificationEventType.reminder) {
-                                await cacheService.updateScheduledReminderNotificationId(videoData.videoId, null);
-                                await cacheService.updateScheduledReminderTime(videoData.videoId, null);
-                              } else {
-                                await cacheService.updateScheduledNotificationId(videoData.videoId, null);
+                                await cacheService.updateVideo(videoData.videoId, CachedVideosCompanion(
+                                  scheduledReminderNotificationId: const Value(null),
+                                  scheduledReminderTime: const Value(null),
+                                  userDismissedAt: Value(dismissalTime),
+                                ));
+                              } else if (item.type == NotificationEventType.live) {
+                                await cacheService.updateVideo(videoData.videoId, CachedVideosCompanion(
+                                  scheduledLiveNotificationId: const Value(null),
+                                  userDismissedAt: Value(dismissalTime),
+                                ));
                               }
+
                               if (context.mounted) {
                                 scaffoldMessenger.showSnackBar(
-                                  SnackBar(content: Text('Cancelled "${videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
+                                  SnackBar(content: Text('Dismissed "${videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
                                 );
                               }
-                              ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);
                             } catch (e, s) {
                               logger.error("Error cancelling notification ID after dismiss: $notificationId", e, s);
                               if (context.mounted) {
                                 scaffoldMessenger.showSnackBar(
-                                  SnackBar(content: Text('Failed to cancel: $e'), backgroundColor: theme.colorScheme.error),
+                                  SnackBar(content: Text('Failed to dismiss: $e'), backgroundColor: theme.colorScheme.error),
                                 );
                               }
                               ref.read(scheduledNotificationsProvider.notifier).fetchScheduledNotifications(isRefreshing: true);

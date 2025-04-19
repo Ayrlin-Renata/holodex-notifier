@@ -1,6 +1,7 @@
 import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
+import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 
 abstract class ISettingsService {
   Future<void> initialize();
@@ -47,4 +48,9 @@ abstract class ISettingsService {
   Future<NotificationFormatConfig> getNotificationFormatConfig();
 
   Future<void> setNotificationFormatConfig(NotificationFormatConfig config);
+
+  Future<Set<NotificationEventType>> getScheduledFilterTypes();
+  Future<void> setScheduledFilterTypes(Set<NotificationEventType> types);
+
+  Set<NotificationEventType> getScheduledFilterTypesSync();
 }

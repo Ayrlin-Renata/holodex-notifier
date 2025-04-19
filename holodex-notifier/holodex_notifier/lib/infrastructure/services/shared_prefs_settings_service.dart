@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
+import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart';
@@ -20,6 +21,7 @@ const String _apiKeySecureStorageKey = 'holodex_api_key';
 const String _keyMainServicesReady = 'app_main_services_ready';
 const String _keyIsFirstLaunch = 'app_is_first_launch';
 const String _keyNotificationFormatConfig = 'settings_notificationFormatConfig';
+const String _keyScheduledFilterTypes = 'settings_scheduledFilterTypes';
 
 class SharedPrefsSettingsService implements ISettingsService {
   late final SharedPreferences _prefs;
@@ -275,5 +277,38 @@ class SharedPrefsSettingsService implements ISettingsService {
     } catch (e, s) {
       _logger.error("Error encoding NotificationFormatConfig JSON", e, s);
     }
+  }
+
+  @override
+  Future<Set<NotificationEventType>> getScheduledFilterTypes() async {
+    await _ensureFreshPrefs();
+    final List<String>? typeNames = _prefs.getStringList(_keyScheduledFilterTypes);
+    if (typeNames == null) {
+      // Default to both being selected if no preference saved
+      return {NotificationEventType.live, NotificationEventType.reminder};
+    }
+    try {
+      return typeNames
+          .map((name) => NotificationEventType.values.firstWhere((e) => e.name == name))
+          .toSet();
+    } catch (e) {
+      _logger.warning("Error parsing saved scheduled filter types: $typeNames. Returning default.", e);
+      return {NotificationEventType.live, NotificationEventType.reminder};
+    }
+  }
+
+  @override
+  Set<NotificationEventType> getScheduledFilterTypesSync() {
+    final prefs = _prefs;
+    final typeStrings = prefs.getStringList(_keyScheduledFilterTypes) ?? [];
+    return typeStrings.map((str) => NotificationEventType.values.byName(str)).toSet();
+  }
+
+
+  @override
+  Future<void> setScheduledFilterTypes(Set<NotificationEventType> types) async {
+    final List<String> typeNames = types.map((e) => e.name).toList();
+    await _prefs.setStringList(_keyScheduledFilterTypes, typeNames);
+    _logger.debug("Saved scheduled filter types: $typeNames");
   }
 }

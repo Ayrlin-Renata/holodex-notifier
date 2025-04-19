@@ -146,6 +146,12 @@ class $CachedVideosTable extends CachedVideos
   late final GeneratedColumn<int> scheduledReminderTime = GeneratedColumn<int>(
       'scheduled_reminder_time', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _userDismissedAtMeta =
+      const VerificationMeta('userDismissedAt');
+  @override
+  late final GeneratedColumn<int> userDismissedAt = GeneratedColumn<int>(
+      'user_dismissed_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         videoId,
@@ -167,7 +173,8 @@ class $CachedVideosTable extends CachedVideos
         scheduledLiveNotificationId,
         lastLiveNotificationSentTime,
         scheduledReminderNotificationId,
-        scheduledReminderTime
+        scheduledReminderTime,
+        userDismissedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -295,6 +302,12 @@ class $CachedVideosTable extends CachedVideos
           scheduledReminderTime.isAcceptableOrUnknown(
               data['scheduled_reminder_time']!, _scheduledReminderTimeMeta));
     }
+    if (data.containsKey('user_dismissed_at')) {
+      context.handle(
+          _userDismissedAtMeta,
+          userDismissedAt.isAcceptableOrUnknown(
+              data['user_dismissed_at']!, _userDismissedAtMeta));
+    }
     return context;
   }
 
@@ -349,6 +362,8 @@ class $CachedVideosTable extends CachedVideos
           data['${effectivePrefix}scheduled_reminder_notification_id']),
       scheduledReminderTime: attachedDatabase.typeMapping.read(
           DriftSqlType.int, data['${effectivePrefix}scheduled_reminder_time']),
+      userDismissedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}user_dismissed_at']),
     );
   }
 
@@ -382,6 +397,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
   final int? lastLiveNotificationSentTime;
   final int? scheduledReminderNotificationId;
   final int? scheduledReminderTime;
+  final int? userDismissedAt;
   const CachedVideo(
       {required this.videoId,
       required this.channelId,
@@ -402,7 +418,8 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       this.scheduledLiveNotificationId,
       this.lastLiveNotificationSentTime,
       this.scheduledReminderNotificationId,
-      this.scheduledReminderTime});
+      this.scheduledReminderTime,
+      this.userDismissedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -456,6 +473,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     if (!nullToAbsent || scheduledReminderTime != null) {
       map['scheduled_reminder_time'] = Variable<int>(scheduledReminderTime);
     }
+    if (!nullToAbsent || userDismissedAt != null) {
+      map['user_dismissed_at'] = Variable<int>(userDismissedAt);
+    }
     return map;
   }
 
@@ -506,6 +526,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       scheduledReminderTime: scheduledReminderTime == null && nullToAbsent
           ? const Value.absent()
           : Value(scheduledReminderTime),
+      userDismissedAt: userDismissedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userDismissedAt),
     );
   }
 
@@ -539,6 +562,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           serializer.fromJson<int?>(json['scheduledReminderNotificationId']),
       scheduledReminderTime:
           serializer.fromJson<int?>(json['scheduledReminderTime']),
+      userDismissedAt: serializer.fromJson<int?>(json['userDismissedAt']),
     );
   }
   @override
@@ -570,6 +594,7 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       'scheduledReminderNotificationId':
           serializer.toJson<int?>(scheduledReminderNotificationId),
       'scheduledReminderTime': serializer.toJson<int?>(scheduledReminderTime),
+      'userDismissedAt': serializer.toJson<int?>(userDismissedAt),
     };
   }
 
@@ -593,7 +618,8 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           Value<int?> scheduledLiveNotificationId = const Value.absent(),
           Value<int?> lastLiveNotificationSentTime = const Value.absent(),
           Value<int?> scheduledReminderNotificationId = const Value.absent(),
-          Value<int?> scheduledReminderTime = const Value.absent()}) =>
+          Value<int?> scheduledReminderTime = const Value.absent(),
+          Value<int?> userDismissedAt = const Value.absent()}) =>
       CachedVideo(
         videoId: videoId ?? this.videoId,
         channelId: channelId ?? this.channelId,
@@ -628,6 +654,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
         scheduledReminderTime: scheduledReminderTime.present
             ? scheduledReminderTime.value
             : this.scheduledReminderTime,
+        userDismissedAt: userDismissedAt.present
+            ? userDismissedAt.value
+            : this.userDismissedAt,
       );
   CachedVideo copyWithCompanion(CachedVideosCompanion data) {
     return CachedVideo(
@@ -676,6 +705,9 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       scheduledReminderTime: data.scheduledReminderTime.present
           ? data.scheduledReminderTime.value
           : this.scheduledReminderTime,
+      userDismissedAt: data.userDismissedAt.present
+          ? data.userDismissedAt.value
+          : this.userDismissedAt,
     );
   }
 
@@ -704,33 +736,36 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
               'lastLiveNotificationSentTime: $lastLiveNotificationSentTime, ')
           ..write(
               'scheduledReminderNotificationId: $scheduledReminderNotificationId, ')
-          ..write('scheduledReminderTime: $scheduledReminderTime')
+          ..write('scheduledReminderTime: $scheduledReminderTime, ')
+          ..write('userDismissedAt: $userDismissedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      videoId,
-      channelId,
-      topicId,
-      status,
-      startScheduled,
-      startActual,
-      availableAt,
-      videoType,
-      thumbnailUrl,
-      certainty,
-      mentionedChannelIds,
-      videoTitle,
-      channelName,
-      channelAvatarUrl,
-      isPendingNewMediaNotification,
-      lastSeenTimestamp,
-      scheduledLiveNotificationId,
-      lastLiveNotificationSentTime,
-      scheduledReminderNotificationId,
-      scheduledReminderTime);
+  int get hashCode => Object.hashAll([
+        videoId,
+        channelId,
+        topicId,
+        status,
+        startScheduled,
+        startActual,
+        availableAt,
+        videoType,
+        thumbnailUrl,
+        certainty,
+        mentionedChannelIds,
+        videoTitle,
+        channelName,
+        channelAvatarUrl,
+        isPendingNewMediaNotification,
+        lastSeenTimestamp,
+        scheduledLiveNotificationId,
+        lastLiveNotificationSentTime,
+        scheduledReminderNotificationId,
+        scheduledReminderTime,
+        userDismissedAt
+      ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -758,7 +793,8 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
               this.lastLiveNotificationSentTime &&
           other.scheduledReminderNotificationId ==
               this.scheduledReminderNotificationId &&
-          other.scheduledReminderTime == this.scheduledReminderTime);
+          other.scheduledReminderTime == this.scheduledReminderTime &&
+          other.userDismissedAt == this.userDismissedAt);
 }
 
 class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
@@ -782,6 +818,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   final Value<int?> lastLiveNotificationSentTime;
   final Value<int?> scheduledReminderNotificationId;
   final Value<int?> scheduledReminderTime;
+  final Value<int?> userDismissedAt;
   final Value<int> rowid;
   const CachedVideosCompanion({
     this.videoId = const Value.absent(),
@@ -804,6 +841,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     this.lastLiveNotificationSentTime = const Value.absent(),
     this.scheduledReminderNotificationId = const Value.absent(),
     this.scheduledReminderTime = const Value.absent(),
+    this.userDismissedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CachedVideosCompanion.insert({
@@ -827,6 +865,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     this.lastLiveNotificationSentTime = const Value.absent(),
     this.scheduledReminderNotificationId = const Value.absent(),
     this.scheduledReminderTime = const Value.absent(),
+    this.userDismissedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : videoId = Value(videoId),
         status = Value(status),
@@ -853,6 +892,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
     Expression<int>? lastLiveNotificationSentTime,
     Expression<int>? scheduledReminderNotificationId,
     Expression<int>? scheduledReminderTime,
+    Expression<int>? userDismissedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -882,6 +922,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
         'scheduled_reminder_notification_id': scheduledReminderNotificationId,
       if (scheduledReminderTime != null)
         'scheduled_reminder_time': scheduledReminderTime,
+      if (userDismissedAt != null) 'user_dismissed_at': userDismissedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -907,6 +948,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       Value<int?>? lastLiveNotificationSentTime,
       Value<int?>? scheduledReminderNotificationId,
       Value<int?>? scheduledReminderTime,
+      Value<int?>? userDismissedAt,
       Value<int>? rowid}) {
     return CachedVideosCompanion(
       videoId: videoId ?? this.videoId,
@@ -934,6 +976,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
           this.scheduledReminderNotificationId,
       scheduledReminderTime:
           scheduledReminderTime ?? this.scheduledReminderTime,
+      userDismissedAt: userDismissedAt ?? this.userDismissedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1008,6 +1051,9 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       map['scheduled_reminder_time'] =
           Variable<int>(scheduledReminderTime.value);
     }
+    if (userDismissedAt.present) {
+      map['user_dismissed_at'] = Variable<int>(userDismissedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1040,6 +1086,7 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
           ..write(
               'scheduledReminderNotificationId: $scheduledReminderNotificationId, ')
           ..write('scheduledReminderTime: $scheduledReminderTime, ')
+          ..write('userDismissedAt: $userDismissedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1079,6 +1126,7 @@ typedef $$CachedVideosTableCreateCompanionBuilder = CachedVideosCompanion
   Value<int?> lastLiveNotificationSentTime,
   Value<int?> scheduledReminderNotificationId,
   Value<int?> scheduledReminderTime,
+  Value<int?> userDismissedAt,
   Value<int> rowid,
 });
 typedef $$CachedVideosTableUpdateCompanionBuilder = CachedVideosCompanion
@@ -1103,6 +1151,7 @@ typedef $$CachedVideosTableUpdateCompanionBuilder = CachedVideosCompanion
   Value<int?> lastLiveNotificationSentTime,
   Value<int?> scheduledReminderNotificationId,
   Value<int?> scheduledReminderTime,
+  Value<int?> userDismissedAt,
   Value<int> rowid,
 });
 
@@ -1143,6 +1192,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             Value<int?> lastLiveNotificationSentTime = const Value.absent(),
             Value<int?> scheduledReminderNotificationId = const Value.absent(),
             Value<int?> scheduledReminderTime = const Value.absent(),
+            Value<int?> userDismissedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CachedVideosCompanion(
@@ -1166,6 +1216,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             lastLiveNotificationSentTime: lastLiveNotificationSentTime,
             scheduledReminderNotificationId: scheduledReminderNotificationId,
             scheduledReminderTime: scheduledReminderTime,
+            userDismissedAt: userDismissedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1189,6 +1240,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             Value<int?> lastLiveNotificationSentTime = const Value.absent(),
             Value<int?> scheduledReminderNotificationId = const Value.absent(),
             Value<int?> scheduledReminderTime = const Value.absent(),
+            Value<int?> userDismissedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               CachedVideosCompanion.insert(
@@ -1212,6 +1264,7 @@ class $$CachedVideosTableTableManager extends RootTableManager<
             lastLiveNotificationSentTime: lastLiveNotificationSentTime,
             scheduledReminderNotificationId: scheduledReminderNotificationId,
             scheduledReminderTime: scheduledReminderTime,
+            userDismissedAt: userDismissedAt,
             rowid: rowid,
           ),
         ));
@@ -1325,6 +1378,11 @@ class $$CachedVideosTableFilterComposer
       column: $state.table.scheduledReminderTime,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<int> get userDismissedAt => $state.composableBuilder(
+      column: $state.table.userDismissedAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
 }
 
 class $$CachedVideosTableOrderingComposer
@@ -1431,6 +1489,11 @@ class $$CachedVideosTableOrderingComposer
 
   ColumnOrderings<int> get scheduledReminderTime => $state.composableBuilder(
       column: $state.table.scheduledReminderTime,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<int> get userDismissedAt => $state.composableBuilder(
+      column: $state.table.userDismissedAt,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 }

@@ -70,6 +70,10 @@ class NotificationDecisionService implements INotificationDecisionService {
 
   NotificationDecisionService(this._cacheService, this._settingsService, this._logger);
 
+  // Define the suppression window
+  static const Duration _dismissalSuppressionWindow = Duration(minutes: 5);
+
+
   @override
   Future<List<NotificationAction>> determineActionsForVideoUpdate({required VideoFull fetchedVideo, required CachedVideo? cachedVideo}) async {
     final String videoId = fetchedVideo.id;
@@ -102,32 +106,72 @@ class NotificationDecisionService implements INotificationDecisionService {
       _logger.trace("[DecisionService] ($videoId) Analyzing state transition...");
       final processingState = _ProcessingState(currentCacheData: cachedVideo, fetchedVideoData: fetchedVideo);
 
-      _determineLiveScheduleActions(fetchedVideo, cachedVideo, channelSettings, processingState, actions, _logger);
+    // --- Add Check for Dismissal Before Processing ---
+    final dismissedTimestamp = cachedVideo?.userDismissedAt;
+    bool recentlyDismissed = false;
+    if (dismissedTimestamp != null) {
+        final dismissedAt = DateTime.fromMillisecondsSinceEpoch(dismissedTimestamp);
+        if (currentSystemTime.difference(dismissedAt) < _dismissalSuppressionWindow) {
+            recentlyDismissed = true;
+            _logger.info("[DecisionService] ($videoId) Video was dismissed recently (${currentSystemTime.difference(dismissedAt).inSeconds}s ago). Suppressing *some* immediate dispatches.");
+        } else {
+            // Dismissal is old, clear the flag in the cache update if it hasn't been cleared already
+            _logger.debug("[DecisionService] ($videoId) Previous dismissal is older than suppression window. Clearing flag.");
+             // We'll add the clear action to the final cache companion later
+        }
+    }
+    // --- End Check ---
 
-      await _determineReminderScheduleActions(fetchedVideo, channelSettings, processingState, reminderLeadTime, actions, _logger);
 
-      _determineNewMediaActions(fetchedVideo, cachedVideo, channelSettings, processingState, delayNewMedia, actions, _logger);
+    // Pass recentlyDismissed flag to relevant functions
+    _determineLiveScheduleActions(fetchedVideo, cachedVideo, channelSettings, processingState, actions, _logger);
+    await _determineReminderScheduleActions(fetchedVideo, channelSettings, processingState, reminderLeadTime, actions, _logger);
+    _determineNewMediaActions(fetchedVideo, cachedVideo, channelSettings, processingState, delayNewMedia, actions, _logger, recentlyDismissed); // Pass flag
+    _determinePendingNewMediaTriggerActions(fetchedVideo, cachedVideo, channelSettings, processingState, actions, _logger, recentlyDismissed); // Pass flag
+    _determineLiveEventActions(fetchedVideo, cachedVideo, channelSettings, processingState, currentSystemTime, actions, _logger, recentlyDismissed); // Pass flag
+    _determineUpdateEventActions(fetchedVideo, cachedVideo, channelSettings, processingState, delayNewMedia, actions, _logger, recentlyDismissed); // Pass flag
+    await _determineMentionEventActions(fetchedVideo, cachedVideo, allSettings, processingState, actions, _logger, recentlyDismissed); // Pass flag
 
-      _determinePendingNewMediaTriggerActions(fetchedVideo, cachedVideo, channelSettings, processingState, actions, _logger);
 
-      _determineLiveEventActions(fetchedVideo, cachedVideo, channelSettings, processingState, currentSystemTime, actions, _logger);
+    // Add cache clear action for userDismissedAt if it was set but is now old
+     Value<int?> userDismissedValue = const Value.absent();
+     if (dismissedTimestamp != null && !recentlyDismissed) {
+         userDismissedValue = const Value(null);
+         _logger.debug("[DecisionService] ($videoId) Adding cache action to clear old userDismissedAt timestamp.");
+     }
 
-      _determineUpdateEventActions(fetchedVideo, cachedVideo, channelSettings, processingState, delayNewMedia, actions, _logger);
+    final finalCacheCompanion = CachedVideosCompanion(
+      isPendingNewMediaNotification: Value(processingState.isPendingNewMedia),
+      scheduledLiveNotificationId: Value(processingState.scheduledLiveNotificationId),
+      scheduledReminderNotificationId: Value(processingState.scheduledReminderNotificationId),
+      scheduledReminderTime: Value(processingState.scheduledReminderTime?.millisecondsSinceEpoch),
+      lastLiveNotificationSentTime: Value(processingState.lastLiveNotificationSentTime?.millisecondsSinceEpoch),
+      userDismissedAt: userDismissedValue, // Include the clear action if needed
+    );
+    // Check if update action already exists, if so, merge, otherwise add new.
+    final existingCacheUpdateIndex = actions.indexWhere((a) => a is UpdateCacheAction && a.videoId == videoId);
+    if (existingCacheUpdateIndex != -1) {
+       final existingAction = actions[existingCacheUpdateIndex] as UpdateCacheAction;
+       actions[existingCacheUpdateIndex] = UpdateCacheAction(
+           videoId: videoId,
+           companion: existingAction.companion.copyWith( // Merge companions
+             isPendingNewMediaNotification: finalCacheCompanion.isPendingNewMediaNotification,
+             scheduledLiveNotificationId:   finalCacheCompanion.scheduledLiveNotificationId,
+             scheduledReminderNotificationId: finalCacheCompanion.scheduledReminderNotificationId,
+             scheduledReminderTime:         finalCacheCompanion.scheduledReminderTime,
+             lastLiveNotificationSentTime:  finalCacheCompanion.lastLiveNotificationSentTime,
+             userDismissedAt:             finalCacheCompanion.userDismissedAt,
+           )
+       );
+        _logger.debug("[DecisionService] ($videoId) Merged final cache state into existing update action.");
+    } else {
+        actions.add(NotificationAction.updateCache(videoId: videoId, companion: finalCacheCompanion));
+        _logger.debug("[DecisionService] ($videoId) Added final cache update action.");
+    }
 
-      await _determineMentionEventActions(fetchedVideo, cachedVideo, allSettings, processingState, actions, _logger);
 
-      final finalCacheCompanion = CachedVideosCompanion(
-        isPendingNewMediaNotification: Value(processingState.isPendingNewMedia),
-        scheduledLiveNotificationId: Value(processingState.scheduledLiveNotificationId),
-        scheduledReminderNotificationId: Value(processingState.scheduledReminderNotificationId),
-        scheduledReminderTime: Value(processingState.scheduledReminderTime?.millisecondsSinceEpoch),
-        lastLiveNotificationSentTime: Value(processingState.lastLiveNotificationSentTime?.millisecondsSinceEpoch),
-      );
-      actions.add(NotificationAction.updateCache(videoId: videoId, companion: finalCacheCompanion));
-      _logger.debug("[DecisionService] ($videoId) Final cache update action created.");
-
-      _logger.info("[DecisionService] ($videoId) Determined ${actions.length} actions.");
-      return actions;
+    _logger.info("[DecisionService] ($videoId) Determined ${actions.length} actions.");
+    return actions;
     } catch (e, s) {
       _logger.error("[DecisionService] ($videoId) Error determining actions for video update", e, s);
       return [];
@@ -151,7 +195,7 @@ class NotificationDecisionService implements INotificationDecisionService {
     final bool needsReschedule = processingState.scheduleChanged || (processingState.wasCertain == false && processingState.isCertain);
 
     _logger.trace(
-      "[$videoId] LiveScheduling: shouldBeScheduled=$shouldBeScheduled, isCurrentlyScheduled=$isCurrentlyScheduled, needsReschedule=$needsReschedule",
+      "[$videoId] LiveScheduling: shouldBeScheduled=$shouldBeScheduled, isCurrentlyScheduled=$isCurrentlyScheduled, needsReschedule=$needsReschedule (scheduleChanged=${processingState.scheduleChanged}, becameCertain=${processingState.becameCertain})",
     );
 
     if (shouldBeScheduled) {
@@ -159,6 +203,10 @@ class NotificationDecisionService implements INotificationDecisionService {
         logger.info(
           '[DecisionService] ($videoId) Needs Live Scheduling/Rescheduling (Current: $isCurrentlyScheduled, NeedsReschedule: $needsReschedule)',
         );
+        // Add specific log if rescheduling due to schedule change
+        if (needsReschedule && processingState.scheduleChanged) {
+          logger.info('[DecisionService] ($videoId) Rescheduling LIVE notification due to schedule change.');
+        }
         if (isCurrentlyScheduled) {
           logger.debug(
             '[DecisionService] ($videoId) Adding previous Live schedule ID ${processingState.scheduledLiveNotificationId} to cancellations for reschedule.',
@@ -259,12 +307,18 @@ class NotificationDecisionService implements INotificationDecisionService {
         (processingState.scheduledReminderTime != null &&
             targetReminderTime.difference(processingState.scheduledReminderTime!).abs() > const Duration(minutes: 1));
 
-    _logger.trace("[$videoId] ReminderScheduling: isCurrentlyScheduled=$isCurrentlyScheduled, needsReschedule=$needsReschedule");
+    _logger.trace(
+      "[$videoId] ReminderScheduling: isCurrentlyScheduled=$isCurrentlyScheduled, needsReschedule=$needsReschedule (scheduleChanged=${processingState.scheduleChanged}, becameCertain=${processingState.becameCertain}, reminderTimeChanged=${processingState.reminderTimeChanged})", // Add detail
+    );
 
     if (!isCurrentlyScheduled || needsReschedule) {
       logger.info(
         '[DecisionService] ($videoId) Needs Reminder Scheduling/Rescheduling (Current: $isCurrentlyScheduled, NeedsReschedule: $needsReschedule)',
       );
+      // Add specific log if rescheduling due to schedule change
+      if (needsReschedule && processingState.scheduleChanged) {
+        logger.info('[DecisionService] ($videoId) Rescheduling REMINDER notification due to schedule change.');
+      }
 
       if (isCurrentlyScheduled) {
         logger.debug(
@@ -301,6 +355,7 @@ class NotificationDecisionService implements INotificationDecisionService {
     bool delayNewMedia,
     List<NotificationAction> actions,
     ILoggingService logger,
+    bool recentlyDismissed, // <-- Add parameter
   ) {
     final videoId = fetchedVideo.id;
     _logger.trace("[$videoId] _determineNewMediaActions START");
@@ -319,14 +374,21 @@ class NotificationDecisionService implements INotificationDecisionService {
     }
     _logger.trace('[DecisionService] ($videoId) Potential New Media Event Detected.');
 
-    if (delayNewMedia && !processingState.isCertain) {
-      logger.info('[DecisionService] ($videoId) Delaying New Media notification (Uncertainty + Setting ON). Setting pending flag.');
-      processingState.isPendingNewMedia = true;
-    } else {
-      logger.info('[DecisionService] ($videoId) Dispatching New Media notification (Certainty or Setting OFF).');
-      actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.newMedia)));
-      processingState.isPendingNewMedia = false;
-    }
+     if (recentlyDismissed && !processingState.isCertain) {
+        logger.info('[DecisionService] ($videoId) Suppressing potential New Media dispatch (Uncertain + Recently Dismissed). Keeping pending flag.');
+        processingState.isPendingNewMedia = true; // Ensure it remains pending
+     } else if (delayNewMedia && !processingState.isCertain) {
+       logger.info('[DecisionService] ($videoId) Delaying New Media notification (Uncertainty + Setting ON). Setting pending flag.');
+       processingState.isPendingNewMedia = true;
+     } else if (recentlyDismissed) {
+        logger.info('[DecisionService] ($videoId) Suppressing New Media dispatch (Recently Dismissed).');
+        // We don't set pending here because the dismissal implies the user doesn't want it *now*.
+        processingState.isPendingNewMedia = false;
+     } else {
+       logger.info('[DecisionService] ($videoId) Dispatching New Media notification (Certainty or Setting OFF, Not Recently Dismissed).');
+       actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.newMedia)));
+       processingState.isPendingNewMedia = false;
+     }
     _logger.trace("[$videoId] _determineNewMediaActions END");
   }
 
@@ -337,6 +399,7 @@ class NotificationDecisionService implements INotificationDecisionService {
     _ProcessingState processingState,
     List<NotificationAction> actions,
     ILoggingService logger,
+      bool recentlyDismissed, // <-- Add parameter
   ) {
     final videoId = fetchedVideo.id;
     _logger.trace("[$videoId] _determinePendingNewMediaTriggerActions START (wasPending=${processingState.wasPendingNewMedia})");
@@ -353,13 +416,18 @@ class NotificationDecisionService implements INotificationDecisionService {
     );
 
     if (triggerConditionMet) {
-      logger.info('[DecisionService] ($videoId) Pending New Media condition met. Dispatching.');
-      actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.newMedia)));
-      processingState.isPendingNewMedia = false;
-    } else {
-      logger.debug('[DecisionService] ($videoId) Pending trigger conditions not met. Keeping pending state.');
-      processingState.isPendingNewMedia = true;
-    }
+          if (recentlyDismissed) {
+              logger.info('[DecisionService] ($videoId) Suppressing Pending New Media dispatch (Recently Dismissed). Clearing pending flag.');
+              processingState.isPendingNewMedia = false; // Clear flag as it won't be sent
+          } else {
+              logger.info('[DecisionService] ($videoId) Pending New Media condition met. Dispatching.');
+              actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.newMedia)));
+              processingState.isPendingNewMedia = false;
+          }
+      } else {
+          logger.debug('[DecisionService] ($videoId) Pending trigger conditions not met. Keeping pending state.');
+          processingState.isPendingNewMedia = true;
+      }
     _logger.trace("[$videoId] _determinePendingNewMediaTriggerActions END (final pending state: ${processingState.isPendingNewMedia})");
   }
 
@@ -371,6 +439,7 @@ class NotificationDecisionService implements INotificationDecisionService {
     DateTime currentSystemTime,
     List<NotificationAction> actions,
     ILoggingService logger,
+    bool recentlyDismissed, // <-- Add parameter
   ) {
     final videoId = fetchedVideo.id;
     _logger.trace("[$videoId] _determineLiveEventActions START");
@@ -399,38 +468,48 @@ class NotificationDecisionService implements INotificationDecisionService {
     }
 
     if (shouldSend) {
-      logger.info('[DecisionService] ($videoId) Dispatching immediate Live notification.');
-      actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.live)));
-      processingState.lastLiveNotificationSentTime = currentSystemTime;
+      if (recentlyDismissed) {
+          logger.info('[DecisionService] ($videoId) SUPPRESSING Live notification (Recently Dismissed).');
+          // Do NOT set lastLiveNotificationSentTime if suppressed
+          // Also ensure dismissal flag ISN'T cleared by the cache update yet
+      } else {
+          logger.info('[DecisionService] ($videoId) Dispatching immediate Live notification.');
+          actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.live)));
+          processingState.lastLiveNotificationSentTime = currentSystemTime;
+           // Clear dismissal on successful dispatch
+           actions.add(NotificationAction.updateCache(videoId: videoId, companion: const CachedVideosCompanion(userDismissedAt: Value(null))));
 
-      if (processingState.scheduledLiveNotificationId != null) {
-        logger.debug(
-          '[DecisionService] ($videoId) Cancelling scheduled LIVE notification ID ${processingState.scheduledLiveNotificationId} due to Live dispatch.',
-        );
-        actions.add(
-          NotificationAction.cancel(notificationId: processingState.scheduledLiveNotificationId!, videoId: videoId, type: NotificationEventType.live),
-        );
-        processingState.scheduledLiveNotificationId = null;
-      }
-      if (processingState.scheduledReminderNotificationId != null) {
-        logger.debug(
-          '[DecisionService] ($videoId) Cancelling scheduled REMINDER notification ID ${processingState.scheduledReminderNotificationId} due to Live dispatch.',
-        );
-        actions.add(
-          NotificationAction.cancel(
-            notificationId: processingState.scheduledReminderNotificationId!,
-            videoId: videoId,
-            type: NotificationEventType.reminder,
-          ),
-        );
-        processingState.scheduledReminderNotificationId = null;
-        processingState.scheduledReminderTime = null;
+
+          // Cancel scheduled items logic remains
+          if (processingState.scheduledLiveNotificationId != null) {
+            logger.debug(
+              '[DecisionService] ($videoId) Cancelling scheduled LIVE notification ID ${processingState.scheduledLiveNotificationId} due to Live dispatch.',
+            );
+            actions.add(
+              NotificationAction.cancel(notificationId: processingState.scheduledLiveNotificationId!, videoId: videoId, type: NotificationEventType.live),
+            );
+            processingState.scheduledLiveNotificationId = null;
+          }
+          if (processingState.scheduledReminderNotificationId != null) {
+            logger.debug(
+              '[DecisionService] ($videoId) Cancelling scheduled REMINDER notification ID ${processingState.scheduledReminderNotificationId} due to Live dispatch.',
+            );
+            actions.add(
+              NotificationAction.cancel(
+                notificationId: processingState.scheduledReminderNotificationId!,
+                videoId: videoId,
+                type: NotificationEventType.reminder,
+              ),
+            );
+            processingState.scheduledReminderNotificationId = null;
+            processingState.scheduledReminderTime = null;
+          }
       }
     }
     _logger.trace("[$videoId] _determineLiveEventActions END");
   }
 
-  void _determineUpdateEventActions(
+   void _determineUpdateEventActions(
     VideoFull fetchedVideo,
     CachedVideo? cachedVideo,
     ChannelSubscriptionSetting channelSettings,
@@ -438,7 +517,8 @@ class NotificationDecisionService implements INotificationDecisionService {
     bool delayNewMedia,
     List<NotificationAction> actions,
     ILoggingService logger,
-  ) {
+    bool recentlyDismissed, // <-- Add parameter
+   ) {
     final videoId = fetchedVideo.id;
     _logger.trace("[$videoId] _determineUpdateEventActions START");
     if (!channelSettings.notifyUpdates || processingState.isNewVideo) {
@@ -462,14 +542,22 @@ class NotificationDecisionService implements INotificationDecisionService {
       );
 
       if (!onlyCertaintyChangedWithDelay) {
-        logger.info('[DecisionService] ($videoId) Dispatching Update notification.');
-        actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.update)));
-      } else {
-        logger.info('[DecisionService] ($videoId) SUPPRESSING Update notification (Only certainty changed & Delay ON).');
-      }
-    }
+            if (recentlyDismissed) {
+                 logger.info('[DecisionService] ($videoId) SUPPRESSING Update notification (Recently Dismissed).');
+                 // Ensure dismissal flag ISN'T cleared by cache update yet
+            } else {
+                logger.info('[DecisionService] ($videoId) Dispatching Update notification.');
+                actions.add(NotificationAction.dispatch(instruction: _createNotificationInstruction(fetchedVideo, NotificationEventType.update)));
+                 // Clear dismissal on successful dispatch
+                actions.add(NotificationAction.updateCache(videoId: videoId, companion: const CachedVideosCompanion(userDismissedAt: Value(null))));
+            }
+        } else {
+             logger.info('[DecisionService] ($videoId) SUPPRESSING Update notification (Only certainty changed & Delay ON).');
+        }
+     }
     _logger.trace("[$videoId] _determineUpdateEventActions END");
-  }
+   }
+
 
   Future<void> _determineMentionEventActions(
     VideoFull fetchedVideo,
@@ -478,6 +566,7 @@ class NotificationDecisionService implements INotificationDecisionService {
     _ProcessingState processingState,
     List<NotificationAction> actions,
     ILoggingService logger,
+    bool recentlyDismissed, // <-- Add parameter
   ) async {
     final videoId = fetchedVideo.id;
     _logger.trace("[$videoId] _determineMentionEventActions START");
@@ -504,20 +593,26 @@ class NotificationDecisionService implements INotificationDecisionService {
     for (final mentionedId in newMentions) {
       final mentionTargetSettings = settingsMap[mentionedId];
       if (mentionTargetSettings != null && mentionTargetSettings.notifyMentions) {
-        final mentionDetails = fetchedVideo.mentions?.firstWhereOrNull((m) => m.id == mentionedId);
-        logger.info(
-          '[DecisionService] ($videoId) User wants mentions for $mentionedId (${mentionDetails?.name ?? '??'}). Dispatching Mention notification.',
-        );
-        actions.add(
-          NotificationAction.dispatch(
-            instruction: _createNotificationInstruction(
-              fetchedVideo,
-              NotificationEventType.mention,
-              mentionTargetId: mentionedId,
-              mentionTargetName: mentionDetails?.name ?? 'Unknown Channel',
-            ),
-          ),
-        );
+          if (recentlyDismissed) {
+              logger.info('[DecisionService] ($videoId) SUPPRESSING Mention notification for target $mentionedId (Video Recently Dismissed).');
+          } else {
+              final mentionDetails = fetchedVideo.mentions?.firstWhereOrNull((m) => m.id == mentionedId);
+              logger.info(
+                '[DecisionService] ($videoId) User wants mentions for $mentionedId (${mentionDetails?.name ?? '??'}). Dispatching Mention notification.',
+              );
+              actions.add(
+                NotificationAction.dispatch(
+                  instruction: _createNotificationInstruction(
+                    fetchedVideo,
+                    NotificationEventType.mention,
+                    mentionTargetId: mentionedId,
+                    mentionTargetName: mentionDetails?.name ?? 'Unknown Channel',
+                  ),
+                ),
+              );
+               // Clear dismissal on successful dispatch
+              actions.add(NotificationAction.updateCache(videoId: videoId, companion: const CachedVideosCompanion(userDismissedAt: Value(null))));
+          }
       } else {
         logger.debug('[DecisionService] ($videoId) User DOES NOT want mentions for newly mentioned channel $mentionedId. Skipping dispatch.');
       }

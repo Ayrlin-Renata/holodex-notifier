@@ -65,6 +65,8 @@ class CachedVideos extends Table {
   IntColumn? get scheduledReminderNotificationId => integer().named('scheduled_reminder_notification_id').nullable()();
   IntColumn? get scheduledReminderTime => integer().named('scheduled_reminder_time').nullable()();
 
+  IntColumn? get userDismissedAt => integer().named('user_dismissed_at').nullable()();
+
   @override
   Set<Column> get primaryKey => {videoId};
 }
@@ -75,7 +77,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e, this._logger);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,9 +87,13 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (Migrator m, int from, int to) async {
       _logger.info("Drift DB: Upgrading schema from v$from to v$to...");
-      if (from == 1 && to == 2) {
-        await m.addColumn(cachedVideos, cachedVideos.thumbnailUrl);
-        _logger.info("Drift DB v1->v2: Added thumbnailUrl column.");
+      if (from < 2) { // Apply migration from v1 to v2 if needed
+         await m.addColumn(cachedVideos, cachedVideos.thumbnailUrl);
+         _logger.info("Drift DB v1/<?->v2: Added thumbnailUrl column.");
+      }
+      if (from < 3) { // Apply migration from v2 (or earlier) to v3
+          await m.addColumn(cachedVideos, cachedVideos.userDismissedAt);
+          _logger.info("Drift DB v<?->v3: Added userDismissedAt column.");
       }
     },
     beforeOpen: (details) async {

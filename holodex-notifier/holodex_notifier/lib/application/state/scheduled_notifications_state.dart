@@ -82,9 +82,25 @@ final scheduledNotificationsProvider = StateNotifierProvider.autoDispose<Schedul
   return ScheduledNotificationsNotifier(cacheService, log);
 }, name: 'scheduledNotificationsProvider');
 
+// lib/application/state/scheduled_notifications_state.dart
+// ... other imports and providers ...
+
+// --- MODIFY PROVIDER INITIALIZATION ---
 final scheduledFilterTypeProvider = StateProvider.autoDispose<Set<NotificationEventType>>((ref) {
-  return {NotificationEventType.live, NotificationEventType.reminder};
-}, name: 'scheduledFilterTypeProvider');
+  // 1. Get the SettingsService
+  final settingsService = ref.read(settingsServiceProvider);
+  final logger = ref.read(loggingServiceProvider);
+
+  // 2. Load the saved filter types from SettingsService (synchronously during provider init)
+  try {
+    final savedTypes = settingsService.getScheduledFilterTypesSync(); // Assuming a synchronous getter exists or create one
+    logger.debug("Scheduled filter types initialized from saved settings: ${savedTypes.map((e) => e.name).join(',')}");
+    return savedTypes;
+  } catch (e, s) {
+    logger.error("Error loading saved scheduled filter types, defaulting to empty set.", e, s);
+    return <NotificationEventType>{}; // Default to empty set on error
+  }
+});
 
 final scheduledFilterChannelProvider = StateProvider.autoDispose<String?>((ref) {
   return null;
@@ -302,3 +318,33 @@ extension AsyncValueStateToString on AsyncValue<dynamic> {
     return 'unknown';
   }
 }
+
+// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\application\state\scheduled_notifications_state.dart
+// ... Add this alongside other providers ...
+
+// Provider for Dismissed Notifications (persisted in memory only for now)
+class DismissedNotificationsNotifier extends StateNotifier<List<ScheduledNotificationItem>> {
+  final ILoggingService _logger;
+  DismissedNotificationsNotifier(this._logger) : super([]);
+
+  void add(ScheduledNotificationItem item) {
+     if (!state.any((i) => i.videoData.videoId == item.videoData.videoId && i.type == item.type)) {
+        state = [...state, item];
+        _logger.info("[DismissedNotifier] Added dismissed item: ${item.videoData.videoId} (${item.type.name})");
+     } else {
+       _logger.warning("[DismissedNotifier] Attempted to add duplicate dismissed item: ${item.videoData.videoId} (${item.type.name})");
+     }
+  }
+
+  void remove(ScheduledNotificationItem itemToRemove) {
+    state = state.where((item) =>
+        !(item.videoData.videoId == itemToRemove.videoData.videoId && item.type == itemToRemove.type)
+    ).toList();
+     _logger.info("[DismissedNotifier] Removed item: ${itemToRemove.videoData.videoId} (${itemToRemove.type.name})");
+  }
+}
+
+final dismissedNotificationsProvider = StateNotifierProvider<DismissedNotificationsNotifier, List<ScheduledNotificationItem>>((ref) {
+   final logger = ref.watch(loggingServiceProvider);
+  return DismissedNotificationsNotifier(logger);
+}, name: 'dismissedNotificationsProvider');

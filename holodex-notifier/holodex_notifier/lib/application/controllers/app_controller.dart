@@ -1,4 +1,3 @@
-
 // ignore_for_file: unused_result, body_might_complete_normally_catch_error
 
 import 'dart:convert';
@@ -432,5 +431,72 @@ class AppController {
 
     await Future.wait(dispatchFutures);
     _loggingService.info("AppController: Test notification dispatch attempted for all types.");
+  }
+
+  Future<void> restoreScheduledNotification(ScheduledNotificationItem itemToRestore) async {
+    _loggingService.info(
+        "AppController: Restoring scheduled notification for ${itemToRestore.videoData.videoId} (${itemToRestore.type.name}) at ${itemToRestore.scheduledTime}");
+    try {
+      // 1. Prepare Instruction
+      final instruction = _createInstructionFromScheduledItem(itemToRestore);
+      if (instruction == null) {
+        _loggingService.error(
+            "AppController: Failed to create instruction for restoration of ${itemToRestore.videoData.videoId}");
+        return;
+      }
+
+      // 2. Reschedule Notification
+      final newNotificationId = await _notificationService.scheduleNotification(
+        instruction: instruction,
+        scheduledTime: itemToRestore.scheduledTime,
+      );
+
+      if (newNotificationId == null) {
+        _loggingService.error(
+            "AppController: Rescheduling notification failed for ${itemToRestore.videoData.videoId}, received null ID.");
+        // Optionally show error to user
+        return;
+      }
+      _loggingService.info("AppController: Notification rescheduled successfully, new ID: $newNotificationId");
+
+      // 3. Update Cache with new ID and time
+      if (itemToRestore.type == NotificationEventType.reminder) {
+        await _cacheService.updateScheduledReminderNotificationId(itemToRestore.videoData.videoId, newNotificationId);
+        await _cacheService.updateScheduledReminderTime(itemToRestore.videoData.videoId, itemToRestore.scheduledTime);
+        _loggingService.debug("AppController: Updated reminder cache entry for ${itemToRestore.videoData.videoId}");
+      } else if (itemToRestore.type == NotificationEventType.live) {
+        await _cacheService.updateScheduledNotificationId(itemToRestore.videoData.videoId, newNotificationId);
+        _loggingService.debug("AppController: Updated live cache entry for ${itemToRestore.videoData.videoId}");
+      }
+
+      // 4. Remove from Dismissed List
+      _ref.read(dismissedNotificationsProvider.notifier).remove(itemToRestore);
+      _loggingService.debug("AppController: Removed item from dismissed state ${itemToRestore.videoData.videoId}");
+
+      // 5. Refresh the main scheduled list provider
+      _ref.refresh(scheduledNotificationsProvider);
+      _loggingService.debug("AppController: Refreshed scheduled notifications provider after restore.");
+    } catch (e, s) {
+      _loggingService.error("AppController: Failed to restore notification for ${itemToRestore.videoData.videoId}", e, s);
+      // Optionally show error to user
+    }
+  }
+
+  // Helper to create instruction (adapt from decision service if needed)
+  NotificationInstruction? _createInstructionFromScheduledItem(ScheduledNotificationItem item) {
+    final video = item.videoData;
+    // Basic recreation, might need more fields if NotificationInstruction changes
+    return NotificationInstruction(
+      videoId: video.videoId,
+      eventType: item.type,
+      channelId: video.channelId,
+      channelName: video.channelName,
+      videoTitle: video.videoTitle,
+      videoType: video.videoType,
+      channelAvatarUrl: video.channelAvatarUrl,
+      availableAt: DateTime.tryParse(video.startScheduled ?? video.availableAt) ?? item.scheduledTime, // Best guess for availableAt
+      videoThumbnailUrl: video.thumbnailUrl,
+      // videoSourceLink might be missing from CachedVideo, handle if needed
+    );
   }
 }
