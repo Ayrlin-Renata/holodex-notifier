@@ -33,18 +33,21 @@ class NotificationFormatConfig with _$NotificationFormatConfig {
   factory NotificationFormatConfig.defaultConfig() {
     return NotificationFormatConfig(
       formats: {
-        NotificationEventType.newMedia: const NotificationFormat(titleTemplate: 'New {mediaType} - {channelName}', bodyTemplate: '{mediaTitle}'),
+        NotificationEventType.newMedia: const NotificationFormat(
+          titleTemplate: 'New {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
+          bodyTemplate: '{mediaTitle}',
+        ),
         NotificationEventType.mention: const NotificationFormat(
-          titleTemplate: 'Mentioned in {mediaType} - {channelName}',
+          titleTemplate: 'Mentioned in {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
         NotificationEventType.live: const NotificationFormat(titleTemplate: '🔴 {mediaTypeCaps} LIVE - {channelName}', bodyTemplate: '{mediaTitle}'),
         NotificationEventType.reminder: const NotificationFormat(
-          titleTemplate: 'Live in {timeToEvent}: {mediaType} - {channelName}',
+          titleTemplate: 'Live in {timeToEvent}: {mediaType} - {mediaTime} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
         NotificationEventType.update: const NotificationFormat(
-          titleTemplate: '⚠️ Update for {mediaType} - {channelName}',
+          titleTemplate: '⚠️ Update for {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
       },

@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:holodex_notifier/application/state/notification_format_providers.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
+import 'package:flutter/services.dart';
 
 class NotificationFormatPage extends HookConsumerWidget {
   const NotificationFormatPage({super.key});
@@ -242,25 +243,7 @@ class NotificationFormatPage extends HookConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              ExpansionTile(
-                title: Text('{ Replacements }', style: theme.textTheme.titleSmall),
-                children: const [
-                  ListTile(title: Text('{channelName}'), subtitle: Text('Name of the channel')),
-                  ListTile(title: Text('{mediaTitle}'), subtitle: Text('Title of the video/stream')),
-                  ListTile(title: Text('{mediaTime}'), subtitle: Text('Actual/scheduled start time (e.g., 7:30 PM). Excludes date.')),
-                  ListTile(title: Text('{timeToEvent}'), subtitle: Text('Time until the start of the scheduled media.')),
-                  ListTile(title: Text('{timeToNotif}'), subtitle: Text('Time until the scheduled dispatch of the notification.')),
-                  ListTile(title: Text('{mediaType}'), subtitle: Text('Type (e.g., "Stream", "Clip")')),
-                  ListTile(title: Text('{mediaTypeCaps}'), subtitle: Text('Type in ALL CAPS (e.g., "STREAM")')),
-                  ListTile(title: Text('{newLine}'), subtitle: Text('Inserts a line break')),
-                  ListTile(title: Text('{mediaDateYMD}'), subtitle: Text('Date (YYYY-MM-DD)')),
-                  ListTile(title: Text('{mediaDateDMY}'), subtitle: Text('Date (DD-MM-YYYY)')),
-                  ListTile(title: Text('{mediaDateMDY}'), subtitle: Text('Date (MM-DD-YYYY)')),
-                  ListTile(title: Text('{mediaDateMD}'), subtitle: Text('Date (MM-DD)')),
-                  ListTile(title: Text('{mediaDateDM}'), subtitle: Text('Date (DD-MM)')),
-                  ListTile(title: Text('{mediaDateAsia}'), subtitle: Text('Date (YYYY年MM月DD日)')),
-                ],
-              ),
+              ExpansionTile(title: Text('{ Replacements }', style: theme.textTheme.titleSmall), children: [_buildReplacementList(theme, context)]),
             ],
           );
         },
@@ -283,5 +266,55 @@ class NotificationFormatPage extends HookConsumerWidget {
       default:
         return type.name;
     }
+  }
+
+  Widget _buildReplacementList(ThemeData theme, BuildContext context) {
+    const replacements = {
+      '{channelName}': 'Name of the channel',
+      '{mediaTitle}': 'Title of the video/stream',
+      '{mediaTime}': 'Actual/scheduled start time (e.g., 7:30 PM). Excludes date.',
+      '{timeToEvent}': 'Time until the start of the scheduled media.',
+      '{timeToNotif}': 'Time until the scheduled dispatch of the notification.',
+      '{mediaType}': 'Type (e.g., "Stream", "Clip")',
+      '{mediaTypeCaps}': 'Type in ALL CAPS (e.g., "STREAM")',
+      '{newLine}': 'Inserts a line break',
+      '{mediaDateYMD}': 'Date (YYYY-MM-DD)',
+      '{mediaDateDMY}': 'Date (DD-MM-YYYY)',
+      '{mediaDateMDY}': 'Date (MM-DD-YYYY)',
+      '{mediaDateMD}': 'Date (MM-DD)',
+      '{mediaDateDM}': 'Date (DD-MM)',
+      '{mediaDateAsia}': 'Date (YYYY年MM月DD日)',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children:
+          replacements.entries.map((entry) {
+            final replacementCode = entry.key;
+            final description = entry.value;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SelectableText(replacementCode, style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace')),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(description, style: theme.textTheme.bodySmall)),
+
+                  IconButton(
+                    icon: const Icon(Icons.copy_outlined, size: 18),
+                    tooltip: 'Copy to Clipboard',
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: replacementCode));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Replacement code copied to clipboard!')));
+                    },
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+    );
   }
 }
