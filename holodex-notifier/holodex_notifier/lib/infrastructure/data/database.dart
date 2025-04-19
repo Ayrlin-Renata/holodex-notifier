@@ -161,7 +161,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<CachedVideo>> getScheduledVideosInternal() {
     return (select(cachedVideos)
-          ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull())
+          ..where((tbl) => ( tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull() ) & tbl.userDismissedAt.isNull() )
           ..orderBy([
             (t) => OrderingTerm.asc(
               CustomExpression<int>(
@@ -175,7 +175,7 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<CachedVideo>> watchScheduledVideosInternal() {
     return (select(cachedVideos)
-          ..where((tbl) => tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull())
+          ..where((tbl) => ( tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull() ) & tbl.userDismissedAt.isNull() )
           ..orderBy([
             (t) => OrderingTerm.asc(
               CustomExpression<int>(
@@ -199,6 +199,23 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateScheduledReminderTimeInternal(String id, DateTime? time) {
     final timestamp = time?.millisecondsSinceEpoch;
     return (update(cachedVideos)..where((t) => t.videoId.equals(id))).write(CachedVideosCompanion(scheduledReminderTime: Value(timestamp)));
+  }
+
+  Future<List<CachedVideo>> getDismissedScheduledVideosInternal() {
+    return (select(cachedVideos)
+          ..where((tbl) => ( tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull() ) & tbl.userDismissedAt.isNotNull() )
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.userDismissedAt)
+          ]))
+        .get();
+  }
+
+  Future<void> updateDismissalStatusInternal(String videoId, int? dismissalTimestamp) {
+    return (update(cachedVideos)
+          ..where((t) => t.videoId.equals(videoId)))
+          .write(CachedVideosCompanion(
+            userDismissedAt: Value(dismissalTimestamp),
+           ));
   }
 }
 

@@ -360,6 +360,8 @@ Future<void> _executePollCycle(ProviderContainer container) async {
   final errorNotifier = container.read(backgroundLastErrorProvider.notifier);
   String currentError = '';
 
+  logger.info("BG Poll Cycle: --- _executePollCycle START ---"); // {{1}} - Log start of poll cycle
+
   try {
     logger.debug("BG Poll Cycle: Checking connectivity...");
     final bool isConnected = await connectivityService.isConnected();
@@ -521,5 +523,7 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     } catch (notifierError) {
       logger.error("BG Poll Cycle: Failed to update background error state.", notifierError);
     }
+  } finally {
+    logger.info("BG Poll Cycle: --- _executePollCycle END ---"); // {{3}} - Log end of poll cycle
   }
 }

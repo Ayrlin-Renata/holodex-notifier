@@ -28,4 +28,8 @@ abstract class ICacheService {
   Future<void> updateScheduledReminderTime(String videoId, DateTime? time);
   Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId);
   Future<List<CachedVideo>> getClipVideosByChannel(String channelId);
+
+  // {{Add these}}
+  Future<List<CachedVideo>> getDismissedScheduledVideos();
+  Future<void> updateDismissalStatus(String videoId, bool isDismissed);
 }

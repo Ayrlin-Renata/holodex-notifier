@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:holodex_notifier/application/state/background_service_state.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
@@ -18,6 +19,8 @@ class ScheduledPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final logger = ref.watch(loggingServiceProvider);
     final isFirstLaunchAsync = ref.watch(isFirstLaunchProvider);
+    final bgService = FlutterBackgroundService();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     final manualPollTriggeredAt = useState<DateTime?>(null);
 
@@ -62,17 +65,20 @@ class ScheduledPage extends HookConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        // Add refresh logic if needed, e.g., fetch notifications
-        logger.info("ScheduledPage: Pull-to-refresh triggered.");
-        await scheduledNotifier.fetchScheduledNotifications(isRefreshing: true);
-        // Manual poll trigger logic can remain if desired
-        // ... (manual poll trigger logic) ...
+        final isRunning = await bgService.isRunning();
+        if (isRunning) {
+          logger.info("ChannelsPage: Invoking manual poll from refresh and recording trigger time...");
+          final triggerTime = DateTime.now();
+          manualPollTriggeredAt.value = triggerTime;
+          bgService.invoke('triggerPoll');
+          scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Manual poll triggered...'), duration: Duration(seconds: 2)));
+        } else {
+          logger.warning("ChannelsPage: Background service not running, manual poll not triggered from refresh.");
+        }
       },
       child: Column(
-        // Use Column for layout
         children: [
           Expanded(
-            // Make the primary content scrollable
             child: ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
@@ -99,11 +105,10 @@ class ScheduledPage extends HookConsumerWidget {
                 ),
                 _buildFilterSection(context, ref),
                 const SizedBox(height: 8),
-                const ScheduledNotificationsCard(), // Main card list
+                const ScheduledNotificationsCard(),
               ],
             ),
           ),
-          // Dismissed items area at the bottom
           const DismissedNotificationsArea(),
         ],
       ),
@@ -155,13 +160,10 @@ class ScheduledPage extends HookConsumerWidget {
   Widget _buildFilterSection(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final subscribedChannels = ref.watch(channelListProvider);
-    // Watch the state from the StateProvider
     final selectedTypes = ref.watch(scheduledFilterTypeProvider);
     final selectedChannelId = ref.watch(scheduledFilterChannelProvider);
-    // Get SettingsService to save the state
     final settingsService = ref.watch(settingsServiceProvider);
     final logger = ref.watch(loggingServiceProvider);
-
 
     return Card(
       elevation: 0,
@@ -186,44 +188,38 @@ class ScheduledPage extends HookConsumerWidget {
                   FilterChip(
                     label: const Text('Live'),
                     selected: selectedTypes.contains(NotificationEventType.live),
-                    onSelected: (selected) async { // Make callback async
+                    onSelected: (selected) async {
                       final currentTypes = Set<NotificationEventType>.from(selectedTypes);
                       if (selected) {
                         currentTypes.add(NotificationEventType.live);
                       } else {
                         currentTypes.remove(NotificationEventType.live);
                       }
-                      // 1. Update the state provider
                       ref.read(scheduledFilterTypeProvider.notifier).state = currentTypes;
-                      // 2. Manually save the state
                       try {
                         await settingsService.setScheduledFilterTypes(currentTypes);
-                        logger.debug("Saved scheduled filter types after UI toggle: ${currentTypes.map((e)=>e.name).join(',')}");
-                      } catch (e,s) {
-                         logger.error("Failed to save scheduled filter types from UI", e, s);
-                         // Optionally show an error message to the user
+                        logger.debug("Saved scheduled filter types after UI toggle: ${currentTypes.map((e) => e.name).join(',')}");
+                      } catch (e, s) {
+                        logger.error("Failed to save scheduled filter types from UI", e, s);
                       }
                     },
                   ),
                   FilterChip(
                     label: const Text('Reminders'),
                     selected: selectedTypes.contains(NotificationEventType.reminder),
-                    onSelected: (selected) async { // Make callback async
+                    onSelected: (selected) async {
                       final currentTypes = Set<NotificationEventType>.from(selectedTypes);
                       if (selected) {
-                         currentTypes.add(NotificationEventType.reminder);
+                        currentTypes.add(NotificationEventType.reminder);
                       } else {
-                         currentTypes.remove(NotificationEventType.reminder);
+                        currentTypes.remove(NotificationEventType.reminder);
                       }
-                       // 1. Update the state provider
-                       ref.read(scheduledFilterTypeProvider.notifier).state = currentTypes;
-                       // 2. Manually save the state
-                       try {
+                      ref.read(scheduledFilterTypeProvider.notifier).state = currentTypes;
+                      try {
                         await settingsService.setScheduledFilterTypes(currentTypes);
-                        logger.debug("Saved scheduled filter types after UI toggle: ${currentTypes.map((e)=>e.name).join(',')}");
-                      } catch (e,s) {
-                         logger.error("Failed to save scheduled filter types from UI", e, s);
-                         // Optionally show an error message to the user
+                        logger.debug("Saved scheduled filter types after UI toggle: ${currentTypes.map((e) => e.name).join(',')}");
+                      } catch (e, s) {
+                        logger.error("Failed to save scheduled filter types from UI", e, s);
                       }
                     },
                   ),
@@ -265,71 +261,90 @@ final isFirstLaunchProvider = FutureProvider<bool>((ref) async {
   return await settings.getIsFirstLaunch();
 });
 
-// NEW: Dismissed Notifications Area Widget
 class DismissedNotificationsArea extends ConsumerWidget {
   const DismissedNotificationsArea({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final dismissedItems = ref.watch(dismissedNotificationsProvider);
+    // Use AsyncValue now
+    final dismissedItemsAsync = ref.watch(dismissedNotificationsProvider);
     final appController = ref.watch(appControllerProvider);
 
-    if (dismissedItems.isEmpty) {
-      return const SizedBox.shrink(); // Don't show if empty
-    }
+    return dismissedItemsAsync.when( // Handle AsyncValue states
+      loading: () => const Padding( // Show loading indicator for dismissed items
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+      ),
+      error: (error, stack) => Padding( // Show error message
+        padding: const EdgeInsets.all(16.0),
+        child: Center(child: Text("Error loading dismissed items: $error", style: TextStyle(color: theme.colorScheme.error))),
+      ),
+      data: (dismissedItems) {
+        if (dismissedItems.isEmpty) {
+          return const SizedBox.shrink(); // Don't show if empty
+        }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest, // Background color for the area
-        border: Border(top: BorderSide(color: theme.dividerColor)),
-      ),
-      child: ExpansionTile(
-        title: Text(
-          'Dismissed Notifications (${dismissedItems.length})',
-          style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-        childrenPadding: const EdgeInsets.symmetric(horizontal: 8.0).copyWith(bottom: 8.0),
-        initiallyExpanded: false, // Start collapsed
-        children:
-            dismissedItems.map((item) {
-              return Card(
-                elevation: 0.5,
-                margin: const EdgeInsets.symmetric(vertical: 4.0),
-                child: ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                    backgroundImage: item.videoData.channelAvatarUrl != null ? NetworkImage(item.videoData.channelAvatarUrl!) : null,
-                    child: item.videoData.channelAvatarUrl == null ? const Icon(Icons.person_outline, size: 16) : null,
-                  ),
-                  title: Text(item.formattedTitle, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(
-                    item.formattedBody,
-                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.restore_from_trash_outlined, color: Colors.green),
-                    tooltip: 'Restore Notification',
-                    iconSize: 20,
+        return Container(
+          // ... Container styling ...
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              border: Border(top: BorderSide(color: theme.dividerColor)),
+            ),
+          child: ExpansionTile(
+            // ... ExpansionTile setup ...
+             title: Text(
+               'Dismissed Notifications (${dismissedItems.length})',
+               style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+             ),
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+            childrenPadding: const EdgeInsets.symmetric(horizontal: 8.0).copyWith(bottom: 8.0),
+            initiallyExpanded: false,
+            children: dismissedItems.map((item) {
+              // ... Card and ListTile setup for dismissed item ...
+                return Card(
+                  elevation: 0.5,
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: ListTile(
+                    dense: true,
                     visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      appController.restoreScheduledNotification(item);
-                      // Optional: Show a snackbar
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Restored notification for "${item.videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
-                      );
-                    },
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                      backgroundImage: item.videoData.channelAvatarUrl != null ? NetworkImage(item.videoData.channelAvatarUrl!) : null,
+                      child: item.videoData.channelAvatarUrl == null ? const Icon(Icons.person_outline, size: 16) : null,
+                    ),
+                    title: Text(item.formattedTitle, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      item.formattedBody,
+                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                       icon: const Icon(Icons.restore_from_trash_outlined, color: Colors.green),
+                       tooltip: 'Restore Notification',
+                       iconSize: 20,
+                       visualDensity: VisualDensity.compact,
+                       onPressed: () {
+                         // ** Restore Action **
+                         appController.restoreScheduledNotification(item);
+                         // Optional: Show a snackbar
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text('Restored notification for "${item.videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
+                         );
+                         // Explicitly refresh dismissed provider after restore action
+                         // Although DB change *should* trigger it via watch, explicit refresh ensures faster UI update
+                         // ignore: unused_result
+                         ref.refresh(dismissedNotificationsProvider);
+                       },
+                     ),
                   ),
-                ),
-              );
+                );
             }).toList(),
-      ),
+          ),
+        );
+      },
     );
   }
 }

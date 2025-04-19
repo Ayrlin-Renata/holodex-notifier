@@ -437,7 +437,12 @@ class AppController {
     _loggingService.info(
         "AppController: Restoring scheduled notification for ${itemToRestore.videoData.videoId} (${itemToRestore.type.name}) at ${itemToRestore.scheduledTime}");
     try {
-      // 1. Prepare Instruction
+      // --- Restore Logic ---
+      // 1. Update dismissal status in DB to false
+      await _cacheService.updateDismissalStatus(itemToRestore.videoData.videoId, false);
+      _loggingService.debug("AppController: Cleared dismissal status for ${itemToRestore.videoData.videoId}");
+
+      // 2. Reschedule Notification (Same logic as before)
       final instruction = _createInstructionFromScheduledItem(itemToRestore);
       if (instruction == null) {
         _loggingService.error(
@@ -445,12 +450,10 @@ class AppController {
         return;
       }
 
-      // 2. Reschedule Notification
       final newNotificationId = await _notificationService.scheduleNotification(
         instruction: instruction,
         scheduledTime: itemToRestore.scheduledTime,
       );
-
       if (newNotificationId == null) {
         _loggingService.error(
             "AppController: Rescheduling notification failed for ${itemToRestore.videoData.videoId}, received null ID.");
@@ -459,7 +462,8 @@ class AppController {
       }
       _loggingService.info("AppController: Notification rescheduled successfully, new ID: $newNotificationId");
 
-      // 3. Update Cache with new ID and time
+      // 3. Update Cache with new ID and time (Same logic as before)
+      // (This now also implicitly removes it from the dismissed list view because userDismissedAt is cleared)
       if (itemToRestore.type == NotificationEventType.reminder) {
         await _cacheService.updateScheduledReminderNotificationId(itemToRestore.videoData.videoId, newNotificationId);
         await _cacheService.updateScheduledReminderTime(itemToRestore.videoData.videoId, itemToRestore.scheduledTime);
@@ -469,13 +473,13 @@ class AppController {
         _loggingService.debug("AppController: Updated live cache entry for ${itemToRestore.videoData.videoId}");
       }
 
-      // 4. Remove from Dismissed List
-      _ref.read(dismissedNotificationsProvider.notifier).remove(itemToRestore);
-      _loggingService.debug("AppController: Removed item from dismissed state ${itemToRestore.videoData.videoId}");
+      // ** NO LONGER MANIPULATE dismissedNotificationsProvider state directly **
+      // _ref.read(dismissedNotificationsProvider.notifier).remove(itemToRestore);
 
-      // 5. Refresh the main scheduled list provider
+      // 4. Refresh providers (Should happen automatically, but explicit refresh can help)
       _ref.refresh(scheduledNotificationsProvider);
-      _loggingService.debug("AppController: Refreshed scheduled notifications provider after restore.");
+      _ref.refresh(dismissedNotificationsProvider); // Trigger reload of dismissed list
+      _loggingService.debug("AppController: Refreshed providers after restore.");
     } catch (e, s) {
       _loggingService.error("AppController: Failed to restore notification for ${itemToRestore.videoData.videoId}", e, s);
       // Optionally show error to user
