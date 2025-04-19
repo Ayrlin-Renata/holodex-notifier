@@ -1,18 +1,24 @@
+// coverage:ignore-file
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'notification_format_config.dart';
 
+// **************************************************************************
+// FreezedGenerator
+// **************************************************************************
+
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 NotificationFormat _$NotificationFormatFromJson(Map<String, dynamic> json) {
   return _NotificationFormat.fromJson(json);
 }
 
+/// @nodoc
 mixin _$NotificationFormat {
   String get titleTemplate => throw _privateConstructorUsedError;
   String get bodyTemplate => throw _privateConstructorUsedError;
@@ -21,20 +27,34 @@ mixin _$NotificationFormat {
   bool get showHolodexLink => throw _privateConstructorUsedError;
   bool get showSourceLink => throw _privateConstructorUsedError;
 
+  /// Serializes this NotificationFormat to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
+  /// Create a copy of NotificationFormat
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $NotificationFormatCopyWith<NotificationFormat> get copyWith => throw _privateConstructorUsedError;
+  $NotificationFormatCopyWith<NotificationFormat> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
+/// @nodoc
 abstract class $NotificationFormatCopyWith<$Res> {
-  factory $NotificationFormatCopyWith(NotificationFormat value, $Res Function(NotificationFormat) then) =
+  factory $NotificationFormatCopyWith(
+          NotificationFormat value, $Res Function(NotificationFormat) then) =
       _$NotificationFormatCopyWithImpl<$Res, NotificationFormat>;
   @useResult
-  $Res call({String titleTemplate, String bodyTemplate, bool showThumbnail, bool showYoutubeLink, bool showHolodexLink, bool showSourceLink});
+  $Res call(
+      {String titleTemplate,
+      String bodyTemplate,
+      bool showThumbnail,
+      bool showYoutubeLink,
+      bool showHolodexLink,
+      bool showSourceLink});
 }
 
-class _$NotificationFormatCopyWithImpl<$Res, $Val extends NotificationFormat> implements $NotificationFormatCopyWith<$Res> {
+/// @nodoc
+class _$NotificationFormatCopyWithImpl<$Res, $Val extends NotificationFormat>
+    implements $NotificationFormatCopyWith<$Res> {
   _$NotificationFormatCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
@@ -42,6 +62,8 @@ class _$NotificationFormatCopyWithImpl<$Res, $Val extends NotificationFormat> im
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of NotificationFormat
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -52,56 +74,62 @@ class _$NotificationFormatCopyWithImpl<$Res, $Val extends NotificationFormat> im
     Object? showHolodexLink = null,
     Object? showSourceLink = null,
   }) {
-    return _then(
-      _value.copyWith(
-            titleTemplate:
-                null == titleTemplate
-                    ? _value.titleTemplate
-                    : titleTemplate // ignore: cast_nullable_to_non_nullable
-                        as String,
-            bodyTemplate:
-                null == bodyTemplate
-                    ? _value.bodyTemplate
-                    : bodyTemplate // ignore: cast_nullable_to_non_nullable
-                        as String,
-            showThumbnail:
-                null == showThumbnail
-                    ? _value.showThumbnail
-                    : showThumbnail // ignore: cast_nullable_to_non_nullable
-                        as bool,
-            showYoutubeLink:
-                null == showYoutubeLink
-                    ? _value.showYoutubeLink
-                    : showYoutubeLink // ignore: cast_nullable_to_non_nullable
-                        as bool,
-            showHolodexLink:
-                null == showHolodexLink
-                    ? _value.showHolodexLink
-                    : showHolodexLink // ignore: cast_nullable_to_non_nullable
-                        as bool,
-            showSourceLink:
-                null == showSourceLink
-                    ? _value.showSourceLink
-                    : showSourceLink // ignore: cast_nullable_to_non_nullable
-                        as bool,
-          )
-          as $Val,
-    );
+    return _then(_value.copyWith(
+      titleTemplate: null == titleTemplate
+          ? _value.titleTemplate
+          : titleTemplate // ignore: cast_nullable_to_non_nullable
+              as String,
+      bodyTemplate: null == bodyTemplate
+          ? _value.bodyTemplate
+          : bodyTemplate // ignore: cast_nullable_to_non_nullable
+              as String,
+      showThumbnail: null == showThumbnail
+          ? _value.showThumbnail
+          : showThumbnail // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showYoutubeLink: null == showYoutubeLink
+          ? _value.showYoutubeLink
+          : showYoutubeLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showHolodexLink: null == showHolodexLink
+          ? _value.showHolodexLink
+          : showHolodexLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showSourceLink: null == showSourceLink
+          ? _value.showSourceLink
+          : showSourceLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ) as $Val);
   }
 }
 
-abstract class _$$NotificationFormatImplCopyWith<$Res> implements $NotificationFormatCopyWith<$Res> {
-  factory _$$NotificationFormatImplCopyWith(_$NotificationFormatImpl value, $Res Function(_$NotificationFormatImpl) then) =
+/// @nodoc
+abstract class _$$NotificationFormatImplCopyWith<$Res>
+    implements $NotificationFormatCopyWith<$Res> {
+  factory _$$NotificationFormatImplCopyWith(_$NotificationFormatImpl value,
+          $Res Function(_$NotificationFormatImpl) then) =
       __$$NotificationFormatImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String titleTemplate, String bodyTemplate, bool showThumbnail, bool showYoutubeLink, bool showHolodexLink, bool showSourceLink});
+  $Res call(
+      {String titleTemplate,
+      String bodyTemplate,
+      bool showThumbnail,
+      bool showYoutubeLink,
+      bool showHolodexLink,
+      bool showSourceLink});
 }
 
-class __$$NotificationFormatImplCopyWithImpl<$Res> extends _$NotificationFormatCopyWithImpl<$Res, _$NotificationFormatImpl>
+/// @nodoc
+class __$$NotificationFormatImplCopyWithImpl<$Res>
+    extends _$NotificationFormatCopyWithImpl<$Res, _$NotificationFormatImpl>
     implements _$$NotificationFormatImplCopyWith<$Res> {
-  __$$NotificationFormatImplCopyWithImpl(_$NotificationFormatImpl _value, $Res Function(_$NotificationFormatImpl) _then) : super(_value, _then);
+  __$$NotificationFormatImplCopyWithImpl(_$NotificationFormatImpl _value,
+      $Res Function(_$NotificationFormatImpl) _then)
+      : super(_value, _then);
 
+  /// Create a copy of NotificationFormat
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -112,55 +140,49 @@ class __$$NotificationFormatImplCopyWithImpl<$Res> extends _$NotificationFormatC
     Object? showHolodexLink = null,
     Object? showSourceLink = null,
   }) {
-    return _then(
-      _$NotificationFormatImpl(
-        titleTemplate:
-            null == titleTemplate
-                ? _value.titleTemplate
-                : titleTemplate // ignore: cast_nullable_to_non_nullable
-                    as String,
-        bodyTemplate:
-            null == bodyTemplate
-                ? _value.bodyTemplate
-                : bodyTemplate // ignore: cast_nullable_to_non_nullable
-                    as String,
-        showThumbnail:
-            null == showThumbnail
-                ? _value.showThumbnail
-                : showThumbnail // ignore: cast_nullable_to_non_nullable
-                    as bool,
-        showYoutubeLink:
-            null == showYoutubeLink
-                ? _value.showYoutubeLink
-                : showYoutubeLink // ignore: cast_nullable_to_non_nullable
-                    as bool,
-        showHolodexLink:
-            null == showHolodexLink
-                ? _value.showHolodexLink
-                : showHolodexLink // ignore: cast_nullable_to_non_nullable
-                    as bool,
-        showSourceLink:
-            null == showSourceLink
-                ? _value.showSourceLink
-                : showSourceLink // ignore: cast_nullable_to_non_nullable
-                    as bool,
-      ),
-    );
+    return _then(_$NotificationFormatImpl(
+      titleTemplate: null == titleTemplate
+          ? _value.titleTemplate
+          : titleTemplate // ignore: cast_nullable_to_non_nullable
+              as String,
+      bodyTemplate: null == bodyTemplate
+          ? _value.bodyTemplate
+          : bodyTemplate // ignore: cast_nullable_to_non_nullable
+              as String,
+      showThumbnail: null == showThumbnail
+          ? _value.showThumbnail
+          : showThumbnail // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showYoutubeLink: null == showYoutubeLink
+          ? _value.showYoutubeLink
+          : showYoutubeLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showHolodexLink: null == showHolodexLink
+          ? _value.showHolodexLink
+          : showHolodexLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showSourceLink: null == showSourceLink
+          ? _value.showSourceLink
+          : showSourceLink // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
   }
 }
 
+/// @nodoc
+
 @JsonSerializable()
 class _$NotificationFormatImpl implements _NotificationFormat {
-  const _$NotificationFormatImpl({
-    required this.titleTemplate,
-    required this.bodyTemplate,
-    this.showThumbnail = true,
-    this.showYoutubeLink = true,
-    this.showHolodexLink = true,
-    this.showSourceLink = true,
-  });
+  const _$NotificationFormatImpl(
+      {required this.titleTemplate,
+      required this.bodyTemplate,
+      this.showThumbnail = true,
+      this.showYoutubeLink = true,
+      this.showHolodexLink = true,
+      this.showSourceLink = true});
 
-  factory _$NotificationFormatImpl.fromJson(Map<String, dynamic> json) => _$$NotificationFormatImplFromJson(json);
+  factory _$NotificationFormatImpl.fromJson(Map<String, dynamic> json) =>
+      _$$NotificationFormatImplFromJson(json);
 
   @override
   final String titleTemplate;
@@ -189,41 +211,53 @@ class _$NotificationFormatImpl implements _NotificationFormat {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$NotificationFormatImpl &&
-            (identical(other.titleTemplate, titleTemplate) || other.titleTemplate == titleTemplate) &&
-            (identical(other.bodyTemplate, bodyTemplate) || other.bodyTemplate == bodyTemplate) &&
-            (identical(other.showThumbnail, showThumbnail) || other.showThumbnail == showThumbnail) &&
-            (identical(other.showYoutubeLink, showYoutubeLink) || other.showYoutubeLink == showYoutubeLink) &&
-            (identical(other.showHolodexLink, showHolodexLink) || other.showHolodexLink == showHolodexLink) &&
-            (identical(other.showSourceLink, showSourceLink) || other.showSourceLink == showSourceLink));
+            (identical(other.titleTemplate, titleTemplate) ||
+                other.titleTemplate == titleTemplate) &&
+            (identical(other.bodyTemplate, bodyTemplate) ||
+                other.bodyTemplate == bodyTemplate) &&
+            (identical(other.showThumbnail, showThumbnail) ||
+                other.showThumbnail == showThumbnail) &&
+            (identical(other.showYoutubeLink, showYoutubeLink) ||
+                other.showYoutubeLink == showYoutubeLink) &&
+            (identical(other.showHolodexLink, showHolodexLink) ||
+                other.showHolodexLink == showHolodexLink) &&
+            (identical(other.showSourceLink, showSourceLink) ||
+                other.showSourceLink == showSourceLink));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, titleTemplate, bodyTemplate, showThumbnail, showYoutubeLink, showHolodexLink, showSourceLink);
+  int get hashCode => Object.hash(runtimeType, titleTemplate, bodyTemplate,
+      showThumbnail, showYoutubeLink, showHolodexLink, showSourceLink);
 
+  /// Create a copy of NotificationFormat
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$NotificationFormatImplCopyWith<_$NotificationFormatImpl> get copyWith =>
-      __$$NotificationFormatImplCopyWithImpl<_$NotificationFormatImpl>(this, _$identity);
+      __$$NotificationFormatImplCopyWithImpl<_$NotificationFormatImpl>(
+          this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$NotificationFormatImplToJson(this);
+    return _$$NotificationFormatImplToJson(
+      this,
+    );
   }
 }
 
 abstract class _NotificationFormat implements NotificationFormat {
-  const factory _NotificationFormat({
-    required final String titleTemplate,
-    required final String bodyTemplate,
-    final bool showThumbnail,
-    final bool showYoutubeLink,
-    final bool showHolodexLink,
-    final bool showSourceLink,
-  }) = _$NotificationFormatImpl;
+  const factory _NotificationFormat(
+      {required final String titleTemplate,
+      required final String bodyTemplate,
+      final bool showThumbnail,
+      final bool showYoutubeLink,
+      final bool showHolodexLink,
+      final bool showSourceLink}) = _$NotificationFormatImpl;
 
-  factory _NotificationFormat.fromJson(Map<String, dynamic> json) = _$NotificationFormatImpl.fromJson;
+  factory _NotificationFormat.fromJson(Map<String, dynamic> json) =
+      _$NotificationFormatImpl.fromJson;
 
   @override
   String get titleTemplate;
@@ -238,37 +272,56 @@ abstract class _NotificationFormat implements NotificationFormat {
   @override
   bool get showSourceLink;
 
+  /// Create a copy of NotificationFormat
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$NotificationFormatImplCopyWith<_$NotificationFormatImpl> get copyWith => throw _privateConstructorUsedError;
+  _$$NotificationFormatImplCopyWith<_$NotificationFormatImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
-NotificationFormatConfig _$NotificationFormatConfigFromJson(Map<String, dynamic> json) {
+NotificationFormatConfig _$NotificationFormatConfigFromJson(
+    Map<String, dynamic> json) {
   return _NotificationFormatConfig.fromJson(json);
 }
 
+/// @nodoc
 mixin _$NotificationFormatConfig {
-  @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
-  Map<NotificationEventType, NotificationFormat> get formats => throw _privateConstructorUsedError;
+  @JsonKey(
+      fromJson: _notificationFormatMapFromJson,
+      toJson: _notificationFormatMapToJson)
+  Map<NotificationEventType, NotificationFormat> get formats =>
+      throw _privateConstructorUsedError;
   int get version => throw _privateConstructorUsedError;
 
+  /// Serializes this NotificationFormatConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
+  /// Create a copy of NotificationFormatConfig
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $NotificationFormatConfigCopyWith<NotificationFormatConfig> get copyWith => throw _privateConstructorUsedError;
+  $NotificationFormatConfigCopyWith<NotificationFormatConfig> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
+/// @nodoc
 abstract class $NotificationFormatConfigCopyWith<$Res> {
-  factory $NotificationFormatConfigCopyWith(NotificationFormatConfig value, $Res Function(NotificationFormatConfig) then) =
+  factory $NotificationFormatConfigCopyWith(NotificationFormatConfig value,
+          $Res Function(NotificationFormatConfig) then) =
       _$NotificationFormatConfigCopyWithImpl<$Res, NotificationFormatConfig>;
   @useResult
-  $Res call({
-    @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson) Map<NotificationEventType, NotificationFormat> formats,
-    int version,
-  });
+  $Res call(
+      {@JsonKey(
+          fromJson: _notificationFormatMapFromJson,
+          toJson: _notificationFormatMapToJson)
+      Map<NotificationEventType, NotificationFormat> formats,
+      int version});
 }
 
-class _$NotificationFormatConfigCopyWithImpl<$Res, $Val extends NotificationFormatConfig> implements $NotificationFormatConfigCopyWith<$Res> {
+/// @nodoc
+class _$NotificationFormatConfigCopyWithImpl<$Res,
+        $Val extends NotificationFormatConfig>
+    implements $NotificationFormatConfigCopyWith<$Res> {
   _$NotificationFormatConfigCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
@@ -276,76 +329,95 @@ class _$NotificationFormatConfigCopyWithImpl<$Res, $Val extends NotificationForm
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of NotificationFormatConfig
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? formats = null, Object? version = null}) {
-    return _then(
-      _value.copyWith(
-            formats:
-                null == formats
-                    ? _value.formats
-                    : formats // ignore: cast_nullable_to_non_nullable
-                        as Map<NotificationEventType, NotificationFormat>,
-            version:
-                null == version
-                    ? _value.version
-                    : version // ignore: cast_nullable_to_non_nullable
-                        as int,
-          )
-          as $Val,
-    );
+  $Res call({
+    Object? formats = null,
+    Object? version = null,
+  }) {
+    return _then(_value.copyWith(
+      formats: null == formats
+          ? _value.formats
+          : formats // ignore: cast_nullable_to_non_nullable
+              as Map<NotificationEventType, NotificationFormat>,
+      version: null == version
+          ? _value.version
+          : version // ignore: cast_nullable_to_non_nullable
+              as int,
+    ) as $Val);
   }
 }
 
-abstract class _$$NotificationFormatConfigImplCopyWith<$Res> implements $NotificationFormatConfigCopyWith<$Res> {
-  factory _$$NotificationFormatConfigImplCopyWith(_$NotificationFormatConfigImpl value, $Res Function(_$NotificationFormatConfigImpl) then) =
+/// @nodoc
+abstract class _$$NotificationFormatConfigImplCopyWith<$Res>
+    implements $NotificationFormatConfigCopyWith<$Res> {
+  factory _$$NotificationFormatConfigImplCopyWith(
+          _$NotificationFormatConfigImpl value,
+          $Res Function(_$NotificationFormatConfigImpl) then) =
       __$$NotificationFormatConfigImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson) Map<NotificationEventType, NotificationFormat> formats,
-    int version,
-  });
+  $Res call(
+      {@JsonKey(
+          fromJson: _notificationFormatMapFromJson,
+          toJson: _notificationFormatMapToJson)
+      Map<NotificationEventType, NotificationFormat> formats,
+      int version});
 }
 
-class __$$NotificationFormatConfigImplCopyWithImpl<$Res> extends _$NotificationFormatConfigCopyWithImpl<$Res, _$NotificationFormatConfigImpl>
+/// @nodoc
+class __$$NotificationFormatConfigImplCopyWithImpl<$Res>
+    extends _$NotificationFormatConfigCopyWithImpl<$Res,
+        _$NotificationFormatConfigImpl>
     implements _$$NotificationFormatConfigImplCopyWith<$Res> {
-  __$$NotificationFormatConfigImplCopyWithImpl(_$NotificationFormatConfigImpl _value, $Res Function(_$NotificationFormatConfigImpl) _then)
-    : super(_value, _then);
+  __$$NotificationFormatConfigImplCopyWithImpl(
+      _$NotificationFormatConfigImpl _value,
+      $Res Function(_$NotificationFormatConfigImpl) _then)
+      : super(_value, _then);
 
+  /// Create a copy of NotificationFormatConfig
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? formats = null, Object? version = null}) {
-    return _then(
-      _$NotificationFormatConfigImpl(
-        formats:
-            null == formats
-                ? _value._formats
-                : formats // ignore: cast_nullable_to_non_nullable
-                    as Map<NotificationEventType, NotificationFormat>,
-        version:
-            null == version
-                ? _value.version
-                : version // ignore: cast_nullable_to_non_nullable
-                    as int,
-      ),
-    );
+  $Res call({
+    Object? formats = null,
+    Object? version = null,
+  }) {
+    return _then(_$NotificationFormatConfigImpl(
+      formats: null == formats
+          ? _value._formats
+          : formats // ignore: cast_nullable_to_non_nullable
+              as Map<NotificationEventType, NotificationFormat>,
+      version: null == version
+          ? _value.version
+          : version // ignore: cast_nullable_to_non_nullable
+              as int,
+    ));
   }
 }
 
+/// @nodoc
+
 @JsonSerializable(explicitToJson: true)
 class _$NotificationFormatConfigImpl implements _NotificationFormatConfig {
-  const _$NotificationFormatConfigImpl({
-    @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
-    required final Map<NotificationEventType, NotificationFormat> formats,
-    this.version = 1,
-  }) : _formats = formats;
+  const _$NotificationFormatConfigImpl(
+      {@JsonKey(
+          fromJson: _notificationFormatMapFromJson,
+          toJson: _notificationFormatMapToJson)
+      required final Map<NotificationEventType, NotificationFormat> formats,
+      this.version = 1})
+      : _formats = formats;
 
-  factory _$NotificationFormatConfigImpl.fromJson(Map<String, dynamic> json) => _$$NotificationFormatConfigImplFromJson(json);
+  factory _$NotificationFormatConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$NotificationFormatConfigImplFromJson(json);
 
   final Map<NotificationEventType, NotificationFormat> _formats;
   @override
-  @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
+  @JsonKey(
+      fromJson: _notificationFormatMapFromJson,
+      toJson: _notificationFormatMapToJson)
   Map<NotificationEventType, NotificationFormat> get formats {
     if (_formats is EqualUnmodifiableMapView) return _formats;
     // ignore: implicit_dynamic_type
@@ -372,36 +444,49 @@ class _$NotificationFormatConfigImpl implements _NotificationFormatConfig {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, const DeepCollectionEquality().hash(_formats), version);
+  int get hashCode => Object.hash(
+      runtimeType, const DeepCollectionEquality().hash(_formats), version);
 
+  /// Create a copy of NotificationFormatConfig
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$NotificationFormatConfigImplCopyWith<_$NotificationFormatConfigImpl> get copyWith =>
-      __$$NotificationFormatConfigImplCopyWithImpl<_$NotificationFormatConfigImpl>(this, _$identity);
+  _$$NotificationFormatConfigImplCopyWith<_$NotificationFormatConfigImpl>
+      get copyWith => __$$NotificationFormatConfigImplCopyWithImpl<
+          _$NotificationFormatConfigImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$NotificationFormatConfigImplToJson(this);
+    return _$$NotificationFormatConfigImplToJson(
+      this,
+    );
   }
 }
 
 abstract class _NotificationFormatConfig implements NotificationFormatConfig {
-  const factory _NotificationFormatConfig({
-    @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
-    required final Map<NotificationEventType, NotificationFormat> formats,
-    final int version,
-  }) = _$NotificationFormatConfigImpl;
+  const factory _NotificationFormatConfig(
+      {@JsonKey(
+          fromJson: _notificationFormatMapFromJson,
+          toJson: _notificationFormatMapToJson)
+      required final Map<NotificationEventType, NotificationFormat> formats,
+      final int version}) = _$NotificationFormatConfigImpl;
 
-  factory _NotificationFormatConfig.fromJson(Map<String, dynamic> json) = _$NotificationFormatConfigImpl.fromJson;
+  factory _NotificationFormatConfig.fromJson(Map<String, dynamic> json) =
+      _$NotificationFormatConfigImpl.fromJson;
 
   @override
-  @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
+  @JsonKey(
+      fromJson: _notificationFormatMapFromJson,
+      toJson: _notificationFormatMapToJson)
   Map<NotificationEventType, NotificationFormat> get formats;
   @override
   int get version;
 
+  /// Create a copy of NotificationFormatConfig
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$NotificationFormatConfigImplCopyWith<_$NotificationFormatConfigImpl> get copyWith => throw _privateConstructorUsedError;
+  _$$NotificationFormatConfigImplCopyWith<_$NotificationFormatConfigImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }
