@@ -17,6 +17,7 @@ abstract class ILoggingServiceWithOutput extends ILoggingService {
   Future<String?> getLogFileContent();
   MemoryLogOutput get memoryOutput;
   void setSystemInfoString(String info);
+  Future<List<String>> getLogFilePaths();
 }
 
 class LoggerService implements ILoggingServiceWithOutput {
@@ -139,6 +140,23 @@ class LoggerService implements ILoggingServiceWithOutput {
   @override
   void fatal(String message, [dynamic error, StackTrace? stackTrace]) {
     _logger.f(message, error: error, stackTrace: stackTrace);
+  }
+
+  @override
+  Future<List<String>> getLogFilePaths() async {
+    _logger.i('LoggerService: Getting all log file paths.');
+    try {
+      final logFilePaths = await _rotatingFileWriter.getAllLogFilePaths();
+      if (logFilePaths.isEmpty) {
+        _logger.w('LoggerService: No log file paths found.');
+        return []; // Or handle no logs scenario in UI
+      }
+
+      return logFilePaths;
+    } catch (e, s) {
+      _logger.e('LoggerService: Error during log file path finding process.', error: e, stackTrace: s);
+      return [];
+    }
   }
 }
 

@@ -22,6 +22,23 @@ class RotatingFileWriter {
     return file.path;
   }
 
+  Future<List<String>> getAllLogFilePaths() async {
+    final logDir = Directory(await _getLogDirectory());
+    List<FileSystemEntity> files = logDir.listSync();
+    List<String> logPaths = [];
+    for (final file in files) {
+      if (file is File && file.path.endsWith('.log')) { // Ensure it's a log file
+        logPaths.add(file.path);
+      }
+    }
+    // Add the current log file path too, if different from rotated ones
+    final currentPath = await currentLogFilePath;
+    if (!logPaths.contains(currentPath)) {
+      logPaths.add(currentPath);
+    }
+    return logPaths;
+  }
+
   RotatingFileWriter({this.baseFilename = 'app_log', this.maxFileSizeInBytes = 5 * 1024 * 1024, this.maxFilesToKeep = 3});
 
   Future<String> _getLogDirectory() async {

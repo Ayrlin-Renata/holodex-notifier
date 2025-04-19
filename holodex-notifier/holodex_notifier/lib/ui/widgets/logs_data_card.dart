@@ -6,6 +6,8 @@ import 'package:holodex_notifier/main.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:path/path.dart' as p;
+import 'package:archive/archive_io.dart';
 
 class LogsDataCard extends ConsumerWidget {
   const LogsDataCard({super.key});
@@ -59,59 +61,56 @@ class LogsDataCard extends ConsumerWidget {
             label: const Text('Share Full Log'),
             onPressed: () async {
               if (loggerService is ILoggingServiceWithOutput) {
-                String? tempLogFilePath;
+                loggerService.info('AppController: Creating and sharing log ZIP archive...');
                 try {
-                  final logContent = await loggerService.getLogFileContent();
-                  if (logContent == null || logContent.isEmpty) {
-                    loggerService.warning('Log content is empty or unavailable for sharing.');
-                    if (context.mounted) {
-                      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Log content is empty or could not be retrieved.')));
-                    }
+                  final logFilePaths = await loggerService.getLogFilePaths();
+                  if (logFilePaths.isEmpty) {
+                    loggerService.warning('AppController: No log files paths provided for ZIP.');
                     return;
                   }
-                  loggerService.debug("Log content length for sharing: ${logContent.length} characters");
+
+                  final archive = Archive();
+                  for (final logFilePath in logFilePaths) {
+                    final file = File(logFilePath);
+                    if (await file.exists()) {
+                      final filename = p.basename(logFilePath);
+                      final fileBytes = await file.readAsBytes();
+                      archive.addFile(ArchiveFile(filename, fileBytes.length, fileBytes));
+                      loggerService.debug('AppController: Added file "$filename" to ZIP archive.');
+                    } else {
+                      loggerService.warning('AppController: Log file not found at path: $logFilePath');
+                    }
+                  }
+
+                  if (archive.isEmpty) {
+                    loggerService.warning('AppController: No files added to ZIP archive. Aborting share.');
+                    return;
+                  }
 
                   final tempDir = await getTemporaryDirectory();
-                  final fileName = 'holodex_notifier_logs_${DateTime.now().millisecondsSinceEpoch}.txt';
-                  final logFile = File('${tempDir.path}/$fileName');
-                  tempLogFilePath = logFile.path;
+                  final zipFilePath = p.join(tempDir.path, 'holodex_notifier_logs.zip');
+                  final zipFile = File(zipFilePath);
 
-                  await logFile.writeAsString(logContent);
-                  loggerService.info("Log content written to temporary file: ${logFile.path}");
+                  ZipFileEncoder encoder = ZipFileEncoder();
+                  encoder.create(zipFilePath); // Create the zip file
+                  encoder.addFile(zipFile); // Add the archive into the zip file
+                  encoder.close();
 
-                  final xFile = XFile(logFile.path, mimeType: 'text/plain');
-                  final shareSubject = 'Holodex Notifier Logs ${DateTime.now().toIso8601String().substring(0, 10)}';
+                  loggerService.debug('AppController: ZIP archive created at: $zipFilePath');
 
-                  final result = await Share.shareXFiles([xFile], subject: shareSubject);
+                  final result = await Share.shareXFiles([XFile(zipFilePath)], text: 'Holodex Notifier Logs', subject: 'HolodexNotifier_Logs');
 
                   if (result.status == ShareResultStatus.success) {
-                    loggerService.info('Log file shared successfully: ${logFile.path}');
-                  } else if (result.status == ShareResultStatus.dismissed) {
-                    loggerService.info('Log file sharing dismissed by user.');
+                    loggerService.info('AppController: Log ZIP archive shared successfully.');
+                    return;
                   } else {
-                    loggerService.warning('Log file sharing failed: Status=${result.status}, RawValue=${result.raw}');
-                    if (context.mounted) {
-                      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Failed to share log file. Status: ${result.status}')));
-                    }
+                    loggerService.warning('AppController: Log ZIP sharing status: ${result.status}');
+                    return;
                   }
                 } catch (e, s) {
-                  loggerService.error('Error preparing or sharing log file', e, s);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error preparing log file for sharing: $e')));
-                  }
-                } finally {
-                  if (tempLogFilePath != null) {
-                    try {
-                      final fileToDelete = File(tempLogFilePath);
-                      if (await fileToDelete.exists()) {
-                        await fileToDelete.delete();
-                        loggerService.debug("Temporary log file deleted: $tempLogFilePath");
-                      }
-                    } catch (e) {
-                      loggerService.warning("Failed to delete temporary log file: $tempLogFilePath. Error: $e");
-                    }
-                  }
-                }
+                  loggerService.error('AppController: Failed to create and share log ZIP archive.', e, s);
+                  return;
+                } 
               } else {
                 loggerService.error("Attempted to share logs, but logger service is not ILoggingServiceWithOutput");
                 if (context.mounted) {
