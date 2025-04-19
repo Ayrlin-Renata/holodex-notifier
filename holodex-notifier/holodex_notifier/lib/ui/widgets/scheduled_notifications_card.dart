@@ -61,8 +61,6 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
     final cacheService = ref.watch(cacheServiceProvider);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final isExpanded = useState(false);
-    // Remove dismissedNotifier read here, no longer needed for adding
-    // final dismissedNotifier = ref.read(dismissedNotificationsProvider.notifier);
 
     logger.trace(
       "[ScheduledNotificationsCard] Build. Filtered Async state: isRefreshing=${scheduledListAsync.isRefreshing}, isLoading=${scheduledListAsync.isLoading}, hasValue=${scheduledListAsync.hasValue}, hasError=${scheduledListAsync.hasError}",
@@ -256,13 +254,13 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                     TextButton(
                                       child: const Text('Cancel'),
                                       onPressed: () {
-                                        Navigator.of(context).pop(false); // Dismiss the dialog and return false
+                                        Navigator.of(context).pop(false);
                                       },
                                     ),
                                     TextButton(
                                       child: const Text('Dismiss'),
                                       onPressed: () {
-                                        Navigator.of(context).pop(true); // Dismiss the dialog and return true
+                                        Navigator.of(context).pop(true);
                                       },
                                     ),
                                   ],
@@ -272,50 +270,37 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                           },
                           onDismissed: (direction) async {
                             logger.info("Dismissed item UI, STARTING dismissal process for video: ${videoData.videoId} (${item.type.name})");
-                            // **NO LONGER ADD TO dismissedNotifier state**
-                            // final dismissedItemData = ScheduledNotificationItem(...);
-                            // dismissedNotifier.add(dismissedItemData);
 
                             try {
-                              // 1. Cancel the OS notification
                               await notificationService.cancelNotification(notificationId);
                               logger.debug("OS Notification $notificationId cancelled.");
-                            
-                              // 2. Update dismissal status in the database via CacheService
+
                               await cacheService.updateDismissalStatus(videoData.videoId, true);
                               logger.debug("Database dismissal status updated for ${videoData.videoId}.");
 
-                              // 3. Clear specific scheduled ID fields (optional but good practice)
                               CachedVideosCompanion clearCompanion;
                               if (item.type == NotificationEventType.reminder) {
                                 clearCompanion = const CachedVideosCompanion(
                                   scheduledReminderNotificationId: Value(null),
                                   scheduledReminderTime: Value(null),
-                                  // userDismissedAt is set by updateDismissalStatus
                                 );
                               } else if (item.type == NotificationEventType.live) {
-                                clearCompanion = const CachedVideosCompanion(
-                                  scheduledLiveNotificationId: Value(null),
-                                  // userDismissedAt is set by updateDismissalStatus
-                                );
+                                clearCompanion = const CachedVideosCompanion(scheduledLiveNotificationId: Value(null));
                               } else {
-                                clearCompanion = const CachedVideosCompanion(); // Should not happen for dismissible
+                                clearCompanion = const CachedVideosCompanion();
                               }
                               if (clearCompanion != const CachedVideosCompanion()) {
                                 await cacheService.updateVideo(videoData.videoId, clearCompanion);
                               }
 
-                              // 4. Show snackbar
                               if (context.mounted) {
                                 scaffoldMessenger.showSnackBar(
                                   SnackBar(content: Text('Dismissed "${videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
                                 );
                               }
 
-                              // 5. Refresh providers (Riverpod should handle this automatically now
-                              // due to the database change triggering provider updates)
-                              ref.refresh(scheduledNotificationsProvider); // Explicit refresh might still be needed
-                              ref.refresh(dismissedNotificationsProvider); // Refresh dismissed list too
+                              ref.refresh(scheduledNotificationsProvider);
+                              ref.refresh(dismissedNotificationsProvider);
                               logger.info("Dismissal process COMPLETED for ${videoData.videoId}. Providers refreshed.");
                             } catch (e, s) {
                               logger.error("Error cancelling notification ID after dismiss: $notificationId", e, s);
@@ -324,7 +309,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                   SnackBar(content: Text('Failed to dismiss: $e'), backgroundColor: theme.colorScheme.error),
                                 );
                               }
-                              // Force refresh on error
+
                               ref.refresh(scheduledNotificationsProvider);
                               ref.refresh(dismissedNotificationsProvider);
                             }
@@ -334,7 +319,6 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
 
                         itemWidget = GestureDetector(behavior: HitTestBehavior.deferToChild, child: dismissibleWidget);
                       } else {
-                        // Item might be displayed even if not dismissible (e.g., past event?)
                         itemWidget = cardContent;
                       }
                       return itemWidget;

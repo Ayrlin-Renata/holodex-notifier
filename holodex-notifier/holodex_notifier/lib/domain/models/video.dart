@@ -35,7 +35,7 @@ class Video with _$Video {
 
 @freezed
 class VideoWithChannel with _$VideoWithChannel {
-@JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
+  @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
   const factory VideoWithChannel({
     required String id,
     required String title,

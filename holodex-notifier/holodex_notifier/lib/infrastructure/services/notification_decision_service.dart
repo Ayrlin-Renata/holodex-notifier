@@ -116,26 +116,8 @@ class NotificationDecisionService implements INotificationDecisionService {
       await _determineReminderScheduleActions(fetchedVideo, channelSettings, processingState, reminderLeadTime, actions, _logger);
       _determineNewMediaActions(fetchedVideo, cachedVideo, channelSettings, processingState, delayNewMedia, actions, _logger, dismissed);
       _determinePendingNewMediaTriggerActions(fetchedVideo, cachedVideo, channelSettings, processingState, actions, _logger, dismissed);
-      _determineLiveEventActions(
-        fetchedVideo,
-        cachedVideo,
-        channelSettings,
-        processingState,
-        currentSystemTime,
-        actions,
-        _logger,
-        dismissed,
-      );
-      _determineUpdateEventActions(
-        fetchedVideo,
-        cachedVideo,
-        channelSettings,
-        processingState,
-        delayNewMedia,
-        actions,
-        _logger,
-        dismissed,
-      );
+      _determineLiveEventActions(fetchedVideo, cachedVideo, channelSettings, processingState, currentSystemTime, actions, _logger, dismissed);
+      _determineUpdateEventActions(fetchedVideo, cachedVideo, channelSettings, processingState, delayNewMedia, actions, _logger, dismissed);
       await _determineMentionEventActions(fetchedVideo, cachedVideo, allSettings, processingState, actions, _logger, dismissed);
 
       Value<int?> userDismissedValue = const Value.absent();

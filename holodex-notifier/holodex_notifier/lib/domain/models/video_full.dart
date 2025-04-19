@@ -11,7 +11,7 @@ DateTime _dateTimeFromStringRequired(String dateString) => DateTime.parse(dateSt
 
 @freezed
 class VideoFull with _$VideoFull {
-@JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
+  @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
   const factory VideoFull({
     required String id,
     required String title,

@@ -30,11 +30,9 @@ import 'package:holodex_notifier/infrastructure/services/notification_decision_s
 import 'package:holodex_notifier/infrastructure/services/shared_prefs_settings_service.dart';
 import 'package:holodex_notifier/ui/screens/home_screen.dart';
 import 'package:dio/dio.dart';
-import 'package:holodex_notifier/ui/pages/permission_explanation_page.dart'; // Import PermissionExplanationPage
+import 'package:holodex_notifier/ui/pages/permission_explanation_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart'; // Import permission_handler
-// Import flutter_hooks
-
+import 'package:permission_handler/permission_handler.dart';
 
 //TODO: implement config.json
 
@@ -339,7 +337,7 @@ class MyApp extends ConsumerWidget {
       theme: ThemeData(colorScheme: lightColorScheme, useMaterial3: true),
       darkTheme: ThemeData(colorScheme: darkColorScheme, useMaterial3: true),
       themeMode: ThemeMode.system,
-      home: const PermissionCheck(), // Changed to PermissionCheck
+      home: const PermissionCheck(),
     );
   }
 }
@@ -368,7 +366,7 @@ class ErrorApp extends StatelessWidget {
   }
 }
 
-class PermissionCheck extends HookConsumerWidget { // New Widget for permission check
+class PermissionCheck extends HookConsumerWidget {
   const PermissionCheck({super.key});
 
   @override
@@ -378,35 +376,34 @@ class PermissionCheck extends HookConsumerWidget { // New Widget for permission 
     return settingsServiceReady.when(
       data: (ready) {
         if (ready) {
-          return FutureBuilder<PermissionStatus>( // Check permission status
+          return FutureBuilder<PermissionStatus>(
             future: Permission.notification.status,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(body: Center(child: CircularProgressIndicator())); // Loading indicator while checking
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
               } else if (snapshot.hasData) {
                 final status = snapshot.data!;
                 if (status.isGranted) {
-                  return const HomeScreen(); // Navigate to HomeScreen if permission granted
+                  return const HomeScreen();
                 } else {
-                  return const PermissionExplanationPage(); // Show explanation page if not granted
+                  return const PermissionExplanationPage();
                 }
               } else {
-                return const Scaffold(body: Center(child: Text('Error checking permissions'))); // Error state
+                return const Scaffold(body: Center(child: Text('Error checking permissions')));
               }
             },
           );
         } else {
-          return const Scaffold(body: Center(child: Text('Settings not ready'))); // Settings service not ready
+          return const Scaffold(body: Center(child: Text('Settings not ready')));
         }
       },
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())), // Loading indicator while settings loading
-      error: (error, stackTrace) => Scaffold(body: Center(child: Text('Error: $error'))), // Error state for settings loading
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => Scaffold(body: Center(child: Text('Error: $error'))),
     );
   }
 }
 
-
 final settingsServiceReadyProvider = FutureProvider<bool>((ref) async {
   final settingsService = await ref.watch(settingsServiceFutureProvider.future);
-  return settingsService.getMainServicesReady(); // Assuming getMainServicesReady exists and checks for readiness
+  return settingsService.getMainServicesReady();
 });

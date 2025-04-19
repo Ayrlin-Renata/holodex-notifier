@@ -9,7 +9,7 @@ class PermissionExplanationPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final localNotificationService = ref.read(notificationServiceProvider); 
+    final localNotificationService = ref.read(notificationServiceProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Permissions Needed')),
@@ -39,7 +39,7 @@ class PermissionExplanationPage extends HookConsumerWidget {
             const SizedBox(height: 32.0),
             ElevatedButton(
               onPressed: () async {
-                final permissionsGranted = await localNotificationService.requestNotificationPermissions(); 
+                final permissionsGranted = await localNotificationService.requestNotificationPermissions();
                 if (permissionsGranted) {
                   if (context.mounted) {
                     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));

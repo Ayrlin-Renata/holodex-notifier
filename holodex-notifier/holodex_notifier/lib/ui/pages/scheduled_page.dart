@@ -267,81 +267,76 @@ class DismissedNotificationsArea extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    // Use AsyncValue now
+
     final dismissedItemsAsync = ref.watch(dismissedNotificationsProvider);
     final appController = ref.watch(appControllerProvider);
 
-    return dismissedItemsAsync.when( // Handle AsyncValue states
-      loading: () => const Padding( // Show loading indicator for dismissed items
-        padding: EdgeInsets.symmetric(vertical: 16.0),
-        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-      ),
-      error: (error, stack) => Padding( // Show error message
-        padding: const EdgeInsets.all(16.0),
-        child: Center(child: Text("Error loading dismissed items: $error", style: TextStyle(color: theme.colorScheme.error))),
-      ),
+    return dismissedItemsAsync.when(
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+          ),
+      error:
+          (error, stack) => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(child: Text("Error loading dismissed items: $error", style: TextStyle(color: theme.colorScheme.error))),
+          ),
       data: (dismissedItems) {
         if (dismissedItems.isEmpty) {
-          return const SizedBox.shrink(); // Don't show if empty
+          return const SizedBox.shrink();
         }
 
         return Container(
-          // ... Container styling ...
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              border: Border(top: BorderSide(color: theme.dividerColor)),
-            ),
+          decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, border: Border(top: BorderSide(color: theme.dividerColor))),
           child: ExpansionTile(
-            // ... ExpansionTile setup ...
-             title: Text(
-               'Dismissed Notifications (${dismissedItems.length})',
-               style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-             ),
+            title: Text(
+              'Dismissed Notifications (${dismissedItems.length})',
+              style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
             tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
             childrenPadding: const EdgeInsets.symmetric(horizontal: 8.0).copyWith(bottom: 8.0),
             initiallyExpanded: false,
-            children: dismissedItems.map((item) {
-              // ... Card and ListTile setup for dismissed item ...
-                return Card(
-                  elevation: 0.5,
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: ListTile(
-                    dense: true,
-                    visualDensity: VisualDensity.compact,
-                    leading: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                      backgroundImage: item.videoData.channelAvatarUrl != null ? NetworkImage(item.videoData.channelAvatarUrl!) : null,
-                      child: item.videoData.channelAvatarUrl == null ? const Icon(Icons.person_outline, size: 16) : null,
+            children:
+                dismissedItems.map((item) {
+                  return Card(
+                    elevation: 0.5,
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: ListTile(
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                        backgroundImage: item.videoData.channelAvatarUrl != null ? NetworkImage(item.videoData.channelAvatarUrl!) : null,
+                        child: item.videoData.channelAvatarUrl == null ? const Icon(Icons.person_outline, size: 16) : null,
+                      ),
+                      title: Text(item.formattedTitle, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        item.formattedBody,
+                        style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.restore_from_trash_outlined, color: Colors.green),
+                        tooltip: 'Restore Notification',
+                        iconSize: 20,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          appController.restoreScheduledNotification(item);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Restored notification for "${item.videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
+                          );
+
+                          // ignore: unused_result
+                          ref.refresh(dismissedNotificationsProvider);
+                        },
+                      ),
                     ),
-                    title: Text(item.formattedTitle, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(
-                      item.formattedBody,
-                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: IconButton(
-                       icon: const Icon(Icons.restore_from_trash_outlined, color: Colors.green),
-                       tooltip: 'Restore Notification',
-                       iconSize: 20,
-                       visualDensity: VisualDensity.compact,
-                       onPressed: () {
-                         // ** Restore Action **
-                         appController.restoreScheduledNotification(item);
-                         // Optional: Show a snackbar
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(content: Text('Restored notification for "${item.videoData.videoTitle}"'), duration: const Duration(seconds: 2)),
-                         );
-                         // Explicitly refresh dismissed provider after restore action
-                         // Although DB change *should* trigger it via watch, explicit refresh ensures faster UI update
-                         // ignore: unused_result
-                         ref.refresh(dismissedNotificationsProvider);
-                       },
-                     ),
-                  ),
-                );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         );
       },

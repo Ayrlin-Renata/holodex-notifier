@@ -435,35 +435,26 @@ class AppController {
 
   Future<void> restoreScheduledNotification(ScheduledNotificationItem itemToRestore) async {
     _loggingService.info(
-        "AppController: Restoring scheduled notification for ${itemToRestore.videoData.videoId} (${itemToRestore.type.name}) at ${itemToRestore.scheduledTime}");
+      "AppController: Restoring scheduled notification for ${itemToRestore.videoData.videoId} (${itemToRestore.type.name}) at ${itemToRestore.scheduledTime}",
+    );
     try {
-      // --- Restore Logic ---
-      // 1. Update dismissal status in DB to false
       await _cacheService.updateDismissalStatus(itemToRestore.videoData.videoId, false);
       _loggingService.debug("AppController: Cleared dismissal status for ${itemToRestore.videoData.videoId}");
 
-      // 2. Reschedule Notification (Same logic as before)
       final instruction = _createInstructionFromScheduledItem(itemToRestore);
       if (instruction == null) {
-        _loggingService.error(
-            "AppController: Failed to create instruction for restoration of ${itemToRestore.videoData.videoId}");
+        _loggingService.error("AppController: Failed to create instruction for restoration of ${itemToRestore.videoData.videoId}");
         return;
       }
 
-      final newNotificationId = await _notificationService.scheduleNotification(
-        instruction: instruction,
-        scheduledTime: itemToRestore.scheduledTime,
-      );
+      final newNotificationId = await _notificationService.scheduleNotification(instruction: instruction, scheduledTime: itemToRestore.scheduledTime);
       if (newNotificationId == null) {
-        _loggingService.error(
-            "AppController: Rescheduling notification failed for ${itemToRestore.videoData.videoId}, received null ID.");
-        // Optionally show error to user
+        _loggingService.error("AppController: Rescheduling notification failed for ${itemToRestore.videoData.videoId}, received null ID.");
+
         return;
       }
       _loggingService.info("AppController: Notification rescheduled successfully, new ID: $newNotificationId");
 
-      // 3. Update Cache with new ID and time (Same logic as before)
-      // (This now also implicitly removes it from the dismissed list view because userDismissedAt is cleared)
       if (itemToRestore.type == NotificationEventType.reminder) {
         await _cacheService.updateScheduledReminderNotificationId(itemToRestore.videoData.videoId, newNotificationId);
         await _cacheService.updateScheduledReminderTime(itemToRestore.videoData.videoId, itemToRestore.scheduledTime);
@@ -473,23 +464,17 @@ class AppController {
         _loggingService.debug("AppController: Updated live cache entry for ${itemToRestore.videoData.videoId}");
       }
 
-      // ** NO LONGER MANIPULATE dismissedNotificationsProvider state directly **
-      // _ref.read(dismissedNotificationsProvider.notifier).remove(itemToRestore);
-
-      // 4. Refresh providers (Should happen automatically, but explicit refresh can help)
       _ref.refresh(scheduledNotificationsProvider);
-      _ref.refresh(dismissedNotificationsProvider); // Trigger reload of dismissed list
+      _ref.refresh(dismissedNotificationsProvider);
       _loggingService.debug("AppController: Refreshed providers after restore.");
     } catch (e, s) {
       _loggingService.error("AppController: Failed to restore notification for ${itemToRestore.videoData.videoId}", e, s);
-      // Optionally show error to user
     }
   }
 
-  // Helper to create instruction (adapt from decision service if needed)
   NotificationInstruction? _createInstructionFromScheduledItem(ScheduledNotificationItem item) {
     final video = item.videoData;
-    // Basic recreation, might need more fields if NotificationInstruction changes
+
     return NotificationInstruction(
       videoId: video.videoId,
       eventType: item.type,
@@ -498,9 +483,8 @@ class AppController {
       videoTitle: video.videoTitle,
       videoType: video.videoType,
       channelAvatarUrl: video.channelAvatarUrl,
-      availableAt: DateTime.tryParse(video.startScheduled ?? video.availableAt) ?? item.scheduledTime, // Best guess for availableAt
+      availableAt: DateTime.tryParse(video.startScheduled ?? video.availableAt) ?? item.scheduledTime,
       videoThumbnailUrl: video.thumbnailUrl,
-      // videoSourceLink might be missing from CachedVideo, handle if needed
     );
   }
 }

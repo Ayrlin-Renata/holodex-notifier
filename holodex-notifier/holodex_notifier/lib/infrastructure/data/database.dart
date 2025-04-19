@@ -87,13 +87,13 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (Migrator m, int from, int to) async {
       _logger.info("Drift DB: Upgrading schema from v$from to v$to...");
-      if (from < 2) { // Apply migration from v1 to v2 if needed
-         await m.addColumn(cachedVideos, cachedVideos.thumbnailUrl);
-         _logger.info("Drift DB v1/<?->v2: Added thumbnailUrl column.");
+      if (from < 2) {
+        await m.addColumn(cachedVideos, cachedVideos.thumbnailUrl);
+        _logger.info("Drift DB v1/<?->v2: Added thumbnailUrl column.");
       }
-      if (from < 3) { // Apply migration from v2 (or earlier) to v3
-          await m.addColumn(cachedVideos, cachedVideos.userDismissedAt);
-          _logger.info("Drift DB v<?->v3: Added userDismissedAt column.");
+      if (from < 3) {
+        await m.addColumn(cachedVideos, cachedVideos.userDismissedAt);
+        _logger.info("Drift DB v<?->v3: Added userDismissedAt column.");
       }
     },
     beforeOpen: (details) async {
@@ -161,7 +161,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<CachedVideo>> getScheduledVideosInternal() {
     return (select(cachedVideos)
-          ..where((tbl) => ( tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull() ) & tbl.userDismissedAt.isNull() )
+          ..where(
+            (tbl) => (tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull()) & tbl.userDismissedAt.isNull(),
+          )
           ..orderBy([
             (t) => OrderingTerm.asc(
               CustomExpression<int>(
@@ -175,7 +177,9 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<CachedVideo>> watchScheduledVideosInternal() {
     return (select(cachedVideos)
-          ..where((tbl) => ( tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull() ) & tbl.userDismissedAt.isNull() )
+          ..where(
+            (tbl) => (tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull()) & tbl.userDismissedAt.isNull(),
+          )
           ..orderBy([
             (t) => OrderingTerm.asc(
               CustomExpression<int>(
@@ -203,19 +207,16 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<CachedVideo>> getDismissedScheduledVideosInternal() {
     return (select(cachedVideos)
-          ..where((tbl) => ( tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull() ) & tbl.userDismissedAt.isNotNull() )
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.userDismissedAt)
-          ]))
+          ..where(
+            (tbl) =>
+                (tbl.scheduledLiveNotificationId.isNotNull() | tbl.scheduledReminderNotificationId.isNotNull()) & tbl.userDismissedAt.isNotNull(),
+          )
+          ..orderBy([(t) => OrderingTerm.desc(t.userDismissedAt)]))
         .get();
   }
 
   Future<void> updateDismissalStatusInternal(String videoId, int? dismissalTimestamp) {
-    return (update(cachedVideos)
-          ..where((t) => t.videoId.equals(videoId)))
-          .write(CachedVideosCompanion(
-            userDismissedAt: Value(dismissalTimestamp),
-           ));
+    return (update(cachedVideos)..where((t) => t.videoId.equals(videoId))).write(CachedVideosCompanion(userDismissedAt: Value(dismissalTimestamp)));
   }
 }
 

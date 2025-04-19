@@ -131,7 +131,7 @@ class AppBehaviorSettingsCard extends HookConsumerWidget {
           subtitle: const Text('Combine notifications for collabs'),
           value: groupNotifications,
           onChanged: null,
-          //   appController.updateGlobalSetting('notificationGrouping', value);
+
           secondary: const Icon(Icons.group_work_outlined),
         ),
 

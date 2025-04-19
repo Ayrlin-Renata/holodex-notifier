@@ -61,20 +61,19 @@ class DriftCacheService implements ICacheService {
   @override
   Future<List<CachedVideo>> getScheduledVideos() {
     _logger.trace("[DriftCacheService] Getting ACTIVE scheduled videos.");
-    return _db.getScheduledVideosInternal(); // This now correctly filters out dismissed
+    return _db.getScheduledVideosInternal();
   }
 
   @override
   Stream<List<CachedVideo>> watchScheduledVideos() {
     _logger.trace("[DriftCacheService] Watching ACTIVE scheduled videos.");
-     return _db.watchScheduledVideosInternal(); // This now correctly filters out dismissed
+    return _db.watchScheduledVideosInternal();
   }
 
   @override
   Future<List<CachedVideo>> getVideosWithScheduledReminders() {
-      // Note: This might need filtering for dismissed status too, depending on usage
-      _logger.trace("[DriftCacheService] Getting videos with scheduled reminders (might include dismissed).");
-      return _db.getVideosWithScheduledRemindersInternal();
+    _logger.trace("[DriftCacheService] Getting videos with scheduled reminders (might include dismissed).");
+    return _db.getVideosWithScheduledRemindersInternal();
   }
 
   @override
@@ -83,17 +82,16 @@ class DriftCacheService implements ICacheService {
   @override
   Future<List<CachedVideo>> getClipVideosByChannel(String channelId) => _db.getClipVideosByChannelInternal(channelId);
 
-  // --- NEW Implementation for dismissed videos ---
   @override
   Future<List<CachedVideo>> getDismissedScheduledVideos() {
-     _logger.trace("[DriftCacheService] Getting DISMISSED scheduled videos.");
-     return _db.getDismissedScheduledVideosInternal();
+    _logger.trace("[DriftCacheService] Getting DISMISSED scheduled videos.");
+    return _db.getDismissedScheduledVideosInternal();
   }
 
   @override
   Future<void> updateDismissalStatus(String videoId, bool isDismissed) {
-     _logger.debug("[DriftCacheService] Updating dismissal status for video $videoId to $isDismissed");
-     final int? dismissalTimestamp = isDismissed ? DateTime.now().millisecondsSinceEpoch : null;
-     return _db.updateDismissalStatusInternal(videoId, dismissalTimestamp);
+    _logger.debug("[DriftCacheService] Updating dismissal status for video $videoId to $isDismissed");
+    final int? dismissalTimestamp = isDismissed ? DateTime.now().millisecondsSinceEpoch : null;
+    return _db.updateDismissalStatusInternal(videoId, dismissalTimestamp);
   }
 }

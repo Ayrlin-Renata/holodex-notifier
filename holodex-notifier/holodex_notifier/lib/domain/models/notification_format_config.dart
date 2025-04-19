@@ -6,7 +6,7 @@ part 'notification_format_config.g.dart';
 
 @freezed
 class NotificationFormat with _$NotificationFormat {
-@JsonSerializable()
+  @JsonSerializable()
   const factory NotificationFormat({
     required String titleTemplate,
     required String bodyTemplate,
@@ -21,7 +21,7 @@ class NotificationFormat with _$NotificationFormat {
 
 @freezed
 class NotificationFormatConfig with _$NotificationFormatConfig {
-@JsonSerializable(explicitToJson: true)
+  @JsonSerializable(explicitToJson: true)
   const factory NotificationFormatConfig({
     @JsonKey(fromJson: _notificationFormatMapFromJson, toJson: _notificationFormatMapToJson)
     required Map<NotificationEventType, NotificationFormat> formats,
@@ -33,18 +33,12 @@ class NotificationFormatConfig with _$NotificationFormatConfig {
   factory NotificationFormatConfig.defaultConfig() {
     return NotificationFormatConfig(
       formats: {
-        NotificationEventType.newMedia: const NotificationFormat(
-          titleTemplate: 'New {mediaType} - {channelName}',
-          bodyTemplate: '{mediaTitle}',
-        ),
+        NotificationEventType.newMedia: const NotificationFormat(titleTemplate: 'New {mediaType} - {channelName}', bodyTemplate: '{mediaTitle}'),
         NotificationEventType.mention: const NotificationFormat(
           titleTemplate: 'Mentioned in {mediaType} - {channelName}',
           bodyTemplate: '{mediaTitle}',
         ),
-        NotificationEventType.live: const NotificationFormat(
-          titleTemplate: '🔴 {mediaTypeCaps} LIVE - {channelName}',
-          bodyTemplate: '{mediaTitle}',
-        ),
+        NotificationEventType.live: const NotificationFormat(titleTemplate: '🔴 {mediaTypeCaps} LIVE - {channelName}', bodyTemplate: '{mediaTitle}'),
         NotificationEventType.reminder: const NotificationFormat(
           titleTemplate: 'Live in {timeToEvent}: {mediaType} - {channelName}',
           bodyTemplate: '{mediaTitle}',

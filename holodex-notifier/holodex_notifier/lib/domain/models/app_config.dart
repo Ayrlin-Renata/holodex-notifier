@@ -6,7 +6,7 @@ part 'app_config.g.dart';
 
 @freezed
 class AppConfig with _$AppConfig {
-@JsonSerializable(explicitToJson: true)
+  @JsonSerializable(explicitToJson: true)
   const factory AppConfig({
     required int pollFrequencyMinutes,
     required bool notificationGrouping,

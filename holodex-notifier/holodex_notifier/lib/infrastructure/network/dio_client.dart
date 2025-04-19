@@ -44,7 +44,6 @@ class DioClient {
 
     _dio.interceptors.add(ApiKeyInterceptor(_apiKeyGetter, _logger));
 
-    // Always add LogInterceptor, removing the kDebugMode check
     _dio.interceptors.add(
       LogInterceptor(
         requestHeader: true,
@@ -52,7 +51,7 @@ class DioClient {
         responseHeader: true,
         responseBody: true,
         error: true,
-        logPrint: (object) => _logger.debug('[Dio Log] $object'), // Using debug level for Dio logs
+        logPrint: (object) => _logger.debug('[Dio Log] $object'),
       ),
     );
   }

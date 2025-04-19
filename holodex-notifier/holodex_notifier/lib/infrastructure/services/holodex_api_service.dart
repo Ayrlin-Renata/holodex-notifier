@@ -17,7 +17,9 @@ class HolodexApiService implements IApiService {
     required DateTime from,
     int limit = 50,
   }) async {
-    _logger.info('[API Service] Fetching videos for channels: ${channelIds.length}, mentions: ${mentionChannelIds.length} since ${from.toIso8601String()}');
+    _logger.info(
+      '[API Service] Fetching videos for channels: ${channelIds.length}, mentions: ${mentionChannelIds.length} since ${from.toIso8601String()}',
+    );
 
     final List<Map<String, dynamic>> allVideos = [];
     final Set<String> processedChannelIds = {};
@@ -47,19 +49,17 @@ class HolodexApiService implements IApiService {
         );
 
         if (response.statusCode == 200 && response.data is List) {
-           final videosFound = (response.data as List).length;
+          final videosFound = (response.data as List).length;
           _logger.debug('[API Service] Success: Received $videosFound videos for channel $id');
           allVideos.addAll(List<Map<String, dynamic>>.from(response.data));
         } else {
-          _logger.warning('[API Service] WARN: Problem fetching videos for channel $id. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}');
+          _logger.warning(
+            '[API Service] WARN: Problem fetching videos for channel $id. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
+          );
         }
         processedChannelIds.add(id);
       } on DioException catch (e, s) {
-        _logger.error(
-          '[API Service] Dio ERROR fetching videos for channel $id. Code:${e.response?.statusCode} Message: ${e.message}',
-          e,
-          s,
-        );
+        _logger.error('[API Service] Dio ERROR fetching videos for channel $id. Code:${e.response?.statusCode} Message: ${e.message}', e, s);
       } catch (e, s) {
         _logger.error('[API Service] UNEXPECTED ERROR fetching videos for channel $id', e, s);
       }
@@ -67,14 +67,14 @@ class HolodexApiService implements IApiService {
 
     _logger.debug('[API Service] Fetching videos for mention channel IDs: ${mentionChannelIds.join(', ')}');
     for (final id in mentionChannelIds) {
-       if (processedChannelIds.contains(id)) {
-         _logger.debug('[API Service] Skipping mention ID already processed as main channel: $id');
-         continue;
-       }
-       if (processedMentionIds.contains(id)) {
-         _logger.debug('[API Service] Skipping already processed mention ID: $id');
-         continue;
-       }
+      if (processedChannelIds.contains(id)) {
+        _logger.debug('[API Service] Skipping mention ID already processed as main channel: $id');
+        continue;
+      }
+      if (processedMentionIds.contains(id)) {
+        _logger.debug('[API Service] Skipping already processed mention ID: $id');
+        continue;
+      }
 
       try {
         _logger.debug('[API Service] Requesting videos for mentioned_channel_id: $id');
@@ -95,15 +95,13 @@ class HolodexApiService implements IApiService {
           _logger.debug('[API Service] Success: Received $videosFound videos for mention $id');
           allVideos.addAll(List<Map<String, dynamic>>.from(response.data));
         } else {
-          _logger.warning('[API Service] WARN: Problem fetching mentions for channel $id. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}');
+          _logger.warning(
+            '[API Service] WARN: Problem fetching mentions for channel $id. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
+          );
         }
         processedMentionIds.add(id);
       } on DioException catch (e, s) {
-        _logger.error(
-          '[API Service] Dio ERROR fetching mentions for channel $id. Code:${e.response?.statusCode} Message: ${e.message}',
-          e,
-          s,
-        );
+        _logger.error('[API Service] Dio ERROR fetching mentions for channel $id. Code:${e.response?.statusCode} Message: ${e.message}', e, s);
       } catch (e, s) {
         _logger.error('[API Service] UNEXPECTED ERROR fetching mentions for channel $id', e, s);
       }
@@ -186,21 +184,19 @@ class HolodexApiService implements IApiService {
               _logger.warning('[API Service] WARN: Autocomplete item missing ID or Text: $item');
             }
           } else {
-             _logger.debug('[API Service] Skipping non-channel autocomplete item: $item');
+            _logger.debug('[API Service] Skipping non-channel autocomplete item: $item');
           }
         }
         _logger.info('[API Service] Finished searching channels for "$query". Found ${parsedChannels.length} channels.');
         return parsedChannels;
       } else {
-        _logger.warning('[API Service] WARN: Problem searching autocomplete for "$query". Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}');
+        _logger.warning(
+          '[API Service] WARN: Problem searching autocomplete for "$query". Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
+        );
         return [];
       }
     } on DioException catch (e, s) {
-      _logger.error(
-        '[API Service] Dio ERROR searching autocomplete "$query". Code:${e.response?.statusCode} Message: ${e.message}',
-        e,
-        s,
-      );
+      _logger.error('[API Service] Dio ERROR searching autocomplete "$query". Code:${e.response?.statusCode} Message: ${e.message}', e, s);
       return [];
     } catch (e, s) {
       _logger.error('[API Service] UNEXPECTED ERROR searching autocomplete "$query"', e, s);

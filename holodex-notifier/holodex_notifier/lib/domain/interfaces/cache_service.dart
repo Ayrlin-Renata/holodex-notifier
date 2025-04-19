@@ -29,7 +29,6 @@ abstract class ICacheService {
   Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId);
   Future<List<CachedVideo>> getClipVideosByChannel(String channelId);
 
-  // {{Add these}}
   Future<List<CachedVideo>> getDismissedScheduledVideos();
   Future<void> updateDismissalStatus(String videoId, bool isDismissed);
 }

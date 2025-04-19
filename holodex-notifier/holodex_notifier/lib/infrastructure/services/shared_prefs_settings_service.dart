@@ -284,13 +284,10 @@ class SharedPrefsSettingsService implements ISettingsService {
     await _ensureFreshPrefs();
     final List<String>? typeNames = _prefs.getStringList(_keyScheduledFilterTypes);
     if (typeNames == null) {
-      // Default to both being selected if no preference saved
       return {NotificationEventType.live, NotificationEventType.reminder};
     }
     try {
-      return typeNames
-          .map((name) => NotificationEventType.values.firstWhere((e) => e.name == name))
-          .toSet();
+      return typeNames.map((name) => NotificationEventType.values.firstWhere((e) => e.name == name)).toSet();
     } catch (e) {
       _logger.warning("Error parsing saved scheduled filter types: $typeNames. Returning default.", e);
       return {NotificationEventType.live, NotificationEventType.reminder};
@@ -303,7 +300,6 @@ class SharedPrefsSettingsService implements ISettingsService {
     final typeStrings = prefs.getStringList(_keyScheduledFilterTypes) ?? [];
     return typeStrings.map((str) => NotificationEventType.values.byName(str)).toSet();
   }
-
 
   @override
   Future<void> setScheduledFilterTypes(Set<NotificationEventType> types) async {

@@ -9,7 +9,7 @@ DateTime? _dateTimeFromStringNullable(String? dateString) => dateString == null 
 
 @freezed
 class Channel with _$Channel {
-@JsonSerializable(fieldRename: FieldRename.snake)
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Channel({
     required String id,
     required String name,

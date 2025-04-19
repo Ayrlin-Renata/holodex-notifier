@@ -1,5 +1,5 @@
-remove_dart_comments.ps1
-# PowerShell script to remove Dart comments from .dart files in the lib directory, except for // ignore comments.
+# PowerShell script to remove Dart comments from .dart files in the lib directory, except for // ignore and // TODO: comments.
+# This script now correctly handles string literals, URLs, and keeps ignore and TODO comments.
 
 # Set the root directory of your Flutter project
 $projectRoot = 'f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier'
@@ -19,57 +19,114 @@ foreach ($file in $dartFiles) {
     $fileContent = Get-Content -Path $file.FullName
     $newContent = @()
     $inMultiLineComment = $false
+    $inSingleQuoteString = $false
+    $inDoubleQuoteString = $false
+    $inTripleSingleQuoteString = $false
+    $inTripleDoubleQuoteString = $false
 
     foreach ($line in $fileContent) {
-        $trimmedLine = $line
+        $processedLine = ""
+        $charArray = $line.ToCharArray()
+        $isSpecialComment = $false # Flag for ignore or TODO comments
 
-        if ($inMultiLineComment) {
-            if ($trimmedLine -match '\*/') {
-                $trimmedLine = $trimmedLine -replace '(?s).*?\*/', '' # Remove everything up to and including */
-                $inMultiLineComment = $false
-                if ($trimmedLine) { # Add remaining part of the line after */ processing
-                    if ($trimmedLine -match '//') {
-                        if ($trimmedLine -match '// ignore') {
-                            $newContent += $trimmedLine
-                        }
-                    } else {
-                        $newContent += $trimmedLine
-                    }
+        for ($i = 0; $i -lt $charArray.Length; $i++) {
+            $char = $charArray[$i]
+            $nextChar = if ($i + 1 -lt $charArray.Length) { $charArray[$i + 1] } else { "" }
+            $prevChar = if ($i - 1 -ge 0) { $charArray[$i - 1] } else { "" }
+
+            if ($inMultiLineComment) {
+                if ($char -eq "*" -and $nextChar -eq "/") {
+                    $inMultiLineComment = $false
+                    $i++ # Skip the next character '/'
+                    continue # Skip adding comment chars to output
                 }
+                 continue # Skip adding comment chars to output
             }
-            # If still in multi-line comment, skip the line
-            continue
-        }
-
-        if ($trimmedLine -match '/\*') {
-            if ($trimmedLine -notmatch '\*/') { # Multiline comment starts but doesn't end on this line
-                $beforeComment = $trimmedLine -replace '(?s)/\*.*', '' # Keep content before /*
-                if ($beforeComment -match '//') {
-                    if ($beforeComment -match '// ignore') {
-                        $newContent += $beforeComment
-                    }
-                } else {
-                    $newContent += $beforeComment
+            elseif ($inSingleQuoteString) {
+                $processedLine += $char
+                if ($char -eq "'" -and $prevChar -ne "\") {
+                    $inSingleQuoteString = $false
                 }
+                continue
+            }
+            elseif ($inDoubleQuoteString) {
+                $processedLine += $char
+                if ($char -eq '"' -and $prevChar -ne "\") {
+                    $inDoubleQuoteString = $false
+                }
+                continue
+            }
+            elseif ($inTripleSingleQuoteString) {
+                $processedLine += $char
+                if ($char -eq "'" -and $prevChar -eq "'" -and ($i + 1 -lt $charArray.Length) -and $nextChar -eq "'") {
+                    $inTripleSingleQuoteString = $false
+                    $processedLine += $nextChar # Add the next '
+                    $i++ # Skip the next character '\''
+                    continue
+                }
+                continue
+            }
+            elseif ($inTripleDoubleQuoteString) {
+                 $processedLine += $char
+                if ($char -eq '"' -and $prevChar -eq '"' -and ($i + 1 -lt $charArray.Length) -and $nextChar -eq '"') {
+                    $inTripleDoubleQuoteString = $false
+                    $processedLine += $nextChar # Add the next "
+                    $i++ # Skip the next character '"'
+                    continue
+                }
+                continue
+            }
+            elseif ($char -eq "/" -and $nextChar -eq "/") {
+                # Single-line comment
+                $commentPart = $line.Substring($i+2).TrimStart()
+                if ($commentPart -like "ignore*" -or $commentPart -like "TODO*") { # Check for "ignore", "ignore_for_file" or "TODO"
+                    $processedLine += "//" + $commentPart # Keep the special comment with the line
+                    $isSpecialComment = $true
+                }
+                 break # Stop processing the rest of the line, either way
+            }
+            elseif ($char -eq "/" -and $nextChar -eq "*") {
+                # Multi-line comment start
                 $inMultiLineComment = $true
-            } else { # Multiline comment starts and ends on the same line
-                $trimmedLine = $trimmedLine -replace '(?s)/\*.*?\*/', ''
-                 if ($trimmedLine -match '//') {
-                    if ($trimmedLine -match '// ignore') {
-                        $newContent += $trimmedLine
+                $i++ # Skip the next character '*'
+                continue # Skip adding comment chars to output
+            }
+            elseif ($char -eq "'") {
+                if ($prevChar -ne '\') {
+                    if (($i + 2 -lt $charArray.Length) -and $nextChar -eq "'" -and  $charArray[$i+2] -eq "'") {
+                        $inTripleSingleQuoteString = -not $inTripleSingleQuoteString # Toggle triple single quote string state
+                        $processedLine += "'''"
+                        $i+=2
+                        continue
+                    } else {
+                        $inSingleQuoteString = -not $inSingleQuoteString # Toggle single quote string state
                     }
-                } else {
-                    $newContent += $trimmedLine
                 }
+                 $processedLine += $char
+                 continue
+            }
+            elseif ($char -eq '"') {
+                 if ($prevChar -ne '\') {
+                    if (($i + 2 -lt $charArray.Length) -and $nextChar -eq '"' -and  $charArray[$i+2] -eq '"') {
+                        $inTripleDoubleQuoteString = -not $inTripleDoubleQuoteString # Toggle triple double quote string state
+                        $processedLine += '"""'
+                        $i+=2
+                        continue
+                    } else {
+                        $inDoubleQuoteString = -not $inDoubleQuoteString # Toggle double quote string state
+                    }
+                }
+                $processedLine += $char
+                continue
+            }
+            else {
+                $processedLine += $char
             }
         }
-        elseif ($trimmedLine -match '//') {
-            if ($trimmedLine -match '// ignore') {
-                $newContent += $trimmedLine
-            }
-        }
-        else {
-            $newContent += $trimmedLine
+        if ($isSpecialComment -or $inMultiLineComment) { # Keep full line if it's a special comment or inside multiline comment (for proper closing detection)
+            $newContent += $line
+        } else {
+            $newContent += $processedLine
         }
     }
 

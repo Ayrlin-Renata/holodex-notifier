@@ -13,7 +13,8 @@ class ConnectivityPlusService implements IConnectivityService {
   Future<bool> isConnected() async {
     _logger.debug('[Connectivity Service] Checking current connectivity...');
     final connectivityResult = await _connectivity.checkConnectivity();
-    final bool connected = connectivityResult.contains(ConnectivityResult.mobile) ||
+    final bool connected =
+        connectivityResult.contains(ConnectivityResult.mobile) ||
         connectivityResult.contains(ConnectivityResult.wifi) ||
         connectivityResult.contains(ConnectivityResult.ethernet);
     _logger.info('[Connectivity Service] Current connectivity status: $connected (Result: $connectivityResult)');
@@ -24,9 +25,8 @@ class ConnectivityPlusService implements IConnectivityService {
   Stream<bool> get connectivityStream {
     _logger.debug('[Connectivity Service] Subscribing to connectivity changes...');
     return _connectivity.onConnectivityChanged.map((results) {
-       final bool connected = results.contains(ConnectivityResult.mobile) ||
-           results.contains(ConnectivityResult.wifi) ||
-           results.contains(ConnectivityResult.ethernet);
+      final bool connected =
+          results.contains(ConnectivityResult.mobile) || results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet);
       _logger.info('[Connectivity Service] Connectivity changed. New Status: $connected (Result: $results)');
       return connected;
     }).asBroadcastStream();

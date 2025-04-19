@@ -360,7 +360,7 @@ Future<void> _executePollCycle(ProviderContainer container) async {
   final errorNotifier = container.read(backgroundLastErrorProvider.notifier);
   String currentError = '';
 
-  logger.info("BG Poll Cycle: --- _executePollCycle START ---"); // {{1}} - Log start of poll cycle
+  logger.info("BG Poll Cycle: --- _executePollCycle START ---");
 
   try {
     logger.debug("BG Poll Cycle: Checking connectivity...");
@@ -415,7 +415,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
         try {
           final cachedVideo = await cacheService.getVideo(videoId);
 
-          // Determine thumbnail URL
           String? videoThumbnailUrl;
           if (fetchedVideo.type == 'placeholder' && fetchedVideo.thumbnail != null && fetchedVideo.thumbnail!.isNotEmpty) {
             videoThumbnailUrl = fetchedVideo.thumbnail;
@@ -424,7 +423,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
             videoThumbnailUrl = 'https://i.ytimg.com/vi/${fetchedVideo.id}/mqdefault.jpg';
             logger.trace("[$videoId] Using YouTube thumbnail URL: $videoThumbnailUrl");
           }
-
 
           final baseCompanion = CachedVideosCompanion(
             videoId: Value(videoId),
@@ -524,6 +522,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       logger.error("BG Poll Cycle: Failed to update background error state.", notifierError);
     }
   } finally {
-    logger.info("BG Poll Cycle: --- _executePollCycle END ---"); // {{3}} - Log end of poll cycle
+    logger.info("BG Poll Cycle: --- _executePollCycle END ---");
   }
 }
