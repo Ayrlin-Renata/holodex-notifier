@@ -503,7 +503,6 @@ class LocalNotificationService implements INotificationService {
         notificationDetails,
         payload: payload,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
       );
 
       _logger.info(

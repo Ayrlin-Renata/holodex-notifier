@@ -43,7 +43,7 @@ class RotatingFileWriter {
 
   Future<String> _getLogDirectory() async {
     if (_logDirectoryPath == null) {
-      final directory = await getTemporaryDirectory();
+      final directory = await getApplicationDocumentsDirectory();
       _logDirectoryPath = p.join(directory.path, 'logs');
       await Directory(_logDirectoryPath!).create(recursive: true);
     }
