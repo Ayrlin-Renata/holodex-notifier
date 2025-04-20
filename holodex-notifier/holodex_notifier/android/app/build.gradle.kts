@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.ayrlin.holodex_notifier"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" //change to change ndk version (flutter.ndkVersion)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.ayrlin.holodex_notifier"
-        minSdk = Math.max(flutter.minSdkVersion,26)
+        minSdk = Math.max(flutter.minSdkVersion,27)
         targetSdk = Math.max(flutter.targetSdkVersion,35)
         versionCode = flutter.versionCode
         versionName = flutter.versionName

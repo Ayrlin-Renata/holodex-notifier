@@ -9,6 +9,9 @@ class DriftCacheService implements ICacheService {
   DriftCacheService(this._db, this._logger);
 
   @override
+  Future<int> countScheduledVideos() => _db.countScheduledVideosInternal();
+
+  @override
   Future<CachedVideo?> getVideo(String videoId) => _db.getVideo(videoId);
 
   @override
@@ -81,6 +84,30 @@ class DriftCacheService implements ICacheService {
 
   @override
   Future<List<CachedVideo>> getClipVideosByChannel(String channelId) => _db.getClipVideosByChannelInternal(channelId);
+
+  @override
+  Future<List<String>> getSentMentionTargets(String videoId) async {
+    return _db.getSentMentionTargetsInternal(videoId);
+  }
+
+  @override
+  Future<void> addSentMentionTarget(String videoId, String targetChannelId) async {
+    _logger.debug("[DriftCacheService] Adding sent mention target $targetChannelId for video $videoId");
+    try {
+      await _db.transaction(() async {
+        final currentTargets = await _db.getSentMentionTargetsInternal(videoId);
+        if (!currentTargets.contains(targetChannelId)) {
+          final updatedTargets = [...currentTargets, targetChannelId];
+          await _db.updateSentMentionTargetsInternal(videoId, updatedTargets);
+          _logger.trace("[DriftCacheService] Updated sent mentions for $videoId: $updatedTargets");
+        } else {
+          _logger.trace("[DriftCacheService] Mention target $targetChannelId already marked as sent for $videoId.");
+        }
+      });
+    } catch (e, s) {
+      _logger.error("[DriftCacheService] Failed to add sent mention target for $videoId", e, s);
+    }
+  }
 
   @override
   Future<List<CachedVideo>> getDismissedScheduledVideos() {

@@ -559,6 +559,10 @@ class LocalNotificationService implements INotificationService {
     String timeToEventString = '';
     String timeToNotifString = '';
 
+    final int mentionedChannelNamesLength = instruction.mentionedChannelNames?.length ?? 0;
+    final String mentionedChannels =
+        (mentionedChannelNamesLength > 1 ? instruction.mentionedChannelNames?.join(', ') : instruction.mentionedChannelNames?.first) ?? '';
+
     try {
       timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
       _logger.trace("[Format] Calculated timeToEventString: '$timeToEventString' (from $localEventTime)");
@@ -596,20 +600,20 @@ class LocalNotificationService implements INotificationService {
 
     Map<String, String> replacements = {
       '{channelName}': instruction.channelName,
+      '{mentionedChannels}': mentionedChannels,
       '{mediaTitle}': instruction.videoTitle,
-      '{mediaTime}': mediaTime,
-
-      '{timeToEvent}': timeToEventString,
-      '{timeToNotif}': timeToNotifString,
       '{mediaType}': mediaType,
       '{mediaTypeCaps}': mediaTypeCaps,
-      '{newLine}': '\n',
+      '{mediaTime}': mediaTime,
+      '{timeToEvent}': timeToEventString,
+      '{timeToNotif}': timeToNotifString,
       '{mediaDateYMD}': dateYMD,
       '{mediaDateDMY}': dateDMY,
       '{mediaDateMDY}': dateMDY,
       '{mediaDateMD}': dateMD,
       '{mediaDateDM}': dateDM,
       '{mediaDateAsia}': dateAsia,
+      '{newLine}': '\n',
     };
 
     String title = format.titleTemplate;

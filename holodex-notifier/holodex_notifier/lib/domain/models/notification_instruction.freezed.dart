@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NotificationInstruction {
 
- String get videoId; NotificationEventType get eventType; String get channelId; String get channelName; String get videoTitle; String? get videoType; String? get channelAvatarUrl; DateTime get availableAt; String? get mentionTargetChannelId; String? get mentionTargetChannelName; String? get videoThumbnailUrl; String? get videoSourceLink;
+ String get videoId; NotificationEventType get eventType; String get channelId; String get channelName; String get videoTitle; String? get videoType; String? get channelAvatarUrl; DateTime get availableAt; String? get mentionTargetChannelId; String? get mentionTargetChannelName; List<String>? get mentionedChannelNames;// {{ Add this field }}
+ String? get videoThumbnailUrl; String? get videoSourceLink;
 /// Create a copy of NotificationInstruction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +27,16 @@ $NotificationInstructionCopyWith<NotificationInstruction> get copyWith => _$Noti
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationInstruction&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.channelId, channelId) || other.channelId == channelId)&&(identical(other.channelName, channelName) || other.channelName == channelName)&&(identical(other.videoTitle, videoTitle) || other.videoTitle == videoTitle)&&(identical(other.videoType, videoType) || other.videoType == videoType)&&(identical(other.channelAvatarUrl, channelAvatarUrl) || other.channelAvatarUrl == channelAvatarUrl)&&(identical(other.availableAt, availableAt) || other.availableAt == availableAt)&&(identical(other.mentionTargetChannelId, mentionTargetChannelId) || other.mentionTargetChannelId == mentionTargetChannelId)&&(identical(other.mentionTargetChannelName, mentionTargetChannelName) || other.mentionTargetChannelName == mentionTargetChannelName)&&(identical(other.videoThumbnailUrl, videoThumbnailUrl) || other.videoThumbnailUrl == videoThumbnailUrl)&&(identical(other.videoSourceLink, videoSourceLink) || other.videoSourceLink == videoSourceLink));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationInstruction&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.channelId, channelId) || other.channelId == channelId)&&(identical(other.channelName, channelName) || other.channelName == channelName)&&(identical(other.videoTitle, videoTitle) || other.videoTitle == videoTitle)&&(identical(other.videoType, videoType) || other.videoType == videoType)&&(identical(other.channelAvatarUrl, channelAvatarUrl) || other.channelAvatarUrl == channelAvatarUrl)&&(identical(other.availableAt, availableAt) || other.availableAt == availableAt)&&(identical(other.mentionTargetChannelId, mentionTargetChannelId) || other.mentionTargetChannelId == mentionTargetChannelId)&&(identical(other.mentionTargetChannelName, mentionTargetChannelName) || other.mentionTargetChannelName == mentionTargetChannelName)&&const DeepCollectionEquality().equals(other.mentionedChannelNames, mentionedChannelNames)&&(identical(other.videoThumbnailUrl, videoThumbnailUrl) || other.videoThumbnailUrl == videoThumbnailUrl)&&(identical(other.videoSourceLink, videoSourceLink) || other.videoSourceLink == videoSourceLink));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,videoId,eventType,channelId,channelName,videoTitle,videoType,channelAvatarUrl,availableAt,mentionTargetChannelId,mentionTargetChannelName,videoThumbnailUrl,videoSourceLink);
+int get hashCode => Object.hash(runtimeType,videoId,eventType,channelId,channelName,videoTitle,videoType,channelAvatarUrl,availableAt,mentionTargetChannelId,mentionTargetChannelName,const DeepCollectionEquality().hash(mentionedChannelNames),videoThumbnailUrl,videoSourceLink);
 
 @override
 String toString() {
-  return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName, videoThumbnailUrl: $videoThumbnailUrl, videoSourceLink: $videoSourceLink)';
+  return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName, mentionedChannelNames: $mentionedChannelNames, videoThumbnailUrl: $videoThumbnailUrl, videoSourceLink: $videoSourceLink)';
 }
 
 
@@ -46,7 +47,7 @@ abstract mixin class $NotificationInstructionCopyWith<$Res>  {
   factory $NotificationInstructionCopyWith(NotificationInstruction value, $Res Function(NotificationInstruction) _then) = _$NotificationInstructionCopyWithImpl;
 @useResult
 $Res call({
- String videoId, NotificationEventType eventType, String channelId, String channelName, String videoTitle, String? videoType, String? channelAvatarUrl, DateTime availableAt, String? mentionTargetChannelId, String? mentionTargetChannelName, String? videoThumbnailUrl, String? videoSourceLink
+ String videoId, NotificationEventType eventType, String channelId, String channelName, String videoTitle, String? videoType, String? channelAvatarUrl, DateTime availableAt, String? mentionTargetChannelId, String? mentionTargetChannelName, List<String>? mentionedChannelNames, String? videoThumbnailUrl, String? videoSourceLink
 });
 
 
@@ -63,7 +64,7 @@ class _$NotificationInstructionCopyWithImpl<$Res>
 
 /// Create a copy of NotificationInstruction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? videoId = null,Object? eventType = null,Object? channelId = null,Object? channelName = null,Object? videoTitle = null,Object? videoType = freezed,Object? channelAvatarUrl = freezed,Object? availableAt = null,Object? mentionTargetChannelId = freezed,Object? mentionTargetChannelName = freezed,Object? videoThumbnailUrl = freezed,Object? videoSourceLink = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? videoId = null,Object? eventType = null,Object? channelId = null,Object? channelName = null,Object? videoTitle = null,Object? videoType = freezed,Object? channelAvatarUrl = freezed,Object? availableAt = null,Object? mentionTargetChannelId = freezed,Object? mentionTargetChannelName = freezed,Object? mentionedChannelNames = freezed,Object? videoThumbnailUrl = freezed,Object? videoSourceLink = freezed,}) {
   return _then(_self.copyWith(
 videoId: null == videoId ? _self.videoId : videoId // ignore: cast_nullable_to_non_nullable
 as String,eventType: null == eventType ? _self.eventType : eventType // ignore: cast_nullable_to_non_nullable
@@ -75,7 +76,8 @@ as String?,channelAvatarUrl: freezed == channelAvatarUrl ? _self.channelAvatarUr
 as String?,availableAt: null == availableAt ? _self.availableAt : availableAt // ignore: cast_nullable_to_non_nullable
 as DateTime,mentionTargetChannelId: freezed == mentionTargetChannelId ? _self.mentionTargetChannelId : mentionTargetChannelId // ignore: cast_nullable_to_non_nullable
 as String?,mentionTargetChannelName: freezed == mentionTargetChannelName ? _self.mentionTargetChannelName : mentionTargetChannelName // ignore: cast_nullable_to_non_nullable
-as String?,videoThumbnailUrl: freezed == videoThumbnailUrl ? _self.videoThumbnailUrl : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
+as String?,mentionedChannelNames: freezed == mentionedChannelNames ? _self.mentionedChannelNames : mentionedChannelNames // ignore: cast_nullable_to_non_nullable
+as List<String>?,videoThumbnailUrl: freezed == videoThumbnailUrl ? _self.videoThumbnailUrl : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
 as String?,videoSourceLink: freezed == videoSourceLink ? _self.videoSourceLink : videoSourceLink // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -88,7 +90,7 @@ as String?,
 
 
 class _NotificationInstruction implements NotificationInstruction {
-  const _NotificationInstruction({required this.videoId, required this.eventType, required this.channelId, required this.channelName, required this.videoTitle, this.videoType, this.channelAvatarUrl, required this.availableAt, this.mentionTargetChannelId, this.mentionTargetChannelName, this.videoThumbnailUrl, this.videoSourceLink});
+  const _NotificationInstruction({required this.videoId, required this.eventType, required this.channelId, required this.channelName, required this.videoTitle, this.videoType, this.channelAvatarUrl, required this.availableAt, this.mentionTargetChannelId, this.mentionTargetChannelName, final  List<String>? mentionedChannelNames, this.videoThumbnailUrl, this.videoSourceLink}): _mentionedChannelNames = mentionedChannelNames;
   
 
 @override final  String videoId;
@@ -101,6 +103,16 @@ class _NotificationInstruction implements NotificationInstruction {
 @override final  DateTime availableAt;
 @override final  String? mentionTargetChannelId;
 @override final  String? mentionTargetChannelName;
+ final  List<String>? _mentionedChannelNames;
+@override List<String>? get mentionedChannelNames {
+  final value = _mentionedChannelNames;
+  if (value == null) return null;
+  if (_mentionedChannelNames is EqualUnmodifiableListView) return _mentionedChannelNames;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
+// {{ Add this field }}
 @override final  String? videoThumbnailUrl;
 @override final  String? videoSourceLink;
 
@@ -114,16 +126,16 @@ _$NotificationInstructionCopyWith<_NotificationInstruction> get copyWith => __$N
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _NotificationInstruction&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.channelId, channelId) || other.channelId == channelId)&&(identical(other.channelName, channelName) || other.channelName == channelName)&&(identical(other.videoTitle, videoTitle) || other.videoTitle == videoTitle)&&(identical(other.videoType, videoType) || other.videoType == videoType)&&(identical(other.channelAvatarUrl, channelAvatarUrl) || other.channelAvatarUrl == channelAvatarUrl)&&(identical(other.availableAt, availableAt) || other.availableAt == availableAt)&&(identical(other.mentionTargetChannelId, mentionTargetChannelId) || other.mentionTargetChannelId == mentionTargetChannelId)&&(identical(other.mentionTargetChannelName, mentionTargetChannelName) || other.mentionTargetChannelName == mentionTargetChannelName)&&(identical(other.videoThumbnailUrl, videoThumbnailUrl) || other.videoThumbnailUrl == videoThumbnailUrl)&&(identical(other.videoSourceLink, videoSourceLink) || other.videoSourceLink == videoSourceLink));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _NotificationInstruction&&(identical(other.videoId, videoId) || other.videoId == videoId)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.channelId, channelId) || other.channelId == channelId)&&(identical(other.channelName, channelName) || other.channelName == channelName)&&(identical(other.videoTitle, videoTitle) || other.videoTitle == videoTitle)&&(identical(other.videoType, videoType) || other.videoType == videoType)&&(identical(other.channelAvatarUrl, channelAvatarUrl) || other.channelAvatarUrl == channelAvatarUrl)&&(identical(other.availableAt, availableAt) || other.availableAt == availableAt)&&(identical(other.mentionTargetChannelId, mentionTargetChannelId) || other.mentionTargetChannelId == mentionTargetChannelId)&&(identical(other.mentionTargetChannelName, mentionTargetChannelName) || other.mentionTargetChannelName == mentionTargetChannelName)&&const DeepCollectionEquality().equals(other._mentionedChannelNames, _mentionedChannelNames)&&(identical(other.videoThumbnailUrl, videoThumbnailUrl) || other.videoThumbnailUrl == videoThumbnailUrl)&&(identical(other.videoSourceLink, videoSourceLink) || other.videoSourceLink == videoSourceLink));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,videoId,eventType,channelId,channelName,videoTitle,videoType,channelAvatarUrl,availableAt,mentionTargetChannelId,mentionTargetChannelName,videoThumbnailUrl,videoSourceLink);
+int get hashCode => Object.hash(runtimeType,videoId,eventType,channelId,channelName,videoTitle,videoType,channelAvatarUrl,availableAt,mentionTargetChannelId,mentionTargetChannelName,const DeepCollectionEquality().hash(_mentionedChannelNames),videoThumbnailUrl,videoSourceLink);
 
 @override
 String toString() {
-  return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName, videoThumbnailUrl: $videoThumbnailUrl, videoSourceLink: $videoSourceLink)';
+  return 'NotificationInstruction(videoId: $videoId, eventType: $eventType, channelId: $channelId, channelName: $channelName, videoTitle: $videoTitle, videoType: $videoType, channelAvatarUrl: $channelAvatarUrl, availableAt: $availableAt, mentionTargetChannelId: $mentionTargetChannelId, mentionTargetChannelName: $mentionTargetChannelName, mentionedChannelNames: $mentionedChannelNames, videoThumbnailUrl: $videoThumbnailUrl, videoSourceLink: $videoSourceLink)';
 }
 
 
@@ -134,7 +146,7 @@ abstract mixin class _$NotificationInstructionCopyWith<$Res> implements $Notific
   factory _$NotificationInstructionCopyWith(_NotificationInstruction value, $Res Function(_NotificationInstruction) _then) = __$NotificationInstructionCopyWithImpl;
 @override @useResult
 $Res call({
- String videoId, NotificationEventType eventType, String channelId, String channelName, String videoTitle, String? videoType, String? channelAvatarUrl, DateTime availableAt, String? mentionTargetChannelId, String? mentionTargetChannelName, String? videoThumbnailUrl, String? videoSourceLink
+ String videoId, NotificationEventType eventType, String channelId, String channelName, String videoTitle, String? videoType, String? channelAvatarUrl, DateTime availableAt, String? mentionTargetChannelId, String? mentionTargetChannelName, List<String>? mentionedChannelNames, String? videoThumbnailUrl, String? videoSourceLink
 });
 
 
@@ -151,7 +163,7 @@ class __$NotificationInstructionCopyWithImpl<$Res>
 
 /// Create a copy of NotificationInstruction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? videoId = null,Object? eventType = null,Object? channelId = null,Object? channelName = null,Object? videoTitle = null,Object? videoType = freezed,Object? channelAvatarUrl = freezed,Object? availableAt = null,Object? mentionTargetChannelId = freezed,Object? mentionTargetChannelName = freezed,Object? videoThumbnailUrl = freezed,Object? videoSourceLink = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? videoId = null,Object? eventType = null,Object? channelId = null,Object? channelName = null,Object? videoTitle = null,Object? videoType = freezed,Object? channelAvatarUrl = freezed,Object? availableAt = null,Object? mentionTargetChannelId = freezed,Object? mentionTargetChannelName = freezed,Object? mentionedChannelNames = freezed,Object? videoThumbnailUrl = freezed,Object? videoSourceLink = freezed,}) {
   return _then(_NotificationInstruction(
 videoId: null == videoId ? _self.videoId : videoId // ignore: cast_nullable_to_non_nullable
 as String,eventType: null == eventType ? _self.eventType : eventType // ignore: cast_nullable_to_non_nullable
@@ -163,7 +175,8 @@ as String?,channelAvatarUrl: freezed == channelAvatarUrl ? _self.channelAvatarUr
 as String?,availableAt: null == availableAt ? _self.availableAt : availableAt // ignore: cast_nullable_to_non_nullable
 as DateTime,mentionTargetChannelId: freezed == mentionTargetChannelId ? _self.mentionTargetChannelId : mentionTargetChannelId // ignore: cast_nullable_to_non_nullable
 as String?,mentionTargetChannelName: freezed == mentionTargetChannelName ? _self.mentionTargetChannelName : mentionTargetChannelName // ignore: cast_nullable_to_non_nullable
-as String?,videoThumbnailUrl: freezed == videoThumbnailUrl ? _self.videoThumbnailUrl : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
+as String?,mentionedChannelNames: freezed == mentionedChannelNames ? _self._mentionedChannelNames : mentionedChannelNames // ignore: cast_nullable_to_non_nullable
+as List<String>?,videoThumbnailUrl: freezed == videoThumbnailUrl ? _self.videoThumbnailUrl : videoThumbnailUrl // ignore: cast_nullable_to_non_nullable
 as String?,videoSourceLink: freezed == videoSourceLink ? _self.videoSourceLink : videoSourceLink // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 
 class ScheduledNotificationItem {
   final CachedVideo videoData;
@@ -54,7 +56,18 @@ class ScheduledNotificationsNotifier extends StateNotifier<AsyncValue<List<Cache
     }
 
     try {
+      final count = await _cacheService.countScheduledVideos();
       final data = await _cacheService.getScheduledVideos();
+      _logger.info(
+        "[ScheduledNotificationsNotifier] Raw videos fetched from DB: ${data.length} out of $count counted and confirmed items in the database.",
+      );
+      if (data.isNotEmpty) {
+        for (final video in data) {
+          _logger.debug(
+            "[ScheduledNotificationsNotifier] Fetched video: ${video.videoId}, title: ${video.videoTitle}, scheduledLiveNotificationId: ${video.scheduledLiveNotificationId}, scheduledReminderNotificationId: ${video.scheduledReminderNotificationId}",
+          );
+        }
+      }
       if (mounted) {
         state = AsyncValue.data(data);
         _logger.info("[ScheduledNotificationsNotifier] Fetch successful, found ${data.length} items.");
@@ -109,205 +122,59 @@ final notificationFormatConfigProvider = FutureProvider.autoDispose<Notification
   return await settingsService.getNotificationFormatConfig();
 }, name: 'notificationFormatConfigProvider');
 
-final dismissedNotificationsProvider = StateNotifierProvider.autoDispose<DismissedNotificationsNotifier, AsyncValue<List<ScheduledNotificationItem>>>(
-  (ref) {
-    final logger = ref.watch(loggingServiceProvider);
-    final cacheService = ref.watch(cacheServiceProvider);
-    final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
-
-    return DismissedNotificationsNotifier(logger, cacheService, formatConfigAsyncValue);
-  },
-  name: 'dismissedNotificationsProvider',
-);
-
-class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<ScheduledNotificationItem>>> {
-  final ILoggingService _logger;
-  final ICacheService _cacheService;
-  NotificationFormatConfig? _formatConfig;
-
-  DismissedNotificationsNotifier(this._logger, this._cacheService, AsyncValue<NotificationFormatConfig> formatConfigAsyncValue)
-    : super(const AsyncValue.loading()) {
-    formatConfigAsyncValue.when(
-      data: (formatConfig) {
-        _formatConfig = formatConfig;
-        _loadDismissedItems();
-      },
-      loading: () {
-        state = const AsyncValue.loading();
-      },
-      error: (error, stackTrace) {
-        state = AsyncValue.error(error, stackTrace);
-        _logger.error("[DismissedNotifier] Error fetching notification format config during init.", error, stackTrace);
-      },
-    );
-  }
-
-  Future<void> _loadDismissedItems() async {
-    _logger.info("[DismissedNotifier] Loading dismissed items from CacheService...");
-    if (!mounted) return;
-
-    try {
-      final dismissedVideos = await _cacheService.getDismissedScheduledVideos();
-
-      if (_formatConfig == null) {
-        _logger.error("[DismissedNotifier:_loadDismissedItems] Cannot format items, formatConfig is unexpectedly null during item load.");
-        if (mounted) {
-          state = const AsyncValue.data([]);
-        }
-        return;
-      }
-
-      final formattedItems = _formatItems(dismissedVideos, _formatConfig, _logger);
-      if (mounted) {
-        state = AsyncValue.data(formattedItems);
-        _logger.info("[DismissedNotifier] Loaded ${formattedItems.length} dismissed items.");
-      }
-    } catch (e, s) {
-      _logger.error("[DismissedNotifier] Error loading dismissed items.", e, s);
-      if (mounted) {
-        state = AsyncValue.error(e, s);
-      }
-    }
-  }
-
-  List<ScheduledNotificationItem> _formatItems(List<CachedVideo> videos, NotificationFormatConfig? config, ILoggingService logger) {
-    if (config == null) {
-      logger.error("[DismissedNotifier:_formatItems] Cannot format items, formatConfig is null.");
-      return [];
-    }
-    final List<ScheduledNotificationItem> items = [];
-
-    for (final video in videos) {
-      DateTime? scheduledTime;
-      NotificationEventType? type;
-
-      if (video.scheduledReminderNotificationId != null && video.scheduledReminderTime != null) {
-        type = NotificationEventType.reminder;
-        scheduledTime = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!);
-      } else if (video.scheduledLiveNotificationId != null && video.startScheduled != null) {
-        type = NotificationEventType.live;
-        try {
-          scheduledTime = DateTime.parse(video.startScheduled!);
-        } catch (_) {
-          logger.warning("[DismissedNotifier:_formatItems] Failed to parse startScheduled for dismissed video ${video.videoId}");
-        }
-      }
-
-      if (type != null && scheduledTime != null) {
-        try {
-          final formatted = formatItem(video, type, scheduledTime, config);
-          items.add(
-            ScheduledNotificationItem(
-              videoData: video,
-              type: type,
-              scheduledTime: scheduledTime,
-              formattedTitle: formatted.title,
-              formattedBody: formatted.body,
-            ),
-          );
-        } catch (e, s) {
-          logger.error("[DismissedNotifier:_formatItems] Error formatting dismissed item ${video.videoId}", e, s);
-        }
-      } else {
-        logger.warning("[DismissedNotifier:_formatItems] Could not determine type/time for dismissed video ${video.videoId}");
-      }
-    }
-
-    return items;
-  }
-
-  Future<void> refresh() async {
-    await _loadDismissedItems();
-  }
-}
-
 ({String title, String body}) formatItem(
   CachedVideo video,
   NotificationEventType type,
   DateTime notificationScheduledTime,
   NotificationFormatConfig config,
+  ILoggingService logger,
+  List<ChannelSubscriptionSetting> channelSettingsList,
 ) {
-  final logger = ProviderContainer().read(loggingServiceProvider);
-
-  final format = config.formats[type];
-  if (format == null) {
-    logger.warning("No format found for event type $type in UI provider");
-    return (title: video.channelName, body: video.videoTitle);
-  }
-
-  final DateTime now = DateTime.now();
-  final DateTime? eventActualStartTime = DateTime.tryParse(video.startScheduled ?? video.availableAt);
-  final DateTime localNotificationScheduledTime = notificationScheduledTime.toLocal();
-  final DateTime? localEventActualStartTime = eventActualStartTime?.toLocal();
-
-  String timeToNotifString = '';
-  String timeToEventString = '';
-
-  try {
-    timeToNotifString = timeago.format(localNotificationScheduledTime, locale: 'en_short', allowFromNow: true);
-  } catch (e) {
-    logger.error("Error formatting timeToNotifString in UI provider for $localNotificationScheduledTime", e);
-    timeToNotifString = (localNotificationScheduledTime.isBefore(now)) ? "now" : "soon";
-  }
-
-  if (localEventActualStartTime != null) {
-    try {
-      timeToEventString = timeago.format(localEventActualStartTime, locale: 'en_short', allowFromNow: true);
-    } catch (e) {
-      logger.error("Error formatting timeToEventString in UI provider for $localEventActualStartTime", e);
-      timeToEventString = (localEventActualStartTime.isBefore(now)) ? "started" : "soon";
+  String mentionedChannels = "";
+  if (video.mentionedChannelIds.isNotEmpty) {
+    final mentionedChannelNames =
+        channelSettingsList.where((channel) => video.mentionedChannelIds.contains(channel.channelId)).map((channel) => channel.name).toList();
+    if (mentionedChannelNames.isNotEmpty) {
+      mentionedChannels = mentionedChannelNames.join(', ');
+    } else {
+      mentionedChannels = video.mentionedChannelIds.join(', ');
+      logger.trace("[formatItem] Could not find names for mentioned IDs ${video.mentionedChannelIds}, using IDs instead.");
     }
-  } else {
-    logger.warning("[${video.videoId}] Missing eventActualStartTime for calculating timeToEventString in UI provider.");
-    timeToEventString = "N/A";
   }
-
-  String videoType = video.videoType ?? 'Media';
-  if (videoType.isEmpty || videoType == 'placeholder') {
-    videoType = 'Media';
-  }
-  String mediaTypeCaps = videoType.toUpperCase();
-
-  final DateTime timeForFormatting = localEventActualStartTime ?? localNotificationScheduledTime;
-
-  String mediaTime = DateFormat.jm().format(timeForFormatting);
-  String dateYMD = DateFormat('yyyy-MM-dd').format(timeForFormatting);
-  String dateDMY = DateFormat('dd-MM-yyyy').format(timeForFormatting);
-  String dateMDY = DateFormat('MM-dd-yyyy').format(timeForFormatting);
-  String dateMD = DateFormat('MM-dd').format(timeForFormatting);
-  String dateDM = DateFormat('dd-MM').format(timeForFormatting);
-  String dateAsia =
-      '${DateFormat('yyyy').format(timeForFormatting)}年${DateFormat('MM').format(timeForFormatting)}月${DateFormat('dd').format(timeForFormatting)}日';
 
   final replacements = {
     '{channelName}': video.channelName,
+    '{mentionedChannels}': mentionedChannels,
     '{mediaTitle}': video.videoTitle,
-    '{mediaTime}': mediaTime,
-    '{timeToEvent}': timeToEventString,
-    '{timeToNotif}': timeToNotifString,
-    '{mediaType}': videoType,
-    '{mediaTypeCaps}': mediaTypeCaps,
+    '{mediaType}': video.videoType ?? 'Media',
+    '{mediaTypeCaps}': (video.videoType ?? 'Media').toUpperCase(),
+    '{mediaTime}': DateFormat.jm().format(notificationScheduledTime),
+    '{timeToEvent}': timeago.format(notificationScheduledTime, locale: 'en_short', allowFromNow: true),
+    '{timeToNotif}': timeago.format(notificationScheduledTime, locale: 'en_short', allowFromNow: true),
+    '{mediaDateYMD}': DateFormat('yyyy-MM-dd').format(notificationScheduledTime),
+    '{mediaDateDMY}': DateFormat('dd-MM-yyyy').format(notificationScheduledTime),
+    '{mediaDateMDY}': DateFormat('MM-dd-yyyy').format(notificationScheduledTime),
+    '{mediaDateMD}': DateFormat('MM-dd').format(notificationScheduledTime),
+    '{mediaDateDM}': DateFormat('dd-MM').format(notificationScheduledTime),
+    '{mediaDateAsia}':
+        '${DateFormat('yyyy').format(notificationScheduledTime)}年${DateFormat('MM').format(notificationScheduledTime)}月${DateFormat('dd').format(notificationScheduledTime)}日',
     '{newLine}': '\n',
-    '{mediaDateYMD}': dateYMD,
-    '{mediaDateDMY}': dateDMY,
-    '{mediaDateMDY}': dateMDY,
-    '{mediaDateMD}': dateMD,
-    '{mediaDateDM}': dateDM,
-    '{mediaDateAsia}': dateAsia,
   };
 
-  String title = format.titleTemplate;
-  String body = format.bodyTemplate;
+  String title = config.formats[type]?.titleTemplate ?? '';
+  String body = config.formats[type]?.bodyTemplate ?? '';
   replacements.forEach((key, value) {
     title = title.replaceAll(key, value);
     body = body.replaceAll(key, value);
   });
+
   return (title: title, body: body);
 }
 
 final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<List<ScheduledNotificationItem>>>((ref) {
   final baseAsyncValue = ref.watch(scheduledNotificationsProvider);
   final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
+  final channelSettingsList = ref.watch(channelListProvider);
   final allowedTypes = ref.watch(scheduledFilterTypeProvider);
   final selectedChannelId = ref.watch(scheduledFilterChannelProvider);
   final logger = ref.watch(loggingServiceProvider);
@@ -339,7 +206,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       try {
         final reminderTime = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!);
         if (reminderTime.isAfter(now)) {
-          final formatted = formatItem(video, NotificationEventType.reminder, reminderTime, formatConfig);
+          final formatted = formatItem(video, NotificationEventType.reminder, reminderTime, formatConfig, logger, channelSettingsList);
           expandedItems.add(
             ScheduledNotificationItem(
               videoData: video,
@@ -359,7 +226,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       try {
         final liveTime = DateTime.tryParse(video.startScheduled!);
         if (liveTime != null && liveTime.isAfter(now)) {
-          final formatted = formatItem(video, NotificationEventType.live, liveTime, formatConfig);
+          final formatted = formatItem(video, NotificationEventType.live, liveTime, formatConfig, logger, channelSettingsList);
           expandedItems.add(
             ScheduledNotificationItem(
               videoData: video,
@@ -391,6 +258,145 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
 
   return AsyncData(filteredItems);
 }, name: 'filteredScheduledNotificationsProvider');
+
+final dismissedNotificationsProvider = StateNotifierProvider.autoDispose<DismissedNotificationsNotifier, AsyncValue<List<ScheduledNotificationItem>>>(
+  (ref) {
+    final logger = ref.watch(loggingServiceProvider);
+    final cacheService = ref.watch(cacheServiceProvider);
+    final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
+
+    final channelSettingsAsyncValue = ref.watch(channelListProvider.select((value) => AsyncValue.data(value)));
+
+    final notifier = DismissedNotificationsNotifier(logger, cacheService, formatConfigAsyncValue, channelSettingsAsyncValue);
+    return notifier;
+  },
+  name: 'dismissedNotificationsProvider',
+);
+
+class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<ScheduledNotificationItem>>> {
+  final ILoggingService _logger;
+  final ICacheService _cacheService;
+  NotificationFormatConfig? _formatConfig;
+
+  List<ChannelSubscriptionSetting>? _channelSettingsList;
+
+  DismissedNotificationsNotifier(
+    this._logger,
+    this._cacheService,
+    AsyncValue<NotificationFormatConfig> formatConfigAsyncValue,
+    AsyncValue<List<ChannelSubscriptionSetting>> channelSettingsAsyncValue,
+  ) : super(const AsyncValue.loading()) {
+    formatConfigAsyncValue
+        .combineLatest(channelSettingsAsyncValue, (config, settings) {
+          _formatConfig = config;
+          _channelSettingsList = settings;
+          _loadDismissedItems();
+        })
+        .whenData((_) {});
+
+    if (formatConfigAsyncValue.isLoading || channelSettingsAsyncValue.isLoading) {
+      state = const AsyncValue.loading();
+    } else if (formatConfigAsyncValue.hasError) {
+      state = AsyncValue.error(formatConfigAsyncValue.error!, formatConfigAsyncValue.stackTrace!);
+    } else if (channelSettingsAsyncValue.hasError) {
+      state = AsyncValue.error(channelSettingsAsyncValue.error!, channelSettingsAsyncValue.stackTrace!);
+    }
+  }
+
+  Future<void> _loadDismissedItems() async {
+    _logger.info("[DismissedNotifier] Loading dismissed items from CacheService...");
+    if (!mounted) return;
+
+    if (_formatConfig == null || _channelSettingsList == null) {
+      _logger.error("[DismissedNotifier:_loadDismissedItems] Cannot load items, formatConfig or channelSettingsList is unexpectedly null.");
+
+      if (mounted) {
+        if (state is! AsyncError) {
+          state = const AsyncValue.data([]);
+        }
+      }
+      return;
+    }
+
+    try {
+      final dismissedVideos = await _cacheService.getDismissedScheduledVideos();
+
+      final formattedItems = _formatItems(dismissedVideos, _formatConfig!, _logger, _channelSettingsList!);
+      if (mounted) {
+        state = AsyncValue.data(formattedItems);
+        _logger.info("[DismissedNotifier] Loaded ${formattedItems.length} dismissed items.");
+      }
+    } catch (e, s) {
+      _logger.error("[DismissedNotifier] Error loading dismissed items.", e, s);
+      if (mounted) {
+        state = AsyncValue.error(e, s);
+      }
+    }
+  }
+
+  List<ScheduledNotificationItem> _formatItems(
+    List<CachedVideo> videos,
+    NotificationFormatConfig config,
+    ILoggingService logger,
+    List<ChannelSubscriptionSetting> channelSettingsList,
+  ) {
+    final List<ScheduledNotificationItem> items = [];
+
+    for (final video in videos) {
+      DateTime? scheduledTime;
+      NotificationEventType? type;
+
+      if (video.scheduledReminderNotificationId != null && video.scheduledReminderTime != null) {
+        type = NotificationEventType.reminder;
+        scheduledTime = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!);
+      } else if (video.scheduledLiveNotificationId != null && video.startScheduled != null) {
+        type = NotificationEventType.live;
+        try {
+          scheduledTime = DateTime.parse(video.startScheduled!);
+        } catch (_) {
+          logger.warning("[DismissedNotifier:_formatItems] Failed to parse startScheduled for dismissed video ${video.videoId}");
+        }
+      }
+
+      if (type != null && scheduledTime != null) {
+        try {
+          final formatted = formatItem(video, type, scheduledTime, config, logger, channelSettingsList);
+          items.add(
+            ScheduledNotificationItem(
+              videoData: video,
+              type: type,
+              scheduledTime: scheduledTime,
+              formattedTitle: formatted.title,
+              formattedBody: formatted.body,
+            ),
+          );
+        } catch (e, s) {
+          logger.error("[DismissedNotifier:_formatItems] Error formatting dismissed item ${video.videoId}", e, s);
+        }
+      } else {
+        logger.warning("[DismissedNotifier:_formatItems] Could not determine type/time for dismissed video ${video.videoId}");
+      }
+    }
+    return items;
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    if (_formatConfig == null || _channelSettingsList == null) {
+      _logger.warning(
+        "[DismissedNotifier] Cannot refresh, dependencies (_formatConfig or _channelSettingsList) are null. Attempting to reload dependencies indirectly.",
+      );
+
+      await Future.delayed(Duration.zero);
+      if (_formatConfig == null || _channelSettingsList == null) {
+        _logger.error("[DismissedNotifier] Refresh abandoned, dependencies still null after delay.");
+        if (mounted) state = const AsyncData([]);
+        return;
+      }
+    }
+    await _loadDismissedItems();
+  }
+}
 
 extension AsyncValueCombineLatest<T1, T2> on AsyncValue<T1> {
   AsyncValue<R> combineLatest<R>(AsyncValue<T2> other, R Function(T1, T2) combiner) {

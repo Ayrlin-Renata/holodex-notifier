@@ -11,128 +11,91 @@ class HolodexApiService implements IApiService {
   HolodexApiService(this._dio, this._logger);
 
   @override
-  Future<List<VideoFull>> fetchVideos({
-    required Set<String> channelIds,
-    required Set<String> mentionChannelIds,
-    required DateTime from,
-    int limit = 50,
-  }) async {
+  Future<List<VideoFull>> fetchLiveVideos({required Set<String> channelIds}) async {
+    if (channelIds.isEmpty) {
+      _logger.info('[API Service - Live] Channel ID set is empty. Skipping /users/live fetch.');
+      return [];
+    }
+    _logger.info('[API Service - Live] Fetching live/upcoming videos for ${channelIds.length} channels...');
+    final String channelsParam = channelIds.join(',');
+
+    try {
+      _logger.debug('[API Service - Live] Requesting /users/live with channels: $channelsParam');
+      final response = await _dio.get('/users/live', queryParameters: {'channels': channelsParam});
+
+      if (response.statusCode == 200 && response.data is List) {
+        final videosData = List<Map<String, dynamic>>.from(response.data);
+        final parsedVideos = _parseVideoList(videosData, '/users/live');
+        _logger.info('[API Service - Live] Success: Received and parsed ${parsedVideos.length} videos.');
+        return parsedVideos;
+      } else {
+        _logger.warning(
+          '[API Service - Live] WARN: Problem fetching live videos. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
+        );
+        return [];
+      }
+    } on DioException catch (e, s) {
+      _logger.error('[API Service - Live] Dio ERROR fetching live videos. Code:${e.response?.statusCode} Message: ${e.message}', e, s);
+      return [];
+    } catch (e, s) {
+      _logger.error('[API Service - Live] UNEXPECTED ERROR fetching live videos', e, s);
+      return [];
+    }
+  }
+
+  @override
+  Future<List<VideoFull>> fetchCollabVideos({required String channelId, required bool includeClips, required DateTime from}) async {
     _logger.info(
-      '[API Service] Fetching videos for channels: ${channelIds.length}, mentions: ${mentionChannelIds.length} since ${from.toIso8601String()}',
+      '[API Service - Collabs] Fetching collab videos for channel: $channelId (includeClips: $includeClips, from: ${from.toIso8601String()})...',
     );
 
-    final List<Map<String, dynamic>> allVideos = [];
-    final Set<String> processedChannelIds = {};
-    final Set<String> processedMentionIds = {};
+    final List<String> includeParts = ['live_info'];
+    if (includeClips) {
+      includeParts.add('clips');
+    }
+    final String includeParam = includeParts.join(',');
+    _logger.trace('[API Service - Collabs] Using include parameter: "$includeParam"');
 
-    final fromIso = from.toIso8601String();
-    const includeParams = 'live_info,mentions';
+    try {
+      _logger.debug('[API Service - Collabs] Requesting /channels/$channelId/collabs');
+      final response = await _dio.get(
+        '/channels/$channelId/collabs',
+        queryParameters: {'lang': 'en', 'type': 'stream,placeholder', 'include': includeParam, 'from': from.toIso8601String()},
+      );
 
-    _logger.debug('[API Service] Fetching videos for main channel IDs: ${channelIds.join(', ')}');
-    for (final id in channelIds) {
-      if (processedChannelIds.contains(id)) {
-        _logger.debug('[API Service] Skipping already processed channel ID: $id');
-        continue;
-      }
-      try {
-        _logger.debug('[API Service] Requesting videos for channel_id: $id');
-        final response = await _dio.get(
-          '/videos',
-          queryParameters: {
-            'channel_id': id,
-            'include': includeParams,
-            'from': fromIso,
-            'limit': limit,
-            'type': 'stream,clip,placeholder',
-            'status': 'new,upcoming,live,past,missing',
-          },
+      if (response.statusCode == 200 && response.data is List) {
+        final videosData = List<Map<String, dynamic>>.from(response.data);
+        final parsedVideos = _parseVideoList(videosData, '/channels/$channelId/collabs');
+        _logger.info('[API Service - Collabs] Success: Received and parsed ${parsedVideos.length} videos for channel $channelId.');
+        return parsedVideos;
+      } else {
+        _logger.warning(
+          '[API Service - Collabs] WARN: Problem fetching collab videos for $channelId. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
         );
-
-        if (response.statusCode == 200 && response.data is List) {
-          final videosFound = (response.data as List).length;
-          _logger.debug('[API Service] Success: Received $videosFound videos for channel $id');
-          allVideos.addAll(List<Map<String, dynamic>>.from(response.data));
-        } else {
-          _logger.warning(
-            '[API Service] WARN: Problem fetching videos for channel $id. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
-          );
-        }
-        processedChannelIds.add(id);
-      } on DioException catch (e, s) {
-        _logger.error('[API Service] Dio ERROR fetching videos for channel $id. Code:${e.response?.statusCode} Message: ${e.message}', e, s);
-      } catch (e, s) {
-        _logger.error('[API Service] UNEXPECTED ERROR fetching videos for channel $id', e, s);
+        return [];
       }
+    } on DioException catch (e, s) {
+      _logger.error(
+        '[API Service - Collabs] Dio ERROR fetching collab videos for $channelId. Code:${e.response?.statusCode} Message: ${e.message}',
+        e,
+        s,
+      );
+      return [];
+    } catch (e, s) {
+      _logger.error('[API Service - Collabs] UNEXPECTED ERROR fetching collab videos for $channelId', e, s);
+      return [];
     }
+  }
 
-    _logger.debug('[API Service] Fetching videos for mention channel IDs: ${mentionChannelIds.join(', ')}');
-    for (final id in mentionChannelIds) {
-      if (processedChannelIds.contains(id)) {
-        _logger.debug('[API Service] Skipping mention ID already processed as main channel: $id');
-        continue;
-      }
-      if (processedMentionIds.contains(id)) {
-        _logger.debug('[API Service] Skipping already processed mention ID: $id');
-        continue;
-      }
-
+  List<VideoFull> _parseVideoList(List<Map<String, dynamic>> videosData, String endpointName) {
+    final List<VideoFull> parsedVideos = [];
+    for (final jsonData in videosData) {
       try {
-        _logger.debug('[API Service] Requesting videos for mentioned_channel_id: $id');
-        final response = await _dio.get(
-          '/videos',
-          queryParameters: {
-            'mentioned_channel_id': id,
-            'include': includeParams,
-            'from': fromIso,
-            'limit': limit,
-            'type': 'stream,clip,placeholder',
-            'status': 'new,upcoming,live,past,missing',
-          },
-        );
-
-        if (response.statusCode == 200 && response.data is List) {
-          final videosFound = (response.data as List).length;
-          _logger.debug('[API Service] Success: Received $videosFound videos for mention $id');
-          allVideos.addAll(List<Map<String, dynamic>>.from(response.data));
-        } else {
-          _logger.warning(
-            '[API Service] WARN: Problem fetching mentions for channel $id. Status: ${response.statusCode}, Data Type: ${response.data?.runtimeType}',
-          );
-        }
-        processedMentionIds.add(id);
-      } on DioException catch (e, s) {
-        _logger.error('[API Service] Dio ERROR fetching mentions for channel $id. Code:${e.response?.statusCode} Message: ${e.message}', e, s);
+        parsedVideos.add(VideoFull.fromJson(jsonData));
       } catch (e, s) {
-        _logger.error('[API Service] UNEXPECTED ERROR fetching mentions for channel $id', e, s);
+        _logger.error('[API Service - Parse] Failed to parse VideoFull from $endpointName: $e\nData: $jsonData', e, s);
       }
     }
-
-    final Set<String?> seenVideoIds = {};
-    final List<Map<String, dynamic>> distinctVideos = [];
-
-    for (final video in allVideos) {
-      final videoId = video['id'] as String?;
-      if (seenVideoIds.add(videoId)) {
-        distinctVideos.add(video);
-      }
-    }
-
-    _logger.debug('[API Service] Fetched ${allVideos.length} videos raw, ${distinctVideos.length} distinct videos.');
-
-    final List<VideoFull> parsedVideos =
-        distinctVideos
-            .map((jsonData) {
-              try {
-                return VideoFull.fromJson(jsonData);
-              } catch (e, s) {
-                _logger.error('[API Service] Failed to parse VideoFull: $e\nData: $jsonData', e, s);
-                return null;
-              }
-            })
-            .whereType<VideoFull>()
-            .toList();
-
-    _logger.info('[API Service] Finished fetching videos. Parsed ${parsedVideos.length} distinct VideoFull objects.');
     return parsedVideos;
   }
 
@@ -163,6 +126,7 @@ class HolodexApiService implements IApiService {
                 Channel(
                   id: channelId,
                   name: channelText,
+
                   englishName: null,
                   type: 'vtuber',
                   org: null,

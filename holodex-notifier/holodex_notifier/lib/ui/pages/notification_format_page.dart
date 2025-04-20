@@ -270,20 +270,21 @@ class NotificationFormatPage extends HookConsumerWidget {
 
   Widget _buildReplacementList(ThemeData theme, BuildContext context) {
     const replacements = {
-      '{channelName}': 'Name of the channel',
-      '{mediaTitle}': 'Title of the video/stream',
-      '{mediaTime}': 'Actual/scheduled start time (e.g., 7:30 PM). Excludes date.',
-      '{timeToEvent}': 'Time until the start of the scheduled media.',
-      '{timeToNotif}': 'Time until the scheduled dispatch of the notification.',
-      '{mediaType}': 'Type (e.g., "Stream", "Clip")',
-      '{mediaTypeCaps}': 'Type in ALL CAPS (e.g., "STREAM")',
-      '{newLine}': 'Inserts a line break',
-      '{mediaDateYMD}': 'Date (YYYY-MM-DD)',
-      '{mediaDateDMY}': 'Date (DD-MM-YYYY)',
-      '{mediaDateMDY}': 'Date (MM-DD-YYYY)',
-      '{mediaDateMD}': 'Date (MM-DD)',
-      '{mediaDateDM}': 'Date (DD-MM)',
-      '{mediaDateAsia}': 'Date (YYYY年MM月DD日)',
+      '{channelName}': 'Channel Name',
+      '{mentionedChannels}': 'Comma-separated list of mentioned channels (for mention notifs)',
+      '{mediaTitle}': 'Video Title',
+      '{mediaType}': 'Media Type (stream, video, clip)',
+      '{mediaTypeCaps}': 'Media Type (STREAM, VIDEO, CLIP)',
+      '{mediaTime}': 'Media Time (hh:mm AM/PM)',
+      '{timeToEvent}': 'Time until event (e.g., in 2 hours)',
+      '{timeToNotif}': 'Time until notification schedule',
+      '{mediaDateYMD}': 'Media Date (YYYY-MM-DD)',
+      '{mediaDateDMY}': 'Media Date (DD-MM-YYYY)',
+      '{mediaDateMDY}': 'Media Date (MM-DD-YYYY)',
+      '{mediaDateMD}': 'Media Date (MM-DD)',
+      '{mediaDateDM}': 'Media Date (DD-MM)',
+      '{mediaDateAsia}': 'Media Date (YYYY年MM月DD日 - Asian format)',
+      '{newLine}': 'New Line Character',
     };
 
     return Column(

@@ -4,7 +4,12 @@ import 'package:holodex_notifier/domain/models/video_full.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 
 abstract class INotificationDecisionService {
-  Future<List<NotificationAction>> determineActionsForVideoUpdate({required VideoFull fetchedVideo, required CachedVideo? cachedVideo});
+  Future<List<NotificationAction>> determineActionsForVideoUpdate({
+    required VideoFull fetchedVideo,
+    required CachedVideo? cachedVideo,
+    required List<ChannelSubscriptionSetting> allChannelSettings,
+    required Set<String>? mentionedForChannels,
+  });
 
   Future<List<NotificationAction>> determineActionsForChannelSettingChange({
     required String channelId,

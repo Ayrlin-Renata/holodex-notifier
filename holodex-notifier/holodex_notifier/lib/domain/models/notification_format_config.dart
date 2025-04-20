@@ -39,7 +39,7 @@ abstract class NotificationFormatConfig with _$NotificationFormatConfig {
         ),
         NotificationEventType.mention: const NotificationFormat(
           titleTemplate: 'Mentioned in {mediaType} - {mediaDateYMD} {mediaTime} - {channelName}',
-          bodyTemplate: '{mediaTitle}',
+          bodyTemplate: '{mentionedChannels}{newLine}{mediaTitle}',
         ),
         NotificationEventType.live: const NotificationFormat(titleTemplate: '🔴 {mediaTypeCaps} LIVE - {channelName}', bodyTemplate: '{mediaTitle}'),
         NotificationEventType.reminder: const NotificationFormat(

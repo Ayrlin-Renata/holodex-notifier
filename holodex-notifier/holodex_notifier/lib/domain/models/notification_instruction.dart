@@ -18,6 +18,7 @@ abstract class NotificationInstruction with _$NotificationInstruction {
 
     String? mentionTargetChannelId,
     String? mentionTargetChannelName,
+    List<String>? mentionedChannelNames,
 
     String? videoThumbnailUrl,
     String? videoSourceLink,

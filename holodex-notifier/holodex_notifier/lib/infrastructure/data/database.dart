@@ -67,6 +67,8 @@ class CachedVideos extends Table {
 
   IntColumn? get userDismissedAt => integer().named('user_dismissed_at').nullable()();
 
+  TextColumn get sentMentionTargetIds => text().named('sent_mention_target_ids').map(const StringListConverter()).withDefault(const Constant('[]'))();
+
   @override
   Set<Column> get primaryKey => {videoId};
 }
@@ -77,7 +79,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e, this._logger);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -87,13 +89,13 @@ class AppDatabase extends _$AppDatabase {
     },
     onUpgrade: (Migrator m, int from, int to) async {
       _logger.info("Drift DB: Upgrading schema from v$from to v$to...");
-      if (from < 2) {
-        await m.addColumn(cachedVideos, cachedVideos.thumbnailUrl);
-        _logger.info("Drift DB v1/<?->v2: Added thumbnailUrl column.");
-      }
-      if (from < 3) {
-        await m.addColumn(cachedVideos, cachedVideos.userDismissedAt);
-        _logger.info("Drift DB v<?->v3: Added userDismissedAt column.");
+      for (int targetVersion = from + 1; targetVersion <= to; targetVersion++) {
+        _logger.info("Drift DB: Applying migration to v$targetVersion...");
+        switch (targetVersion) {
+          default:
+            _logger.warning("Drift DB: No migration logic defined for v$targetVersion");
+        }
+        _logger.info("Drift DB: Migration to v$targetVersion applied.");
       }
     },
     beforeOpen: (details) async {
@@ -101,11 +103,21 @@ class AppDatabase extends _$AppDatabase {
         "Drift DB: Opening database. Was Created: ${details.wasCreated}, Version Before: ${details.versionBefore}, Current Version: ${details.versionNow}",
       );
       await customStatement('PRAGMA foreign_keys = ON;');
+      await customStatement('PRAGMA journal_mode=WAL;');
     },
   );
 
   Future<CachedVideo?> getVideo(String id) {
     return (select(cachedVideos)..where((t) => t.videoId.equals(id))).getSingleOrNull();
+  }
+
+  Future<int> countScheduledVideosInternal() async {
+    final count =
+        await customSelect(
+          'SELECT COUNT(*) FROM cached_videos WHERE (scheduled_live_notification_id IS NOT NULL OR scheduled_reminder_notification_id IS NOT NULL) AND user_dismissed_at IS NULL;',
+          readsFrom: {cachedVideos},
+        ).getSingle();
+    return count.data.values.first as int;
   }
 
   Future<void> upsertVideo(CachedVideosCompanion entry) {
@@ -217,6 +229,15 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> updateDismissalStatusInternal(String videoId, int? dismissalTimestamp) {
     return (update(cachedVideos)..where((t) => t.videoId.equals(videoId))).write(CachedVideosCompanion(userDismissedAt: Value(dismissalTimestamp)));
+  }
+
+  Future<List<String>> getSentMentionTargetsInternal(String videoId) async {
+    final video = await getVideo(videoId);
+    return video?.sentMentionTargetIds ?? [];
+  }
+
+  Future<void> updateSentMentionTargetsInternal(String videoId, List<String> targetIds) {
+    return (update(cachedVideos)..where((t) => t.videoId.equals(videoId))).write(CachedVideosCompanion(sentMentionTargetIds: Value(targetIds)));
   }
 }
 

@@ -14,11 +14,10 @@ _ChannelMin _$ChannelMinFromJson(Map<String, dynamic> json) => _ChannelMin(
   photo: json['photo'] as String?,
 );
 
-Map<String, dynamic> _$ChannelMinToJson(_ChannelMin instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'english_name': instance.englishName,
-      'type': instance.type,
-      'photo': instance.photo,
-    };
+Map<String, dynamic> _$ChannelMinToJson(_ChannelMin instance) => <String, dynamic>{
+  'id': instance.id,
+  'name': instance.name,
+  'english_name': instance.englishName,
+  'type': instance.type,
+  'photo': instance.photo,
+};

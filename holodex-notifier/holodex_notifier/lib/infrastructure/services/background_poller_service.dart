@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
-import 'package:drift/drift.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:holodex_notifier/application/state/background_service_state.dart';
@@ -18,12 +16,12 @@ import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/domain/models/notification_action.dart';
 import 'package:holodex_notifier/domain/models/video_full.dart';
-import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
 import 'package:holodex_notifier/main.dart' hide ErrorApp, appControllerProvider;
 import 'package:holodex_notifier/main.dart' as main_providers show isolateContextProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
+import 'dart:io' show Platform;
 
 class BackgroundPollerService implements IBackgroundPollingService {
   final ILoggingService _logger;
@@ -373,148 +371,145 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     }
     logger.debug("BG Poll Cycle: Internet connection available.");
 
-    final DateTime? lastPollTime = await settingsService.getLastPollTime();
     final DateTime currentPollTime = DateTime.now().toUtc();
-    final DateTime fromTime = lastPollTime ?? currentPollTime.subtract(const Duration(hours: 6));
-    logger.info("BG Poll Cycle: Checking for videos since ${fromTime.toIso8601String()}");
+    logger.info("BG Poll Cycle: Starting poll at ${currentPollTime.toIso8601String()}");
+    final DateTime fromTime = currentPollTime;
 
     final Duration reminderLeadTime = await settingsService.getReminderLeadTime();
     logger.debug("BG Poll Cycle: Current Reminder Lead Time: ${reminderLeadTime.inMinutes} minutes");
 
-    logger.debug("BG Poll Cycle: Loading channel subscriptions for fetch...");
+    logger.debug("BG Poll Cycle: Loading channel subscriptions...");
     final List<ChannelSubscriptionSetting> channelSettingsList = await settingsService.getChannelSubscriptions();
     if (channelSettingsList.isEmpty) {
-      logger.info("BG Poll Cycle: No channels subscribed. Skipping API fetch.");
+      logger.info("BG Poll Cycle: No channels subscribed. Skipping fetch.");
       await settingsService.setLastPollTime(currentPollTime);
       errorNotifier.state = null;
       return;
     }
-    final Set<String> subscribedIds = {};
-    final Set<String> mentionIds = {};
-    for (final setting in channelSettingsList) {
-      subscribedIds.add(setting.channelId);
-      if (setting.notifyMentions) {
-        mentionIds.add(setting.channelId);
+
+    final Map<String, ChannelSubscriptionSetting> channelSettingsMap = {for (var s in channelSettingsList) s.channelId: s};
+    final Set<String> subscribedIds = channelSettingsList.map((s) => s.channelId).toSet();
+    logger.debug("BG Poll Cycle: Subscribed IDs: ${subscribedIds.length}");
+
+    List<VideoFull> liveFeedVideos = [];
+    List<VideoFull> allCollabVideos = [];
+    Map<String, Set<String>> mentionContextMap = {};
+
+    logger.debug("BG Poll Cycle: Fetching live feed videos from API...");
+    try {
+      liveFeedVideos = await apiService.fetchLiveVideos(channelIds: subscribedIds);
+      logger.info("BG Poll Cycle: Fetched ${liveFeedVideos.length} videos from /users/live.");
+    } catch (e, s) {
+      logger.error("BG Poll Cycle: Error fetching live feed videos.", e, s);
+      if (currentError.isEmpty) currentError = "Live Feed Fetch Error: ${e.toString().split('\n').first}";
+    }
+
+    logger.debug(
+      "BG Poll Cycle: Fetching collab videos for ${subscribedIds.length} channels (conditionally, from: ${fromTime.toIso8601String()})...",
+    );
+    for (final channelSetting in channelSettingsList) {
+      final channelId = channelSetting.channelId;
+      if (!channelSetting.notifyMentions) {
+        logger.trace("[BG Poll Cycle] Skipping collabs fetch for $channelId (notifyMentions is false).");
+        continue;
+      }
+
+      final bool includeClips = channelSetting.notifyClips;
+      logger.trace("[BG Poll Cycle] Fetching collabs for $channelId (includeClips: $includeClips, from: ${fromTime.toIso8601String()})");
+      try {
+        final collabVids = await apiService.fetchCollabVideos(channelId: channelId, includeClips: includeClips, from: fromTime);
+        logger.debug("BG Poll Cycle: Fetched ${collabVids.length} collab videos for channel $channelId.");
+        allCollabVideos.addAll(collabVids);
+      } catch (e, s) {
+        logger.error("BG Poll Cycle: Error fetching collab videos for channel $channelId.", e, s);
+        if (currentError.isEmpty) currentError = "Collab Fetch Error ($channelId): ${e.toString().split('\n').first}";
       }
     }
-    logger.debug("BG Poll Cycle: Subscribed IDs: ${subscribedIds.length}, Mention IDs: ${mentionIds.length}");
+    logger.info("BG Poll Cycle: Mention context map built containing ${mentionContextMap.length} unique collab video entries.");
 
-    logger.debug("BG Poll Cycle: Fetching videos from API...");
-    final List<VideoFull> fetchedVideos = await apiService.fetchVideos(channelIds: subscribedIds, mentionChannelIds: mentionIds, from: fromTime);
-    logger.info("BG Poll Cycle: Fetched ${fetchedVideos.length} videos from API.");
+    List<VideoFull> combinedVideos = [...liveFeedVideos, ...allCollabVideos];
+    final Set<String> seenVideoIds = {};
+    final List<VideoFull> distinctVideos = [];
+    for (final video in combinedVideos) {
+      if (seenVideoIds.add(video.id)) {
+        distinctVideos.add(video);
+      }
+    }
+    logger.info("BG Poll Cycle: Combined ${combinedVideos.length} videos -> ${distinctVideos.length} distinct videos.");
 
-    final List<CachedVideosCompanion> companionsToUpsert = [];
+    logger.info(
+      "BG Poll Cycle: Building mention context map from ${distinctVideos.length} distinct videos for ${subscribedIds.length} subscribed channels...",
+    );
+    for (final video in distinctVideos) {
+      if (video.mentions != null) {
+        for (final mention in video.mentions!) {
+          if (subscribedIds.contains(mention.id)) {
+            mentionContextMap.putIfAbsent(video.id, () => {}).add(mention.id);
+          }
+        }
+      }
+    }
+    logger.info(
+      "BG Poll Cycle: Mention context map built containing ${mentionContextMap.length} unique video entries with mentions relevant to subscribed channels.",
+    );
+
     final List<NotificationAction> allActions = [];
-
     int processedCount = 0;
-    int errorCount = 0;
-    if (fetchedVideos.isNotEmpty) {
-      logger.debug("BG Poll Cycle: Processing ${fetchedVideos.length} fetched videos...");
-      for (final fetchedVideo in fetchedVideos) {
+    int processingErrorCount = 0;
+
+    if (distinctVideos.isNotEmpty) {
+      logger.debug("BG Poll Cycle: Processing ${distinctVideos.length} distinct videos...");
+      for (final fetchedVideo in distinctVideos) {
         final videoId = fetchedVideo.id;
         try {
           final cachedVideo = await cacheService.getVideo(videoId);
 
-          String? videoThumbnailUrl;
-          if (fetchedVideo.type == 'placeholder' && fetchedVideo.thumbnail != null && fetchedVideo.thumbnail!.isNotEmpty) {
-            videoThumbnailUrl = fetchedVideo.thumbnail;
-            logger.trace("[$videoId] Using placeholder thumbnail URL: $videoThumbnailUrl");
-          } else {
-            videoThumbnailUrl = 'https://i.ytimg.com/vi/${fetchedVideo.id}/mqdefault.jpg';
-            logger.trace("[$videoId] Using YouTube thumbnail URL: $videoThumbnailUrl");
-          }
-
-          final baseCompanion = CachedVideosCompanion(
-            videoId: Value(videoId),
-            channelId: Value(fetchedVideo.channel.id),
-            status: Value(fetchedVideo.status),
-            startScheduled: Value(fetchedVideo.startScheduled?.toIso8601String()),
-            startActual: Value(fetchedVideo.startActual?.toIso8601String()),
-            availableAt: Value(fetchedVideo.availableAt.toIso8601String()),
-            videoType: Value(fetchedVideo.type),
-            thumbnailUrl: Value(videoThumbnailUrl),
-            topicId: Value(fetchedVideo.topicId),
-            certainty: Value(fetchedVideo.certainty),
-            mentionedChannelIds: Value(fetchedVideo.mentions?.map((m) => m.id).whereType<String>().toList() ?? []),
-            videoTitle: Value(fetchedVideo.title),
-            channelName: Value(fetchedVideo.channel.name),
-            channelAvatarUrl: Value(fetchedVideo.channel.photo),
-            lastSeenTimestamp: Value(DateTime.now().millisecondsSinceEpoch),
-            isPendingNewMediaNotification: const Value.absent(),
-            scheduledLiveNotificationId: const Value.absent(),
-            scheduledReminderNotificationId: const Value.absent(),
-            scheduledReminderTime: const Value.absent(),
-            lastLiveNotificationSentTime: const Value.absent(),
-          );
-          CachedVideosCompanion finalCompanion;
-          if (cachedVideo != null) {
-            finalCompanion = baseCompanion.copyWith(userDismissedAt: Value(cachedVideo.userDismissedAt));
-            logger.debug("[$videoId] Saving userDismissedAt=${cachedVideo.userDismissedAt} on update.");
-          } else {
-            finalCompanion = baseCompanion;
-            logger.debug("[$videoId] Existing video not found, not preserving userDismissedAt.");
-          }
-          companionsToUpsert.add(finalCompanion);
+          final Set<String>? mentionedForChannels = mentionContextMap[videoId];
 
           final List<NotificationAction> videoActions = await decisionService.determineActionsForVideoUpdate(
             fetchedVideo: fetchedVideo,
             cachedVideo: cachedVideo,
+            allChannelSettings: channelSettingsList,
+            mentionedForChannels: mentionedForChannels,
           );
           allActions.addAll(videoActions);
 
           try {
-            await settingsService.updateChannelAvatar(fetchedVideo.channel.id, fetchedVideo.channel.photo);
-            logger.debug("[BG Poll Cycle] ($videoId) Attempted passive avatar update.");
+            final channelSetting = channelSettingsMap[fetchedVideo.channel.id];
+            if (channelSetting != null && fetchedVideo.channel.photo != null && channelSetting.avatarUrl != fetchedVideo.channel.photo) {
+              await settingsService.updateChannelAvatar(fetchedVideo.channel.id, fetchedVideo.channel.photo);
+              logger.trace("[BG Poll Cycle] ($videoId) Attempted passive avatar update for subscribed channel.");
+            } else if (channelSetting != null) {
+              logger.trace("[BG Poll Cycle] ($videoId) Avatar already up-to-date or no photo available. Skipping passive update.");
+            }
           } catch (e, s) {
             logger.error("[BG Poll Cycle] ($videoId) Error updating channel avatar via SettingsService", e, s);
           }
 
           processedCount++;
         } catch (e, s) {
-          logger.error("BG Poll Cycle: Error processing video ${fetchedVideo.id}.", e, s);
-          errorCount++;
-          final truncatedError = e.toString().split('\n').first;
+          logger.error("BG Poll Cycle: Error processing video $videoId.", e, s);
+          processingErrorCount++;
           if (currentError.isEmpty) {
-            currentError = "Error processing video ${fetchedVideo.id}: $truncatedError";
+            currentError = "Error processing video ${fetchedVideo.id}: ${e.toString().split('\n').first}";
           }
         }
       }
-      logger.debug("BG Poll Cycle: Processed $processedCount videos ($errorCount errors during processing).");
-
-      if (companionsToUpsert.isNotEmpty) {
-        logger.info("BG Poll Cycle: Performing batch database upsert for ${companionsToUpsert.length} videos...");
-        try {
-          container.read(cacheServiceProvider);
-          final db = container.read(databaseProvider);
-          await db.batch((batch) {
-            batch.insertAll(db.cachedVideos, companionsToUpsert, mode: InsertMode.insertOrReplace);
-          });
-          logger.info("BG Poll Cycle: Batch database upsert successful.");
-        } catch (e, s) {
-          logger.error("BG Poll Cycle: FAILED batch database upsert.", e, s);
-          if (currentError.isEmpty) {
-            currentError = "DB Batch Upsert Error: ${e.toString().split('\n').first}";
-          }
-          errorCount++;
-        }
-      }
+      logger.debug("BG Poll Cycle: Processed $processedCount videos ($processingErrorCount errors during processing).");
 
       logger.info("BG Poll Cycle: Executing ${allActions.length} collected notification actions...");
       try {
         await actionHandler.executeActions(allActions);
         logger.info("BG Poll Cycle: Action handler finished executing actions.");
       } catch (e, s) {
-        logger.error("BG Poll Cycle: Error dispatching notifications/cancellations after batch DB write.", e, s);
-        if (currentError.isEmpty) {
-          currentError = "Notification Dispatch Error: ${e.toString().split('\n').first}";
-        }
-        errorCount++;
+        logger.error("BG Poll Cycle: Error executing notification actions.", e, s);
+        if (currentError.isEmpty) currentError = "Notification Action Error: ${e.toString().split('\n').first}";
       }
     } else {
-      logger.info("BG Poll Cycle: No new video data to process.");
+      logger.info("BG Poll Cycle: No distinct videos to process after fetching and deduplication.");
     }
 
-    if (errorCount > 0) {
+    if (currentError.isNotEmpty) {
       errorNotifier.state = currentError;
     } else {
       errorNotifier.state = null;
@@ -522,12 +517,11 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     await settingsService.setLastPollTime(currentPollTime);
     logger.info("BG Poll Cycle: Updated last poll time to ${currentPollTime.toIso8601String()}");
   } catch (e, s) {
-    logger.error("BG Poll Cycle: Unhandled error during cycle execution.", e, s);
+    logger.fatal("BG Poll Cycle: Unhandled FATAL error during cycle execution.", e, s);
     try {
-      final truncatedError = e.toString().split('\n').first;
-      errorNotifier.state = "Poll Error: $truncatedError";
+      errorNotifier.state = "FATAL Poll Error: ${e.toString().split('\n').first}";
     } catch (notifierError) {
-      logger.error("BG Poll Cycle: Failed to update background error state.", notifierError);
+      logger.error("BG Poll Cycle: Failed to update background error state during FATAL error.", notifierError);
     }
   } finally {
     logger.info("BG Poll Cycle: --- _executePollCycle END ---");

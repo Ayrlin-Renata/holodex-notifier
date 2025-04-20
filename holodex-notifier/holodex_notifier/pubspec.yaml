@@ -57,5 +57,5 @@ flutter:
     - assets/config/ # Add declaration for the config directory
 
 android:
-  minSdkVersion: 26
+  minSdkVersion: 27
   targetSdkVersion: 33

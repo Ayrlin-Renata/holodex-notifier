@@ -20,8 +20,6 @@ class ChannelSettingsTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Row(
           children: [
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 8.0), child: Icon(Icons.drag_handle)),
-
             SizedBox(
               width: 64,
               height: 64,
