@@ -89,11 +89,11 @@ class LogsDataCard extends ConsumerWidget {
 
                   final tempDir = await getTemporaryDirectory();
                   final zipFilePath = p.join(tempDir.path, 'holodex_notifier_logs.zip');
-                  final zipFile = File(zipFilePath);
-
                   ZipFileEncoder encoder = ZipFileEncoder();
                   encoder.create(zipFilePath);
-                  encoder.addFile(zipFile);
+                  for (final file in archive.files) {
+                    encoder.addArchiveFile(file);
+                  }
                   encoder.close();
 
                   loggerService.debug('AppController: ZIP archive created at: $zipFilePath');

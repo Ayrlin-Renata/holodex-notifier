@@ -11,11 +11,11 @@ import 'package:holodex_notifier/domain/interfaces/connectivity_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_action_handler.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_decision_service.dart';
-import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/domain/models/notification_action.dart';
 import 'package:holodex_notifier/domain/models/video_full.dart';
+import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/infrastructure/services/local_notification_service.dart';
 import 'package:holodex_notifier/main.dart' hide ErrorApp, appControllerProvider;
 import 'package:holodex_notifier/main.dart' as main_providers show isolateContextProvider;
@@ -82,6 +82,7 @@ class BackgroundPollerService implements IBackgroundPollingService {
         _logger.info('[BG Poller Service] startService() called successfully.');
       } catch (e, s) {
         _logger.error('[BG Poller Service] ERROR calling startService()', e, s);
+        
       }
     } else {
       _logger.info('[BG Poller Service] Service is already running.');
@@ -90,300 +91,522 @@ class BackgroundPollerService implements IBackgroundPollingService {
 
   @override
   Future<void> stopPolling() async {
-    _logger.info('[BG Poller Service] Stopping service...');
-    _service.invoke("stopService");
+    _logger.info('[BG Poller Service] Attempting to stop service via invoke...');
+    try {
+      _service.invoke("stopService");
+      _logger.info('[BG Poller Service] Invoked "stopService".');
+    } catch (e, s) {
+      _logger.error('[BG Poller Service] ERROR invoking "stopService"', e, s);
+    }
   }
 
   @override
   Future<bool> isRunning() async {
-    return await _service.isRunning();
+    try {
+      final running = await _service.isRunning();
+      _logger.trace('[BG Poller Service] isRunning check returned: $running');
+      return running;
+    } catch (e, s) {
+      _logger.error('[BG Poller Service] ERROR checking if service is running', e, s);
+      return false; 
+    }
   }
 
   @override
   Future<void> triggerPoll() async {
-    _service.invoke("triggerPoll");
+    _logger.info('[BG Poller Service] Attempting to trigger manual poll via invoke...');
+    try {
+      _service.invoke("triggerPoll");
+      _logger.info('[BG Poller Service] Invoked "triggerPoll".');
+    } catch (e, s) {
+      _logger.error('[BG Poller Service] ERROR invoking "triggerPoll"', e, s);
+    }
   }
 
   @override
   void notifySettingChanged(String key, dynamic value) {
     _logger.debug('[BG Poller Service Invoke] Notifying background: Setting changed - Key=$key');
-    _service.invoke('updateSetting', {'key': key, 'value': value});
+    try {
+      _service.invoke('updateSetting', {'key': key, 'value': value});
+      _logger.trace('[BG Poller Service Invoke] Invoked "updateSetting" for key: $key');
+    } catch (e, s) {
+      _logger.error('[BG Poller Service Invoke] ERROR invoking "updateSetting" for key: $key', e, s);
+    }
   }
 }
 
 Timer? pollingTimer;
-Duration currentPollFrequency = const Duration(minutes: 10);
-bool isPolling = false;
+Duration currentPollFrequency = const Duration(minutes: 10); 
+bool isPolling = false; 
+ProviderContainer? _backgroundContainer; 
 
 @pragma('vm:entry-point')
 Future<void> onStart(ServiceInstance service) async {
-  DartPluginRegistrant.ensureInitialized();
+  
+  
+  
+  // ignore: avoid_print
+  print("BG Isolate: onStart ENTRY POINT.");
 
-  final container = ProviderContainer(overrides: [main_providers.isolateContextProvider.overrideWithValue(IsolateContext.background)]);
-  final ILoggingService logger = container.read(loggingServiceProvider);
-  tz.initializeTimeZones();
-  logger.info('BG Isolate: STARTED.');
-
-  if (service is AndroidServiceInstance) {
-    service.on('setAsForeground').listen((event) {
-      service.setAsForegroundService();
-      logger.info("BG Isolate: Set to foreground.");
-    });
-    service.on('setAsBackground').listen((event) {
-      service.setAsBackgroundService();
-      logger.info("BG Isolate: Set to background.");
-    });
-  }
-  service.on('stopService').listen((event) {
-    logger.info("BG Isolate: Received 'stopService' invoke.");
-    pollingTimer?.cancel();
-    service.stopSelf();
-    logger.info("BG Isolate: Timer cancelled, stopping service.");
-    container.dispose();
-  });
-
-  service.on('triggerPoll').listen((event) async {
-    if (isPolling) {
-      logger.warning("BG Isolate: Received 'triggerPoll' while already polling, skipping.");
-      return;
-    }
-    logger.info('BG Isolate: --- Manual Poll START ---');
-    isPolling = true;
-    try {
-      if (service is AndroidServiceInstance) {
-        service.setForegroundNotificationInfo(
-          title: "Holodex Notifier",
-          content: "Manual poll started @ ${DateTime.now().toLocal().toString().substring(11, 19)}",
-        );
-      }
-      await _executePollCycle(container);
-    } catch (e, s) {
-      logger.fatal("BG Isolate: Unhandled error during MANUAL poll cycle execution.", e, s);
-      try {
-        container.read(backgroundLastErrorProvider.notifier).state = "Manual Poll Error: ${e.toString()}";
-      } catch (_) {}
-    } finally {
-      isPolling = false;
-      logger.info('BG Isolate: --- Manual Poll END ---');
-      if (service is AndroidServiceInstance) {
-        final lastError = container.read(backgroundLastErrorProvider);
-        service.setForegroundNotificationInfo(
-          title: "Holodex Notifier",
-          content:
-              lastError != null
-                  ? "Manual poll finished with error @ ${DateTime.now().toLocal().toString().substring(11, 19)}"
-                  : "Manual poll finished @ ${DateTime.now().toLocal().toString().substring(11, 19)} - Waiting for next timed poll.",
-        );
-      }
-    }
-  });
-
-  service.on('updateSetting').listen((event) async {
-    if (event == null || event['key'] == null) {
-      logger.warning("BG Isolate: Received invalid 'updateSetting' event: $event");
-      return;
-    }
-
-    final String key = event['key'];
-    final dynamic value = event['value'];
-    logger.info("BG Isolate: Received 'updateSetting': Key=$key, Value=$value");
-
-    if (key == 'pollFrequency' && value is int) {
-      final newFrequency = Duration(minutes: value);
-      if (newFrequency != currentPollFrequency) {
-        logger.info("BG Isolate: Updating poll frequency to $value minutes.");
-        currentPollFrequency = newFrequency;
-        pollingTimer?.cancel();
-        if (isPolling) {
-          logger.warning("BG Isolate: Poll cycle active during frequency update. New timer will start after cycle completes.");
-        } else {
-          logger.debug("BG Isolate: Restarting timer with new frequency.");
-          await startPollingTimer(container, service);
-        }
-      } else {
-        logger.debug("BG Isolate: Received poll frequency update, but value ($value min) is unchanged.");
-      }
-    } else if (key == 'reminderLeadTime' && value is int) {
-      logger.info("BG Isolate: Received reminderLeadTime update ($value min). Value will be used on next poll cycle.");
-    } else if (key == 'apiKey') {
-      logger.debug("BG Isolate: Received API Key update notification. No background action needed.");
-    } else if (key == 'notificationFormat') {
-      logger.info("BG Isolate: Received 'notificationFormat' update notification.");
-      try {
-        final notificationService = container.read(notificationServiceProvider);
-        await notificationService.reloadFormatConfig();
-        logger.info("BG Isolate: Successfully instructed NotificationService to reload format config.");
-      } catch (e, s) {
-        logger.error("BG Isolate: Error reloading notification format config.", e, s);
-      }
-    } else {
-      logger.warning("BG Isolate: Received unhandled setting update key: $key");
-    }
-  });
-
-  ISettingsService? settingsService;
   try {
-    logger.info("BG Isolate: Initializing dependencies and waiting for main isolate readiness...");
+    DartPluginRegistrant.ensureInitialized();
+    // ignore: avoid_print
+    print("BG Isolate: DartPluginRegistrant ensured.");
+
+    
+    _backgroundContainer = ProviderContainer(overrides: [main_providers.isolateContextProvider.overrideWithValue(IsolateContext.background)]);
+    // ignore: avoid_print
+    print("BG Isolate: ProviderContainer created.");
+
+    final ILoggingService logger = _backgroundContainer!.read(loggingServiceProvider);
+    logger.info('BG Isolate: Logger Service obtained from Container.');
+
     try {
-      logger.debug("BG Isolate: Ensuring SettingsService instance is resolved...");
-      settingsService = await container.read(settingsServiceFutureProvider.future);
-      logger.debug("BG Isolate: SettingsService instance resolved.");
+      tz.initializeTimeZones();
+      logger.info('BG Isolate: Timezones initialized.');
     } catch (e, s) {
-      logger.fatal("BG Isolate: FATAL: Failed to resolve SettingsService FutureProvider.", e, s);
-      service.stopSelf();
-      container.dispose();
-      return;
+      logger.error("BG Isolate: Failed to initialize timezones.", e, s);
+      
     }
-    bool mainReady = false;
-    while (!mainReady) {
+
+    logger.info('BG Isolate: STARTED successfully.');
+
+    
+    if (service is AndroidServiceInstance) {
+      service.on('setAsForeground').listen((event) {
+        try {
+          logger.info("BG Isolate Listen(setAsForeground): Received.");
+          service.setAsForegroundService();
+          logger.info("BG Isolate Listen(setAsForeground): Set to foreground OK.");
+        } catch (e, s) {
+          logger.error("BG Isolate Listen(setAsForeground): ERROR", e, s);
+        }
+      });
+      service.on('setAsBackground').listen((event) {
+        try {
+          logger.info("BG Isolate Listen(setAsBackground): Received.");
+          service.setAsBackgroundService();
+          logger.info("BG Isolate Listen(setAsBackground): Set to background OK.");
+        } catch (e, s) {
+          logger.error("BG Isolate Listen(setAsBackground): ERROR", e, s);
+        }
+      });
+    }
+    service.on('stopService').listen((event) {
       try {
-        mainReady = await settingsService!.getMainServicesReady();
+        logger.info("BG Isolate Listen(stopService): Received.");
+        pollingTimer?.cancel();
+        logger.info("BG Isolate Listen(stopService): Polling timer cancelled.");
+        service.stopSelf(); 
+        logger.info("BG Isolate Listen(stopService): stopSelf() called.");
+        
+        _backgroundContainer?.dispose();
+        _backgroundContainer = null;
+        logger.info("BG Isolate Listen(stopService): Container disposed.");
       } catch (e, s) {
-        logger.error("BG Isolate: Error resolving SettingsService or checking readiness flag, retrying in 5s...", e, s);
-        await Future.delayed(const Duration(seconds: 5));
+        logger.error("BG Isolate Listen(stopService): ERROR", e, s);
+        
+        try {
+          service.stopSelf(); 
+          _backgroundContainer?.dispose();
+          _backgroundContainer = null;
+        } catch (_) {} // Ignore cleanup errors during error handling
+      }
+    });
+
+    service.on('triggerPoll').listen((event) async {
+      if (isPolling) {
+        logger.warning("BG Isolate Listen(triggerPoll): Received while already polling, skipping.");
+        return;
+      }
+      logger.info('BG Isolate Listen(triggerPoll): --- Manual Poll START ---');
+      isPolling = true;
+      try {
+        if (service is AndroidServiceInstance) {
+          try {
+            service.setForegroundNotificationInfo(
+              title: "Holodex Notifier",
+              content: "Manual poll starting @ ${DateTime.now().toLocal().toString().substring(11, 19)}",
+            );
+            logger.debug('BG Isolate Listen(triggerPoll): setForegroundNotificationInfo (Starting)');
+          } catch (e, s) {
+            logger.error('BG Isolate Listen(triggerPoll): Failed to set starting foreground notification', e, s);
+          }
+        }
+        
+        if (_backgroundContainer == null) {
+          logger.fatal("BG Isolate Listen(triggerPoll): Container is NULL before executing poll cycle. Aborting poll.");
+          throw Exception("Background container was null before manual poll execution.");
+        }
+        await _executePollCycle(_backgroundContainer!); 
+      } catch (e, s) {
+        logger.fatal("BG Isolate Listen(triggerPoll): Unhandled FATAL error during MANUAL poll cycle execution.", e, s);
+        try {
+          
+          _backgroundContainer?.read(backgroundLastErrorProvider.notifier).state = "Manual Poll FATAL Error: ${e.toString().split('\n').first}";
+        } catch (notifierError, notifierStack) {
+          logger.error("BG Isolate Listen(triggerPoll): Failed to update error state during FATAL poll error.", notifierError, notifierStack);
+        }
+      } finally {
+        isPolling = false;
+        logger.info('BG Isolate Listen(triggerPoll): --- Manual Poll END ---');
+        if (service is AndroidServiceInstance) {
+          try {
+            final lastError = _backgroundContainer?.read(backgroundLastErrorProvider); 
+            service.setForegroundNotificationInfo(
+              title: "Holodex Notifier",
+              content:
+                  lastError != null
+                      ? "Manual poll finished with error @ ${DateTime.now().toLocal().toString().substring(11, 19)}"
+                      : "Manual poll finished @ ${DateTime.now().toLocal().toString().substring(11, 19)} - Waiting...",
+            );
+            logger.debug('BG Isolate Listen(triggerPoll): setForegroundNotificationInfo (Finished)');
+          } catch (e, s) {
+            logger.error('BG Isolate Listen(triggerPoll): Failed to set finished foreground notification', e, s);
+          }
+        }
+      }
+    });
+
+    service.on('updateSetting').listen((event) async {
+      try {
+        
+        if (event == null || event['key'] == null || _backgroundContainer == null) {
+          logger.warning("BG Isolate Listen(updateSetting): Received invalid event or container is null: $event");
+          return;
+        }
+
+        final String key = event['key'];
+        final dynamic value = event['value'];
+        logger.info("BG Isolate Listen(updateSetting): Received Key=$key, Value=$value");
+
+        if (key == 'pollFrequency' && value is int) {
+          final newFrequency = Duration(minutes: value);
+          if (newFrequency != currentPollFrequency && newFrequency.inMinutes > 0) {
+            
+            logger.info("BG Isolate Listen(updateSetting): Updating poll frequency to $value minutes.");
+            currentPollFrequency = newFrequency;
+            pollingTimer?.cancel();
+            logger.debug("BG Isolate Listen(updateSetting): Timer cancelled due to frequency update.");
+            if (isPolling) {
+              logger.warning("BG Isolate Listen(updateSetting): Poll active during frequency update. New timer starts after current poll.");
+            } else {
+              logger.debug("BG Isolate Listen(updateSetting): Restarting timer with new frequency immediately.");
+              
+              if (_backgroundContainer != null) {
+                
+                await startPollingTimer(_backgroundContainer!, service);
+              } else {
+                logger.error("BG Isolate Listen(updateSetting): Container is NULL, cannot restart timer.");
+              }
+            }
+          } else if (newFrequency.inMinutes <= 0) {
+            logger.warning("BG Isolate Listen(updateSetting): Received invalid poll frequency ($value minutes). Ignoring.");
+          } else {
+            logger.debug("BG Isolate Listen(updateSetting): Poll frequency ($value min) unchanged.");
+          }
+        } else if (key == 'reminderLeadTime' && value is int) {
+          logger.info("BG Isolate Listen(updateSetting): Received reminderLeadTime update ($value min). Will use on next poll cycle.");
+          
+        } else if (key == 'apiKey') {
+          logger.debug("BG Isolate Listen(updateSetting): API Key update notification received. No immediate background action.");
+          
+          
+        } else if (key == 'notificationFormat') {
+          logger.info("BG Isolate Listen(updateSetting): Received 'notificationFormat' update.");
+          if (_backgroundContainer != null) {
+            try {
+              final notificationService = _backgroundContainer!.read(notificationServiceProvider);
+              await notificationService.reloadFormatConfig(); 
+              logger.info("BG Isolate Listen(updateSetting): Instructed NotificationService to reload format config.");
+            } catch (e, s) {
+              logger.error("BG Isolate Listen(updateSetting): Error instructing NotificationService to reload format config.", e, s);
+            }
+          } else {
+            logger.error("BG Isolate Listen(updateSetting): Container is NULL, cannot reload format config.");
+          }
+        } else {
+          logger.warning("BG Isolate Listen(updateSetting): Received unhandled setting update key: $key");
+        }
+      } catch (e, s) {
+        logger.error("BG Isolate Listen(updateSetting): Unhandled ERROR in listener callback", e, s);
+        
+      }
+    });
+    
+
+    
+    ISettingsService? settingsService;
+    try {
+      logger.info("BG Isolate: Starting main initialization logic...");
+      logger.debug("BG Isolate: Ensuring SettingsService resolution...");
+      if (_backgroundContainer == null) throw Exception("Background Container is null during settings service resolution");
+      settingsService = await _backgroundContainer!.read(settingsServiceFutureProvider.future);
+      logger.info("BG Isolate: SettingsService resolved.");
+
+      logger.debug("BG Isolate: Waiting for Main Isolate readiness flag...");
+      bool mainReady = false;
+      int waitAttempts = 0;
+      const maxWaitAttempts = 30; 
+      while (!mainReady && waitAttempts < maxWaitAttempts) {
+        waitAttempts++;
+        try {
+          mainReady = await settingsService!.getMainServicesReady();
+        } catch (e, s) {
+          logger.error("BG Isolate: Error checking main readiness flag (Attempt $waitAttempts/$maxWaitAttempts). Retrying in 2s...", e, s);
+          await Future.delayed(const Duration(seconds: 2));
+          continue; 
+        }
+
+        if (!mainReady) {
+          logger.info("BG Isolate: Main isolate not ready (Attempt $waitAttempts/$maxWaitAttempts), waiting 2 seconds...");
+          await Future.delayed(const Duration(seconds: 2));
+        }
       }
 
       if (!mainReady) {
-        logger.info("BG Isolate: Main isolate not ready yet, waiting 2 seconds...");
-        await Future.delayed(const Duration(seconds: 2));
+        logger.fatal("BG Isolate: FATAL: Main isolate did not become ready after $maxWaitAttempts attempts. Stopping service.");
+        throw Exception("Main isolate readiness timeout");
       }
-    }
-    logger.info("BG Isolate: Main isolate readiness confirmed. Proceeding with background initialization.");
+      logger.info("BG Isolate: Main isolate readiness confirmed.");
 
-    late INotificationService notificationServiceInstance;
-    try {
-      logger.debug("BG Isolate: Ensuring NotificationService instance is resolved...");
-      notificationServiceInstance = await container.read(notificationServiceFutureProvider.future);
+      logger.debug("BG Isolate: Ensuring NotificationService resolution...");
+      if (_backgroundContainer == null) throw Exception("Background Container is null during notification service resolution");
+      final notificationServiceInstance = await _backgroundContainer!.read(notificationServiceFutureProvider.future);
       logger.info("BG Isolate: Notification Service resolved.");
 
+      
       if (notificationServiceInstance is LocalNotificationService) {
         try {
-          logger.debug("BG Isolate: Ensuring Notification Format Config is loaded...");
+          logger.debug("BG Isolate: Ensuring Notification Format Config is loaded in Background...");
           await notificationServiceInstance.loadFormatConfig();
-          logger.info("BG Isolate: Notification Format Config ensured.");
+          logger.info("BG Isolate: Notification Format Config loading attempted/ensured.");
         } catch (e, s) {
-          logger.fatal("BG Isolate: FATAL: Failed to load Notification Format Config.", e, s);
-          service.stopSelf();
-          container.dispose();
-          return;
+          
+          logger.warning("BG Isolate: WARNING: Failed to load Notification Format Config in background.", e, s);
+          
+          
         }
       } else {
-        logger.warning("BG Isolate: Resolved Notification Service is not LocalNotificationService, cannot explicitly load format config.");
+        logger.warning("BG Isolate: Resolved Notification Service is not LocalNotificationService type.");
       }
-    } catch (e, s) {
-      logger.fatal("BG Isolate: FATAL: Failed to resolve NotificationService FutureProvider.", e, s);
-      service.stopSelf();
-      container.dispose();
-      return;
-    }
 
-    logger.info("BG Isolate: Starting the main polling timer...");
-    currentPollFrequency = await settingsService!.getPollFrequency();
-    await startPollingTimer(container, service);
+      logger.info("BG Isolate: Starting the main polling timer...");
+      if (_backgroundContainer == null) throw Exception("Background Container is null before starting timer");
+      currentPollFrequency = await settingsService!.getPollFrequency();
+      logger.info("BG Isolate: Initial poll frequency read: ${currentPollFrequency.inMinutes} minutes.");
+      await startPollingTimer(_backgroundContainer!, service); 
+    } catch (e, s) {
+      
+      logger.fatal("BG Isolate: FATAL error during main background initialization.", e, s);
+      try {
+        service.stopSelf(); 
+        _backgroundContainer?.dispose(); 
+        _backgroundContainer = null;
+      } catch (stopErr, stopST) {
+        logger.error("BG Isolate: Failed to stop service/dispose container during FATAL init error.", stopErr, stopST);
+      }
+    }
+    
   } catch (e, s) {
-    logger.fatal("BG Isolate: FATAL error during initial setup/readiness check.", e, s);
-    service.stopSelf();
-    container.dispose();
+    
+    // ignore: avoid_print
+    print("BG Isolate: VERY EARLY FATAL ERROR in onStart: $e\n$s");
+    
+    try {
+      service.stopSelf();
+    } catch (_) {}
+      
+    _backgroundContainer?.dispose();
+    _backgroundContainer = null;
   }
 }
 
 Future<void> startPollingTimer(ProviderContainer container, ServiceInstance service) async {
-  final ILoggingService logger = container.read(loggingServiceProvider);
-  final ISettingsService settingsService = container.read(settingsServiceProvider);
-
+  ILoggingService? logger; 
   try {
+    logger = container.read(loggingServiceProvider)!; 
+    logger.info("BG Isolate: startPollingTimer invoked.");
+
+    final ISettingsService settingsService = container.read(settingsServiceProvider); 
+
     pollingTimer?.cancel();
-    logger.debug("BG Isolate: Polling timer (if exists) cancelled.");
+    logger.debug("BG Isolate Timer Control: Previous timer (if any) cancelled.");
 
     currentPollFrequency = await settingsService.getPollFrequency();
-    logger.info("BG Isolate: Setting poll frequency to: ${currentPollFrequency.inMinutes} minutes");
+    if (currentPollFrequency.inMinutes <= 0) {
+      logger.warning(
+        "BG Isolate Timer Control: Invalid poll frequency (${currentPollFrequency.inMinutes} min) read from settings. Defaulting to 10 min.",
+      );
+      currentPollFrequency = const Duration(minutes: 10);
+    }
+    logger.info("BG Isolate Timer Control: Setting poll frequency to: ${currentPollFrequency.inMinutes} minutes");
 
     pollingTimer = Timer.periodic(currentPollFrequency, (timer) async {
-      if (isPolling) {
-        logger.warning("BG Isolate: Timed poll triggered, but a previous cycle is still running. Skipping.");
-        return;
-      }
-      logger.info('BG Isolate: --- Timed Poll START ---');
-      isPolling = true;
+      
+      ILoggingService? callbackLogger;
       try {
-        if (service is AndroidServiceInstance) {
-          service.setForegroundNotificationInfo(
-            title: "Holodex Notifier",
-            content: "Polling @ ${DateTime.now().toLocal().toString().substring(11, 19)}",
-          );
+        
+        callbackLogger = container.read(loggingServiceProvider)!;
+        callbackLogger.trace("BG Isolate Timer Tick: Timer fired. Checking polling status.");
+
+        if (isPolling) {
+          callbackLogger.warning("BG Isolate Timer Tick: Skipping timed poll, previous cycle still running.");
+          return;
         }
-        await _executePollCycle(container);
+        callbackLogger.info('BG Isolate Timer Tick: --- Timed Poll START ---');
+        isPolling = true;
+
+        
+        if (service is AndroidServiceInstance) {
+          try {
+            service.setForegroundNotificationInfo(
+              title: "Holodex Notifier",
+              content: "Polling @ ${DateTime.now().toLocal().toString().substring(11, 19)}...",
+            );
+            callbackLogger.debug('BG Isolate Timer Tick: setForegroundNotificationInfo (Starting)');
+          } catch (e, s) {
+            callbackLogger.error('BG Isolate Timer Tick: Failed to set starting foreground notification', e, s);
+          }
+        }
+
+        
+        await _executePollCycle(container); 
       } catch (e, s) {
-        logger.fatal("BG Isolate: Unhandled error during TIMED poll cycle execution.", e, s);
+        
+        final currentLogger = callbackLogger ?? container.read(loggingServiceProvider)!; 
+        currentLogger.fatal("BG Isolate Timer Tick: Unhandled FATAL error during TIMED poll cycle.", e, s);
         try {
-          container.read(backgroundLastErrorProvider.notifier).state = "Timed Poll Error: ${e.toString()}";
-        } catch (_) {}
-      } finally {
-        isPolling = false;
-        logger.info('BG Isolate: --- Timed Poll END ---');
-        if (service is AndroidServiceInstance) {
-          final lastError = container.read(backgroundLastErrorProvider);
-          service.setForegroundNotificationInfo(
-            title: "Holodex Notifier",
-            content:
-                lastError != null
-                    ? "Poll finished with error @ ${DateTime.now().toLocal().toString().substring(11, 19)}"
-                    : "Poll finished @ ${DateTime.now().toLocal().toString().substring(11, 19)} - Waiting for next poll.",
-          );
+          
+          container.read(backgroundLastErrorProvider.notifier).state = "Timed Poll FATAL Error: ${e.toString().split('\n').first}";
+        } catch (notifierError, notifierStack) {
+          currentLogger.error("BG Isolate Timer Tick: Failed to update error state during FATAL poll error.", notifierError, notifierStack);
         }
+      } finally {
+        final currentLogger = callbackLogger ?? container.read(loggingServiceProvider)!;
+        isPolling = false; 
+        currentLogger.info('BG Isolate Timer Tick: --- Timed Poll END ---');
+        
+        if (service is AndroidServiceInstance) {
+          try {
+            final lastError = container.read(backgroundLastErrorProvider);
+            service.setForegroundNotificationInfo(
+              title: "Holodex Notifier",
+              content:
+                  lastError != null
+                      ? "Poll finished with error @ ${DateTime.now().toLocal().toString().substring(11, 19)}"
+                      : "Poll finished @ ${DateTime.now().toLocal().toString().substring(11, 19)} - Waiting...",
+            );
+            currentLogger.debug('BG Isolate Timer Tick: setForegroundNotificationInfo (Finished)');
+          } catch (e, s) {
+            currentLogger.error('BG Isolate Timer Tick: Failed to set finished foreground notification', e, s);
+          }
+        }
+        
+        currentLogger.trace("BG Isolate Timer Tick: Waiting for next tick in ${currentPollFrequency.inMinutes} min.");
       }
+      
     });
-    logger.info("BG Isolate: Polling timer started successfully.");
+    logger.info("BG Isolate Timer Control: New Polling timer started successfully for ${currentPollFrequency.inMinutes} minutes.");
   } catch (e, s) {
-    logger.fatal("BG Isolate: Error retrieving poll frequency or starting timer.", e, s);
-    pollingTimer?.cancel();
+    final currentLogger = logger ?? container.read(loggingServiceProvider)!; 
+    currentLogger.fatal("BG Isolate Timer Control: FATAL error setting up timer.", e, s);
+    pollingTimer?.cancel(); 
     try {
-      service.stopSelf();
-      container.dispose();
+      
+      
+      
+      
+      
+      currentLogger.error("BG Isolate Timer Control: Timer setup failed, background tasks will likely stop functioning correctly.");
     } catch (stopErr, stopST) {
-      logger.error("BG Isolate: Failed to stop service/dispose container during timer start error.", stopErr, stopST);
+      currentLogger.error("BG Isolate Timer Control: Error during timer setup's error handling.", stopErr, stopST);
     }
   }
 }
 
 Future<void> _executePollCycle(ProviderContainer container) async {
-  final ILoggingService logger = container.read(loggingServiceProvider);
-  final ISettingsService settingsService = container.read(settingsServiceProvider);
-  final IConnectivityService connectivityService = container.read(connectivityServiceProvider);
-  final IApiService apiService = container.read(apiServiceProvider);
-  final ICacheService cacheService = container.read(cacheServiceProvider);
-  final INotificationDecisionService decisionService = container.read(notificationDecisionServiceProvider);
-  final INotificationActionHandler actionHandler = container.read(notificationActionHandlerProvider);
-
-  final errorNotifier = container.read(backgroundLastErrorProvider.notifier);
-  String currentError = '';
-
-  logger.info("BG Poll Cycle: --- _executePollCycle START ---");
+  
+  ILoggingService logger;
+  ISettingsService settingsService;
+  IConnectivityService connectivityService;
+  IApiService apiService;
+  ICacheService cacheService;
+  INotificationDecisionService decisionService;
+  INotificationActionHandler actionHandler;
+  StateController<String?> errorNotifier;
 
   try {
-    logger.debug("BG Poll Cycle: Checking connectivity...");
-    final bool isConnected = await connectivityService.isConnected();
-    if (!isConnected) {
-      currentError = 'No internet connection.';
-      logger.warning("BG Poll Cycle: $currentError Skipping poll.");
-      errorNotifier.state = currentError;
-      return;
+    logger = container.read(loggingServiceProvider);
+    settingsService = container.read(settingsServiceProvider);
+    connectivityService = container.read(connectivityServiceProvider);
+    apiService = container.read(apiServiceProvider);
+    cacheService = container.read(cacheServiceProvider);
+    decisionService = container.read(notificationDecisionServiceProvider);
+    actionHandler = container.read(notificationActionHandlerProvider);
+    errorNotifier = container.read(backgroundLastErrorProvider.notifier);
+  } catch (e, s) {
+    
+    final tempLogger = container.exists(loggingServiceProvider) ? container.read(loggingServiceProvider) : null;
+    if (tempLogger == null) {
+      // ignore: avoid_print
+      print("BG Poll Cycle: FATAL ERROR resolving dependencies. Cycle cannot run. $e\n$s");
     }
-    logger.debug("BG Poll Cycle: Internet connection available.");
+    
+    try {
+      container.read(backgroundLastErrorProvider.notifier).state = "FATAL Dependency Error: $e";
+    } catch (_) {}
+    return; 
+  }
+
+  logger.info("BG Poll Cycle: --- _executePollCycle START ---");
+  String currentCycleError = ''; 
+
+  try {
+    
+    try {
+      logger.debug("BG Poll Cycle: Checking connectivity...");
+      final bool isConnected = await connectivityService.isConnected();
+      if (!isConnected) {
+        currentCycleError = 'No internet connection.';
+        logger.warning("BG Poll Cycle: $currentCycleError Skipping poll this cycle.");
+        
+        
+        return; 
+      }
+      logger.debug("BG Poll Cycle: Internet connection confirmed.");
+    } catch (e, s) {
+      currentCycleError = "Connectivity Check Error: ${e.toString().split('\n').first}";
+      logger.error("BG Poll Cycle: Failed connectivity check.", e, s);
+      
+      errorNotifier.state = currentCycleError; 
+      return; 
+    }
 
     final DateTime currentPollTime = DateTime.now().toUtc();
-    logger.info("BG Poll Cycle: Starting poll at ${currentPollTime.toIso8601String()}");
-    final DateTime fromTime = currentPollTime;
+    logger.info("BG Poll Cycle: Starting poll sequence at ${currentPollTime.toIso8601String()}");
+    final DateTime fromTime = currentPollTime; 
 
-    final Duration reminderLeadTime = await settingsService.getReminderLeadTime();
-    logger.debug("BG Poll Cycle: Current Reminder Lead Time: ${reminderLeadTime.inMinutes} minutes");
+    
+    Duration reminderLeadTime;
+    List<ChannelSubscriptionSetting> channelSettingsList;
+    try {
+      reminderLeadTime = await settingsService.getReminderLeadTime();
+      logger.debug("BG Poll Cycle: Current Reminder Lead Time: ${reminderLeadTime.inMinutes} minutes");
 
-    logger.debug("BG Poll Cycle: Loading channel subscriptions...");
-    final List<ChannelSubscriptionSetting> channelSettingsList = await settingsService.getChannelSubscriptions();
+      logger.debug("BG Poll Cycle: Loading channel subscriptions...");
+      channelSettingsList = await settingsService.getChannelSubscriptions();
+    } catch (e, s) {
+      currentCycleError = "Settings Load Error: ${e.toString().split('\n').first}";
+      logger.error("BG Poll Cycle: Failed to load critical settings.", e, s);
+      errorNotifier.state = currentCycleError;
+      return; 
+    }
+
     if (channelSettingsList.isEmpty) {
-      logger.info("BG Poll Cycle: No channels subscribed. Skipping fetch.");
-      await settingsService.setLastPollTime(currentPollTime);
-      errorNotifier.state = null;
+      logger.info("BG Poll Cycle: No channels subscribed. Poll cycle complete (No API fetch needed).");
+      await settingsService.setLastPollTime(currentPollTime); 
+      errorNotifier.state = null; 
       return;
     }
 
@@ -391,30 +614,32 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     final Set<String> subscribedIds = channelSettingsList.map((s) => s.channelId).toSet();
     logger.debug("BG Poll Cycle: Subscribed IDs: ${subscribedIds.length}");
 
+    
     List<VideoFull> liveFeedVideos = [];
     List<VideoFull> allCollabVideos = [];
-    Map<String, Set<String>> mentionContextMap = {};
 
-    logger.debug("BG Poll Cycle: Fetching live feed videos from API...");
+    logger.debug("BG Poll Cycle: Attempting to fetch live feed videos from API...");
     try {
       liveFeedVideos = await apiService.fetchLiveVideos(channelIds: subscribedIds);
       logger.info("BG Poll Cycle: Fetched ${liveFeedVideos.length} videos from /users/live.");
     } catch (e, s) {
       logger.error("BG Poll Cycle: Error fetching live feed videos.", e, s);
-      if (currentError.isEmpty) currentError = "Live Feed Fetch Error: ${e.toString().split('\n').first}";
+      if (currentCycleError.isEmpty) currentCycleError = "Live Feed Fetch Error: ${e.toString().split('\n').first}";
+      
+      
     }
 
     logger.debug(
-      "BG Poll Cycle: Fetching collab videos for ${subscribedIds.length} channels (conditionally, from: ${fromTime.toIso8601String()})...",
+      "BG Poll Cycle: Attempting to fetch collab videos for ${subscribedIds.length} applicable channels (from: ${fromTime.toIso8601String()})...",
     );
     for (final channelSetting in channelSettingsList) {
       final channelId = channelSetting.channelId;
       if (!channelSetting.notifyMentions) {
-        logger.trace("[BG Poll Cycle] Skipping collabs fetch for $channelId (notifyMentions is false).");
+        logger.trace("[BG Poll Cycle] Skipping collabs fetch for $channelId (notifyMentions=false).");
         continue;
       }
 
-      final bool includeClips = channelSetting.notifyClips;
+      final bool includeClips = channelSetting.notifyClips; 
       logger.trace("[BG Poll Cycle] Fetching collabs for $channelId (includeClips: $includeClips, from: ${fromTime.toIso8601String()})");
       try {
         final collabVids = await apiService.fetchCollabVideos(channelId: channelId, includeClips: includeClips, from: fromTime);
@@ -422,108 +647,163 @@ Future<void> _executePollCycle(ProviderContainer container) async {
         allCollabVideos.addAll(collabVids);
       } catch (e, s) {
         logger.error("BG Poll Cycle: Error fetching collab videos for channel $channelId.", e, s);
-        if (currentError.isEmpty) currentError = "Collab Fetch Error ($channelId): ${e.toString().split('\n').first}";
+        if (currentCycleError.isEmpty) currentCycleError = "Collab Fetch Error ($channelId): ${e.toString().split('\n').first}";
+        
       }
     }
-    logger.info("BG Poll Cycle: Mention context map built containing ${mentionContextMap.length} unique collab video entries.");
 
-    List<VideoFull> combinedVideos = [...liveFeedVideos, ...allCollabVideos];
-    final Set<String> seenVideoIds = {};
-    final List<VideoFull> distinctVideos = [];
-    for (final video in combinedVideos) {
-      if (seenVideoIds.add(video.id)) {
-        distinctVideos.add(video);
+    
+    List<VideoFull> distinctVideos = [];
+    Map<String, Set<String>> mentionContextMap = {};
+    try {
+      logger.debug("BG Poll Cycle: Processing fetched video data...");
+      List<VideoFull> combinedVideos = [...liveFeedVideos, ...allCollabVideos];
+      final Set<String> seenVideoIds = {};
+
+      for (final video in combinedVideos) {
+        if (seenVideoIds.add(video.id)) {
+          distinctVideos.add(video);
+        }
       }
-    }
-    logger.info("BG Poll Cycle: Combined ${combinedVideos.length} videos -> ${distinctVideos.length} distinct videos.");
+      logger.info("BG Poll Cycle: Combined ${combinedVideos.length} videos -> ${distinctVideos.length} distinct videos after deduplication.");
 
-    logger.info(
-      "BG Poll Cycle: Building mention context map from ${distinctVideos.length} distinct videos for ${subscribedIds.length} subscribed channels...",
-    );
-    for (final video in distinctVideos) {
-      if (video.mentions != null) {
-        for (final mention in video.mentions!) {
-          if (subscribedIds.contains(mention.id)) {
-            mentionContextMap.putIfAbsent(video.id, () => {}).add(mention.id);
+      logger.debug("BG Poll Cycle: Building mention context map for ${subscribedIds.length} channels...");
+      for (final video in distinctVideos) {
+        if (video.mentions != null) {
+          for (final mention in video.mentions!) {
+            if (subscribedIds.contains(mention.id)) {
+              mentionContextMap.putIfAbsent(video.id, () => {}).add(mention.id);
+              logger.trace("BG Poll Cycle Map: Added mention ${mention.id} for video ${video.id}");
+            }
           }
         }
       }
+      logger.info("BG Poll Cycle: Mention context map built with ${mentionContextMap.length} entries relevant to subscriptions.");
+    } catch (e, s) {
+      currentCycleError = "Data Processing Error: ${e.toString().split('\n').first}";
+      logger.error("BG Poll Cycle: Error during video data processing (dedup/mapping).", e, s);
+      errorNotifier.state = currentCycleError;
+      
+      return;
     }
-    logger.info(
-      "BG Poll Cycle: Mention context map built containing ${mentionContextMap.length} unique video entries with mentions relevant to subscribed channels.",
-    );
 
+    
     final List<NotificationAction> allActions = [];
     int processedCount = 0;
     int processingErrorCount = 0;
 
     if (distinctVideos.isNotEmpty) {
-      logger.debug("BG Poll Cycle: Processing ${distinctVideos.length} distinct videos...");
+      logger.debug("BG Poll Cycle: Determining notification actions for ${distinctVideos.length} videos...");
       for (final fetchedVideo in distinctVideos) {
         final videoId = fetchedVideo.id;
         try {
-          final cachedVideo = await cacheService.getVideo(videoId);
+          
+          CachedVideo? cachedVideo;
+          try {
+            cachedVideo = await cacheService.getVideo(videoId);
+          } catch (cacheError, cacheStack) {
+            logger.warning("BG Poll Cycle ($videoId): Failed to get cached video state. Proceeding without cache.", cacheError, cacheStack);
+            
+          }
 
           final Set<String>? mentionedForChannels = mentionContextMap[videoId];
 
-          final List<NotificationAction> videoActions = await decisionService.determineActionsForVideoUpdate(
-            fetchedVideo: fetchedVideo,
-            cachedVideo: cachedVideo,
-            allChannelSettings: channelSettingsList,
-            mentionedForChannels: mentionedForChannels,
-          );
-          allActions.addAll(videoActions);
+          
+          List<NotificationAction> videoActions = [];
+          try {
+            videoActions = await decisionService.determineActionsForVideoUpdate(
+              fetchedVideo: fetchedVideo,
 
+              cachedVideo: cachedVideo,
+              allChannelSettings: channelSettingsList,
+              mentionedForChannels: mentionedForChannels,
+            );
+            logger.trace("BG Poll Cycle ($videoId): Determined ${videoActions.length} actions.");
+            allActions.addAll(videoActions);
+          } catch (decisionError, decisionStack) {
+            logger.error("BG Poll Cycle ($videoId): ERROR in NotificationDecisionService.", decisionError, decisionStack);
+            processingErrorCount++;
+            if (currentCycleError.isEmpty) {
+              currentCycleError = "Decision Error ($videoId): ${decisionError.toString().split('\n').first}";
+            }
+            
+            continue;
+          }
+
+          
           try {
             final channelSetting = channelSettingsMap[fetchedVideo.channel.id];
             if (channelSetting != null && fetchedVideo.channel.photo != null && channelSetting.avatarUrl != fetchedVideo.channel.photo) {
               await settingsService.updateChannelAvatar(fetchedVideo.channel.id, fetchedVideo.channel.photo);
-              logger.trace("[BG Poll Cycle] ($videoId) Attempted passive avatar update for subscribed channel.");
+              logger.trace("[BG Poll Cycle] ($videoId): Attempted passive avatar update for subscribed channel.");
             } else if (channelSetting != null) {
-              logger.trace("[BG Poll Cycle] ($videoId) Avatar already up-to-date or no photo available. Skipping passive update.");
+              
             }
+            
           } catch (e, s) {
-            logger.error("[BG Poll Cycle] ($videoId) Error updating channel avatar via SettingsService", e, s);
+            logger.error("[BG Poll Cycle] ($videoId): Error during passive avatar update.", e, s);
+            
           }
 
           processedCount++;
         } catch (e, s) {
-          logger.error("BG Poll Cycle: Error processing video $videoId.", e, s);
+          
+          logger.error("BG Poll Cycle: Unhandled loop error processing video $videoId.", e, s);
           processingErrorCount++;
-          if (currentError.isEmpty) {
-            currentError = "Error processing video ${fetchedVideo.id}: ${e.toString().split('\n').first}";
+          if (currentCycleError.isEmpty) {
+            currentCycleError = "Video Loop Error ($videoId): ${e.toString().split('\n').first}";
           }
+          
         }
       }
-      logger.debug("BG Poll Cycle: Processed $processedCount videos ($processingErrorCount errors during processing).");
+      logger.debug(
+        "BG Poll Cycle: Finished determining actions. Processed $processedCount videos ($processingErrorCount errors). Total actions: ${allActions.length}.",
+      );
 
-      logger.info("BG Poll Cycle: Executing ${allActions.length} collected notification actions...");
-      try {
-        await actionHandler.executeActions(allActions);
-        logger.info("BG Poll Cycle: Action handler finished executing actions.");
-      } catch (e, s) {
-        logger.error("BG Poll Cycle: Error executing notification actions.", e, s);
-        if (currentError.isEmpty) currentError = "Notification Action Error: ${e.toString().split('\n').first}";
+      
+      if (allActions.isNotEmpty) {
+        logger.info("BG Poll Cycle: Executing ${allActions.length} collected notification actions...");
+        try {
+          await actionHandler.executeActions(allActions);
+          logger.info("BG Poll Cycle: Action handler finished executing actions successfully.");
+        } catch (e, s) {
+          logger.error("BG Poll Cycle: Error executing notification actions via Handler.", e, s);
+          if (currentCycleError.isEmpty) currentCycleError = "Notification Action Handler Error: ${e.toString().split('\n').first}";
+        }
+      } else {
+        logger.info("BG Poll Cycle: No notification actions to execute.");
       }
     } else {
-      logger.info("BG Poll Cycle: No distinct videos to process after fetching and deduplication.");
+      logger.info("BG Poll Cycle: No distinct videos found after fetching/deduplication. No actions needed.");
     }
 
-    if (currentError.isNotEmpty) {
-      errorNotifier.state = currentError;
+    
+    if (currentCycleError.isNotEmpty) {
+      logger.warning("BG Poll Cycle: Cycle completed with errors: $currentCycleError");
+      errorNotifier.state = currentCycleError; 
     } else {
-      errorNotifier.state = null;
+      logger.info("BG Poll Cycle: Cycle completed successfully.");
+      errorNotifier.state = null; 
     }
-    await settingsService.setLastPollTime(currentPollTime);
-    logger.info("BG Poll Cycle: Updated last poll time to ${currentPollTime.toIso8601String()}");
+    try {
+      await settingsService.setLastPollTime(currentPollTime);
+      logger.info("BG Poll Cycle: Updated last successful poll time to ${currentPollTime.toIso8601String()}");
+    } catch (e, s) {
+      logger.error("BG Poll Cycle: Failed to update last poll time in settings.", e, s);
+      
+      
+      errorNotifier.state = "${errorNotifier.state ?? ""} | Failed to save poll time.";
+    }
   } catch (e, s) {
+    
     logger.fatal("BG Poll Cycle: Unhandled FATAL error during cycle execution.", e, s);
     try {
-      errorNotifier.state = "FATAL Poll Error: ${e.toString().split('\n').first}";
-    } catch (notifierError) {
-      logger.error("BG Poll Cycle: Failed to update background error state during FATAL error.", notifierError);
+      errorNotifier.state = "FATAL Poll Cycle Error: ${e.toString().split('\n').first}";
+    } catch (notifierError, notifierStack) {
+      logger.error("BG Poll Cycle: Failed to update error state during FATAL cycle error.", notifierError, notifierStack);
     }
   } finally {
+    
     logger.info("BG Poll Cycle: --- _executePollCycle END ---");
   }
 }

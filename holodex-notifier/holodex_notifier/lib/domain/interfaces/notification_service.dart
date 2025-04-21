@@ -1,4 +1,5 @@
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 abstract class INotificationService {
   Future<void> initialize();
@@ -12,5 +13,8 @@ abstract class INotificationService {
   Future<void> cancelAllNotifications();
 
   Future<void> reloadFormatConfig();
-  Future<bool> requestNotificationPermissions();
+
+  Future<Map<Permission, PermissionStatus>> requestRequiredPermissions();
+  Future<bool> isBatteryOptimizationDisabled(); 
+  Future<bool> requestBatteryOptimizationDisabled(); 
 }

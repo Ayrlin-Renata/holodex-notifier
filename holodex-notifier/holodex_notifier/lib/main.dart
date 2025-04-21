@@ -235,7 +235,7 @@ Future<void> main() async {
       info.writeln('--- System Info ---');
       info.writeln('Error getting device info: $e');
     }
-    info.writeln('App Version: 0.1.0');
+    info.writeln('App Version: alpha-0.1.1');
     info.writeln('-------------------');
     return info.toString();
   }

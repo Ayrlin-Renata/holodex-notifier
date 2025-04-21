@@ -19,9 +19,9 @@ const String _keyLastPollTime = 'settings_lastPollTime';
 const String _keyChannelSubscriptions = 'settings_channelSubscriptions';
 const String _apiKeySecureStorageKey = 'holodex_api_key';
 const String _keyMainServicesReady = 'app_main_services_ready';
-const String _keyIsFirstLaunch = 'app_is_first_launch';
 const String _keyNotificationFormatConfig = 'settings_notificationFormatConfig';
 const String _keyScheduledFilterTypes = 'settings_scheduledFilterTypes';
+const String _keyFeatureSeenStatus = 'feature_seen_status_map'; 
 
 class SharedPrefsSettingsService implements ISettingsService {
   late final SharedPreferences _prefs;
@@ -203,20 +203,45 @@ class SharedPrefsSettingsService implements ISettingsService {
     }
   }
 
-  @override
-  Future<bool> getIsFirstLaunch() async {
-    await _ensureFreshPrefs();
-    return _prefs.getBool(_keyIsFirstLaunch) ?? true;
-  }
-
-  @override
-  Future<void> setIsFirstLaunch(bool isFirst) async {
-    await _prefs.setBool(_keyIsFirstLaunch, isFirst);
-    if (kDebugMode) {
-      print("[SharedPrefsSettingsService] IsFirstLaunch flag SET to: $isFirst");
+   @override
+  Future<bool> getFeatureSeen(String featureKey) async {
+    try {
+      final String? jsonMap = _prefs.getString(_keyFeatureSeenStatus);
+      if (jsonMap == null) {
+        _logger.trace('[SharedPrefsSettingsService] getFeatureSeen($featureKey): No map found, returning false.');
+        return false; // No map stored yet
+      }
+      final Map<String, dynamic> featureMap = jsonDecode(jsonMap);
+      final bool seen = featureMap[featureKey] == true; // Check if key exists and is true
+      _logger.trace('[SharedPrefsSettingsService] getFeatureSeen($featureKey): Map lookup result: $seen.');
+      return seen;
+    } catch (e, s) {
+      _logger.error('[SharedPrefsSettingsService] Error reading feature seen status for $featureKey', e, s);
+      return false; // Default to false on error
     }
   }
 
+  @override
+  Future<void> setFeatureSeen(String featureKey) async {
+    try {
+      final String? jsonMap = _prefs.getString(_keyFeatureSeenStatus);
+      Map<String, dynamic> featureMap = {};
+      if (jsonMap != null) {
+        try {
+          featureMap = jsonDecode(jsonMap);
+        } catch (e, s) {
+           _logger.error('[SharedPrefsSettingsService] Error decoding existing feature map, starting fresh.', e, s);
+            featureMap = {}; // Reset if decoding fails
+        }
+      }
+      featureMap[featureKey] = true; // Set the specific feature to seen
+      final String newJsonMap = jsonEncode(featureMap);
+      await _prefs.setString(_keyFeatureSeenStatus, newJsonMap);
+      _logger.info('[SharedPrefsSettingsService] setFeatureSeen($featureKey): Map updated.');
+    } catch (e, s) {
+      _logger.error('[SharedPrefsSettingsService] Error saving feature seen status for $featureKey', e, s);
+    }
+  }
   @override
   Future<AppConfig> exportConfiguration() async {
     final freq = await getPollFrequency();

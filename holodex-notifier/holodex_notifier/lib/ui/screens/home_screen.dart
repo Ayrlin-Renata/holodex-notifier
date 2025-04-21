@@ -18,7 +18,7 @@ class HomeScreen extends HookConsumerWidget {
 
     final List<Widget> pages = [
       ScheduledPage(pageController: pageController),
-      const ChannelsPage(),
+      ChannelsPage(),
       const SettingsPage(),
       const NotificationFormatPage(),
     ];

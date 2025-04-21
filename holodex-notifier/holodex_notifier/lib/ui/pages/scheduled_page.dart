@@ -14,7 +14,7 @@ import 'package:holodex_notifier/main.dart';
 class ScheduledPage extends HookConsumerWidget {
   final PageController pageController;
   const ScheduledPage({super.key, required this.pageController});
-
+  static const String _infoCardFeatureKey = 'scheduledPageInfoCardSeen';
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final logger = ref.watch(loggingServiceProvider);
@@ -84,10 +84,10 @@ class ScheduledPage extends HookConsumerWidget {
               children: [
                 isFirstLaunchAsync.when(
                   data: (isFirstLaunchValue) {
-                    final bool shouldShowInfo = isFirstLaunchValue;
+                    final bool shouldShowInfo = !isFirstLaunchValue;
 
                     if (shouldShowInfo) {
-                      return _buildFirstInstallInfo(context, ref, isFirstLaunchValue);
+                      return _buildFirstInstallInfo(context, ref, shouldShowInfo);
                     } else {
                       return const SizedBox.shrink();
                     }
@@ -146,7 +146,7 @@ class ScheduledPage extends HookConsumerWidget {
                 child: TextButton(
                   child: Text('Dismiss', style: TextStyle(color: theme.colorScheme.onTertiaryContainer)),
                   onPressed: () async {
-                    await ref.read(settingsServiceProvider).setIsFirstLaunch(false);
+                    await ref.read(settingsServiceProvider).setFeatureSeen(_infoCardFeatureKey);
                     ref.invalidate(isFirstLaunchProvider);
                   },
                 ),
@@ -258,7 +258,7 @@ class ScheduledPage extends HookConsumerWidget {
 
 final isFirstLaunchProvider = FutureProvider<bool>((ref) async {
   final settings = ref.watch(settingsServiceProvider);
-  return await settings.getIsFirstLaunch();
+  return await settings.getFeatureSeen(ScheduledPage._infoCardFeatureKey);
 });
 
 class DismissedNotificationsArea extends ConsumerWidget {

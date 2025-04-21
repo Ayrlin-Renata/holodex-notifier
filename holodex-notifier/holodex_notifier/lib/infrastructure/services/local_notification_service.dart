@@ -16,8 +16,10 @@ import 'package:synchronized/synchronized.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:disable_battery_optimization/disable_battery_optimization.dart';
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
@@ -244,42 +246,75 @@ class LocalNotificationService implements INotificationService {
   }
 
   @override
-  Future<bool> requestNotificationPermissions() async {
-    if (Platform.isAndroid) {
-      return await _requestAndroidPermissions();
-    } else if (Platform.isIOS || Platform.isMacOS) {
-      final plugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
-      if (plugin != null) {
-        final granted = await plugin.requestPermissions(alert: true, badge: true, sound: true);
-        _logger.debug("iOS/macOS permissions granted: $granted");
-        return granted ?? false;
+  Future<Map<Permission, PermissionStatus>> requestRequiredPermissions() async {
+    _logger.info("[Notification Service] Requesting Notification and Exact Alarm permissions...");
+    Map<Permission, PermissionStatus> statuses = {};
+
+    final notificationStatus = await Permission.notification.request();
+    _logger.info("[Notification Service] Notification permission status: $notificationStatus");
+    statuses[Permission.notification] = notificationStatus;
+
+    if (notificationStatus.isGranted || notificationStatus.isLimited) {
+      if (Platform.isAndroid) {
+        _logger.info("[Notification Service] Requesting Exact Alarm permission...");
+        final alarmStatus = await Permission.scheduleExactAlarm.request();
+        _logger.info("[Notification Service] Exact Alarm permission status: $alarmStatus");
+        statuses[Permission.scheduleExactAlarm] = alarmStatus;
+      } else {
+        _logger.info("[Notification Service] Skipping Exact Alarm permission request (Not Android).");
+
+        statuses[Permission.scheduleExactAlarm] = PermissionStatus.granted;
       }
-      return false;
     } else {
+      _logger.warning("[Notification Service] Skipping Exact Alarm permission request because Notification permission was denied.");
+
+      statuses[Permission.scheduleExactAlarm] = PermissionStatus.denied;
+    }
+
+    _logger.info("[Notification Service] Finished requesting permissions.");
+    return statuses;
+  }
+
+  @override
+  Future<bool> isBatteryOptimizationDisabled() async {
+    if (!Platform.isAndroid) {
+      _logger.trace("[Notification Service] Skipping battery optimization check (Not Android). Reporting as disabled.");
       return true;
+    }
+    try {
+      bool? isDisabled = await DisableBatteryOptimization.isBatteryOptimizationDisabled;
+      _logger.trace("[Notification Service] Battery optimization status check returned: $isDisabled");
+      return isDisabled ?? false;
+    } catch (e, s) {
+      _logger.error("[Notification Service] Error checking battery optimization status", e, s);
+      return false;
     }
   }
 
-  Future<bool> _requestAndroidPermissions() async {
-    bool permissionsGranted = false;
-    final plugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    if (plugin != null) {
-      try {
-        _logger.debug("Requesting Android notification permissions...");
-        bool? notificationsGranted = await plugin.requestNotificationsPermission();
-        _logger.debug("Android Notification Permission Granted: $notificationsGranted");
-
-        _logger.debug("Requesting Android exact alarm permissions...");
-        bool? exactAlarmsGranted = await plugin.requestExactAlarmsPermission();
-        _logger.debug("Android Exact Alarm Permission Granted: $exactAlarmsGranted");
-
-        permissionsGranted = (notificationsGranted == true) && (exactAlarmsGranted == true);
-      } catch (e, s) {
-        _logger.error("Error requesting Android permissions", e, s);
-        permissionsGranted = false;
-      }
+  @override
+  Future<bool> requestBatteryOptimizationDisabled() async {
+    if (!Platform.isAndroid) {
+      _logger.info("[Notification Service] Skipping battery optimization request (Not Android).");
+      return true;
     }
-    return permissionsGranted;
+    _logger.info("[Notification Service] Requesting user to disable battery optimization...");
+    try {
+      bool alreadyDisabled = await DisableBatteryOptimization.isBatteryOptimizationDisabled ?? false;
+      if (alreadyDisabled) {
+        _logger.info("[Notification Service] Battery optimization is already disabled.");
+        return true;
+      } else {
+        _logger.info("[Notification Service] Showing system settings page for disabling battery optimization...");
+
+        bool? success = await DisableBatteryOptimization.showDisableBatteryOptimizationSettings();
+
+        _logger.info("[Notification Service] Directed user to battery optimization settings.");
+        return success ?? false;
+      }
+    } catch (e, s) {
+      _logger.error("[Notification Service] Error requesting battery optimization disable", e, s);
+      return false;
+    }
   }
 
   Future<bool> areNotificationsEnabled() async {

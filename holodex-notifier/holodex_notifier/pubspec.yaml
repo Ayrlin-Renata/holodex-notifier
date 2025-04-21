@@ -1,7 +1,7 @@
 name: holodex_notifier
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ^3.7.2
@@ -40,6 +40,10 @@ dependencies:
   device_info_plus: ^11.3.3
   permission_handler: ^12.0.0+1 
   archive: ^4.0.6
+  disable_battery_optimization:
+    git:
+      url: https://github.com/pvsvamsi/Disable-Battery-Optimizations
+      ref: 3bd744d03c416859bbaedecd61c1c11fc022ed75
 
 dev_dependencies:
   flutter_test:
