@@ -49,12 +49,17 @@ dev_dependencies:
   freezed: ^3.0.6
   json_serializable: ^6.8.0
   drift_dev: ^2.17.0
+  mockito: ^5.4.5
+  riverpod_test: ^0.1.6
+
+dependency_overrides:
+  analyzer: ^6.11.0
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/ # Keep existing images asset declaration
-    - assets/config/ # Add declaration for the config directory
+    - assets/images/ 
+    - assets/config/ 
 
 android:
   minSdkVersion: 27

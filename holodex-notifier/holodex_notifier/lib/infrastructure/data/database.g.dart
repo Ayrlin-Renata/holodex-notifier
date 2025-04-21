@@ -3,12 +3,15 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
-class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable, CachedVideo> {
+class $CachedVideosTable extends CachedVideos
+    with TableInfo<$CachedVideosTable, CachedVideo> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $CachedVideosTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _videoIdMeta = const VerificationMeta('videoId');
+  static const VerificationMeta _videoIdMeta = const VerificationMeta(
+    'videoId',
+  );
   @override
   late final GeneratedColumn<String> videoId = GeneratedColumn<String>(
     'video_id',
@@ -17,7 +20,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _channelIdMeta = const VerificationMeta('channelId');
+  static const VerificationMeta _channelIdMeta = const VerificationMeta(
+    'channelId',
+  );
   @override
   late final GeneratedColumn<String> channelId = GeneratedColumn<String>(
     'channel_id',
@@ -27,7 +32,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     requiredDuringInsert: false,
     defaultValue: const Constant('Unknown'),
   );
-  static const VerificationMeta _topicIdMeta = const VerificationMeta('topicId');
+  static const VerificationMeta _topicIdMeta = const VerificationMeta(
+    'topicId',
+  );
   @override
   late final GeneratedColumn<String> topicId = GeneratedColumn<String>(
     'topic_id',
@@ -45,7 +52,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _startScheduledMeta = const VerificationMeta('startScheduled');
+  static const VerificationMeta _startScheduledMeta = const VerificationMeta(
+    'startScheduled',
+  );
   @override
   late final GeneratedColumn<String> startScheduled = GeneratedColumn<String>(
     'start_scheduled',
@@ -54,7 +63,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _startActualMeta = const VerificationMeta('startActual');
+  static const VerificationMeta _startActualMeta = const VerificationMeta(
+    'startActual',
+  );
   @override
   late final GeneratedColumn<String> startActual = GeneratedColumn<String>(
     'start_actual',
@@ -63,7 +74,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _availableAtMeta = const VerificationMeta('availableAt');
+  static const VerificationMeta _availableAtMeta = const VerificationMeta(
+    'availableAt',
+  );
   @override
   late final GeneratedColumn<String> availableAt = GeneratedColumn<String>(
     'available_at',
@@ -72,7 +85,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _videoTypeMeta = const VerificationMeta('videoType');
+  static const VerificationMeta _videoTypeMeta = const VerificationMeta(
+    'videoType',
+  );
   @override
   late final GeneratedColumn<String> videoType = GeneratedColumn<String>(
     'video_type',
@@ -81,7 +96,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _thumbnailUrlMeta = const VerificationMeta('thumbnailUrl');
+  static const VerificationMeta _thumbnailUrlMeta = const VerificationMeta(
+    'thumbnailUrl',
+  );
   @override
   late final GeneratedColumn<String> thumbnailUrl = GeneratedColumn<String>(
     'thumbnail_url',
@@ -90,7 +107,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _certaintyMeta = const VerificationMeta('certainty');
+  static const VerificationMeta _certaintyMeta = const VerificationMeta(
+    'certainty',
+  );
   @override
   late final GeneratedColumn<String> certainty = GeneratedColumn<String>(
     'certainty',
@@ -100,15 +119,20 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     requiredDuringInsert: false,
   );
   @override
-  late final GeneratedColumnWithTypeConverter<List<String>, String> mentionedChannelIds = GeneratedColumn<String>(
+  late final GeneratedColumnWithTypeConverter<List<String>, String>
+  mentionedChannelIds = GeneratedColumn<String>(
     'mentioned_channel_ids',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('[]'),
-  ).withConverter<List<String>>($CachedVideosTable.$convertermentionedChannelIds);
-  static const VerificationMeta _videoTitleMeta = const VerificationMeta('videoTitle');
+  ).withConverter<List<String>>(
+    $CachedVideosTable.$convertermentionedChannelIds,
+  );
+  static const VerificationMeta _videoTitleMeta = const VerificationMeta(
+    'videoTitle',
+  );
   @override
   late final GeneratedColumn<String> videoTitle = GeneratedColumn<String>(
     'video_title',
@@ -118,7 +142,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     requiredDuringInsert: false,
     defaultValue: const Constant('Unknown Title'),
   );
-  static const VerificationMeta _channelNameMeta = const VerificationMeta('channelName');
+  static const VerificationMeta _channelNameMeta = const VerificationMeta(
+    'channelName',
+  );
   @override
   late final GeneratedColumn<String> channelName = GeneratedColumn<String>(
     'channel_name',
@@ -128,7 +154,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     requiredDuringInsert: false,
     defaultValue: const Constant('Unknown Channel'),
   );
-  static const VerificationMeta _channelAvatarUrlMeta = const VerificationMeta('channelAvatarUrl');
+  static const VerificationMeta _channelAvatarUrlMeta = const VerificationMeta(
+    'channelAvatarUrl',
+  );
   @override
   late final GeneratedColumn<String> channelAvatarUrl = GeneratedColumn<String>(
     'channel_avatar_url',
@@ -137,18 +165,24 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _isPendingNewMediaNotificationMeta = const VerificationMeta('isPendingNewMediaNotification');
+  static const VerificationMeta _isPendingNewMediaNotificationMeta =
+      const VerificationMeta('isPendingNewMediaNotification');
   @override
-  late final GeneratedColumn<bool> isPendingNewMediaNotification = GeneratedColumn<bool>(
-    'is_pending_new_media_notification',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_pending_new_media_notification" IN (0, 1))'),
-    defaultValue: const Constant(false),
+  late final GeneratedColumn<bool> isPendingNewMediaNotification =
+      GeneratedColumn<bool>(
+        'is_pending_new_media_notification',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_pending_new_media_notification" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _lastSeenTimestampMeta = const VerificationMeta(
+    'lastSeenTimestamp',
   );
-  static const VerificationMeta _lastSeenTimestampMeta = const VerificationMeta('lastSeenTimestamp');
   @override
   late final GeneratedColumn<int> lastSeenTimestamp = GeneratedColumn<int>(
     'last_seen_timestamp',
@@ -157,34 +191,41 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _scheduledLiveNotificationIdMeta = const VerificationMeta('scheduledLiveNotificationId');
+  static const VerificationMeta _scheduledLiveNotificationIdMeta =
+      const VerificationMeta('scheduledLiveNotificationId');
   @override
-  late final GeneratedColumn<int> scheduledLiveNotificationId = GeneratedColumn<int>(
-    'scheduled_live_notification_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _lastLiveNotificationSentTimeMeta = const VerificationMeta('lastLiveNotificationSentTime');
+  late final GeneratedColumn<int> scheduledLiveNotificationId =
+      GeneratedColumn<int>(
+        'scheduled_live_notification_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastLiveNotificationSentTimeMeta =
+      const VerificationMeta('lastLiveNotificationSentTime');
   @override
-  late final GeneratedColumn<int> lastLiveNotificationSentTime = GeneratedColumn<int>(
-    'last_live_notification_sent_time',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _scheduledReminderNotificationIdMeta = const VerificationMeta('scheduledReminderNotificationId');
+  late final GeneratedColumn<int> lastLiveNotificationSentTime =
+      GeneratedColumn<int>(
+        'last_live_notification_sent_time',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _scheduledReminderNotificationIdMeta =
+      const VerificationMeta('scheduledReminderNotificationId');
   @override
-  late final GeneratedColumn<int> scheduledReminderNotificationId = GeneratedColumn<int>(
-    'scheduled_reminder_notification_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _scheduledReminderTimeMeta = const VerificationMeta('scheduledReminderTime');
+  late final GeneratedColumn<int> scheduledReminderNotificationId =
+      GeneratedColumn<int>(
+        'scheduled_reminder_notification_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _scheduledReminderTimeMeta =
+      const VerificationMeta('scheduledReminderTime');
   @override
   late final GeneratedColumn<int> scheduledReminderTime = GeneratedColumn<int>(
     'scheduled_reminder_time',
@@ -193,7 +234,9 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _userDismissedAtMeta = const VerificationMeta('userDismissedAt');
+  static const VerificationMeta _userDismissedAtMeta = const VerificationMeta(
+    'userDismissedAt',
+  );
   @override
   late final GeneratedColumn<int> userDismissedAt = GeneratedColumn<int>(
     'user_dismissed_at',
@@ -203,14 +246,17 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     requiredDuringInsert: false,
   );
   @override
-  late final GeneratedColumnWithTypeConverter<List<String>, String> sentMentionTargetIds = GeneratedColumn<String>(
+  late final GeneratedColumnWithTypeConverter<List<String>, String>
+  sentMentionTargetIds = GeneratedColumn<String>(
     'sent_mention_target_ids',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('[]'),
-  ).withConverter<List<String>>($CachedVideosTable.$convertersentMentionTargetIds);
+  ).withConverter<List<String>>(
+    $CachedVideosTable.$convertersentMentionTargetIds,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     videoId,
@@ -242,91 +288,178 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
   String get actualTableName => $name;
   static const String $name = 'cached_videos';
   @override
-  VerificationContext validateIntegrity(Insertable<CachedVideo> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<CachedVideo> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('video_id')) {
-      context.handle(_videoIdMeta, videoId.isAcceptableOrUnknown(data['video_id']!, _videoIdMeta));
+      context.handle(
+        _videoIdMeta,
+        videoId.isAcceptableOrUnknown(data['video_id']!, _videoIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_videoIdMeta);
     }
     if (data.containsKey('channel_id')) {
-      context.handle(_channelIdMeta, channelId.isAcceptableOrUnknown(data['channel_id']!, _channelIdMeta));
+      context.handle(
+        _channelIdMeta,
+        channelId.isAcceptableOrUnknown(data['channel_id']!, _channelIdMeta),
+      );
     }
     if (data.containsKey('topic_id')) {
-      context.handle(_topicIdMeta, topicId.isAcceptableOrUnknown(data['topic_id']!, _topicIdMeta));
+      context.handle(
+        _topicIdMeta,
+        topicId.isAcceptableOrUnknown(data['topic_id']!, _topicIdMeta),
+      );
     }
     if (data.containsKey('status')) {
-      context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
     } else if (isInserting) {
       context.missing(_statusMeta);
     }
     if (data.containsKey('start_scheduled')) {
-      context.handle(_startScheduledMeta, startScheduled.isAcceptableOrUnknown(data['start_scheduled']!, _startScheduledMeta));
+      context.handle(
+        _startScheduledMeta,
+        startScheduled.isAcceptableOrUnknown(
+          data['start_scheduled']!,
+          _startScheduledMeta,
+        ),
+      );
     }
     if (data.containsKey('start_actual')) {
-      context.handle(_startActualMeta, startActual.isAcceptableOrUnknown(data['start_actual']!, _startActualMeta));
+      context.handle(
+        _startActualMeta,
+        startActual.isAcceptableOrUnknown(
+          data['start_actual']!,
+          _startActualMeta,
+        ),
+      );
     }
     if (data.containsKey('available_at')) {
-      context.handle(_availableAtMeta, availableAt.isAcceptableOrUnknown(data['available_at']!, _availableAtMeta));
+      context.handle(
+        _availableAtMeta,
+        availableAt.isAcceptableOrUnknown(
+          data['available_at']!,
+          _availableAtMeta,
+        ),
+      );
     } else if (isInserting) {
       context.missing(_availableAtMeta);
     }
     if (data.containsKey('video_type')) {
-      context.handle(_videoTypeMeta, videoType.isAcceptableOrUnknown(data['video_type']!, _videoTypeMeta));
+      context.handle(
+        _videoTypeMeta,
+        videoType.isAcceptableOrUnknown(data['video_type']!, _videoTypeMeta),
+      );
     }
     if (data.containsKey('thumbnail_url')) {
-      context.handle(_thumbnailUrlMeta, thumbnailUrl.isAcceptableOrUnknown(data['thumbnail_url']!, _thumbnailUrlMeta));
+      context.handle(
+        _thumbnailUrlMeta,
+        thumbnailUrl.isAcceptableOrUnknown(
+          data['thumbnail_url']!,
+          _thumbnailUrlMeta,
+        ),
+      );
     }
     if (data.containsKey('certainty')) {
-      context.handle(_certaintyMeta, certainty.isAcceptableOrUnknown(data['certainty']!, _certaintyMeta));
+      context.handle(
+        _certaintyMeta,
+        certainty.isAcceptableOrUnknown(data['certainty']!, _certaintyMeta),
+      );
     }
     if (data.containsKey('video_title')) {
-      context.handle(_videoTitleMeta, videoTitle.isAcceptableOrUnknown(data['video_title']!, _videoTitleMeta));
+      context.handle(
+        _videoTitleMeta,
+        videoTitle.isAcceptableOrUnknown(data['video_title']!, _videoTitleMeta),
+      );
     }
     if (data.containsKey('channel_name')) {
-      context.handle(_channelNameMeta, channelName.isAcceptableOrUnknown(data['channel_name']!, _channelNameMeta));
+      context.handle(
+        _channelNameMeta,
+        channelName.isAcceptableOrUnknown(
+          data['channel_name']!,
+          _channelNameMeta,
+        ),
+      );
     }
     if (data.containsKey('channel_avatar_url')) {
-      context.handle(_channelAvatarUrlMeta, channelAvatarUrl.isAcceptableOrUnknown(data['channel_avatar_url']!, _channelAvatarUrlMeta));
+      context.handle(
+        _channelAvatarUrlMeta,
+        channelAvatarUrl.isAcceptableOrUnknown(
+          data['channel_avatar_url']!,
+          _channelAvatarUrlMeta,
+        ),
+      );
     }
     if (data.containsKey('is_pending_new_media_notification')) {
       context.handle(
         _isPendingNewMediaNotificationMeta,
-        isPendingNewMediaNotification.isAcceptableOrUnknown(data['is_pending_new_media_notification']!, _isPendingNewMediaNotificationMeta),
+        isPendingNewMediaNotification.isAcceptableOrUnknown(
+          data['is_pending_new_media_notification']!,
+          _isPendingNewMediaNotificationMeta,
+        ),
       );
     }
     if (data.containsKey('last_seen_timestamp')) {
-      context.handle(_lastSeenTimestampMeta, lastSeenTimestamp.isAcceptableOrUnknown(data['last_seen_timestamp']!, _lastSeenTimestampMeta));
+      context.handle(
+        _lastSeenTimestampMeta,
+        lastSeenTimestamp.isAcceptableOrUnknown(
+          data['last_seen_timestamp']!,
+          _lastSeenTimestampMeta,
+        ),
+      );
     } else if (isInserting) {
       context.missing(_lastSeenTimestampMeta);
     }
     if (data.containsKey('scheduled_live_notification_id')) {
       context.handle(
         _scheduledLiveNotificationIdMeta,
-        scheduledLiveNotificationId.isAcceptableOrUnknown(data['scheduled_live_notification_id']!, _scheduledLiveNotificationIdMeta),
+        scheduledLiveNotificationId.isAcceptableOrUnknown(
+          data['scheduled_live_notification_id']!,
+          _scheduledLiveNotificationIdMeta,
+        ),
       );
     }
     if (data.containsKey('last_live_notification_sent_time')) {
       context.handle(
         _lastLiveNotificationSentTimeMeta,
-        lastLiveNotificationSentTime.isAcceptableOrUnknown(data['last_live_notification_sent_time']!, _lastLiveNotificationSentTimeMeta),
+        lastLiveNotificationSentTime.isAcceptableOrUnknown(
+          data['last_live_notification_sent_time']!,
+          _lastLiveNotificationSentTimeMeta,
+        ),
       );
     }
     if (data.containsKey('scheduled_reminder_notification_id')) {
       context.handle(
         _scheduledReminderNotificationIdMeta,
-        scheduledReminderNotificationId.isAcceptableOrUnknown(data['scheduled_reminder_notification_id']!, _scheduledReminderNotificationIdMeta),
+        scheduledReminderNotificationId.isAcceptableOrUnknown(
+          data['scheduled_reminder_notification_id']!,
+          _scheduledReminderNotificationIdMeta,
+        ),
       );
     }
     if (data.containsKey('scheduled_reminder_time')) {
       context.handle(
         _scheduledReminderTimeMeta,
-        scheduledReminderTime.isAcceptableOrUnknown(data['scheduled_reminder_time']!, _scheduledReminderTimeMeta),
+        scheduledReminderTime.isAcceptableOrUnknown(
+          data['scheduled_reminder_time']!,
+          _scheduledReminderTimeMeta,
+        ),
       );
     }
     if (data.containsKey('user_dismissed_at')) {
-      context.handle(_userDismissedAtMeta, userDismissedAt.isAcceptableOrUnknown(data['user_dismissed_at']!, _userDismissedAtMeta));
+      context.handle(
+        _userDismissedAtMeta,
+        userDismissedAt.isAcceptableOrUnknown(
+          data['user_dismissed_at']!,
+          _userDismissedAtMeta,
+        ),
+      );
     }
     return context;
   }
@@ -337,36 +470,108 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
   CachedVideo map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CachedVideo(
-      videoId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}video_id'])!,
-      channelId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}channel_id'])!,
-      topicId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}topic_id']),
-      status: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}status'])!,
-      startScheduled: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}start_scheduled']),
-      startActual: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}start_actual']),
-      availableAt: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}available_at'])!,
-      videoType: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}video_type']),
-      thumbnailUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}thumbnail_url']),
-      certainty: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}certainty']),
-      mentionedChannelIds: $CachedVideosTable.$convertermentionedChannelIds.fromSql(
-        attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}mentioned_channel_ids'])!,
+      videoId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}video_id'],
+          )!,
+      channelId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}channel_id'],
+          )!,
+      topicId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}topic_id'],
       ),
-      videoTitle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}video_title'])!,
-      channelName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}channel_name'])!,
-      channelAvatarUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}channel_avatar_url']),
+      status:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}status'],
+          )!,
+      startScheduled: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_scheduled'],
+      ),
+      startActual: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_actual'],
+      ),
+      availableAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}available_at'],
+          )!,
+      videoType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}video_type'],
+      ),
+      thumbnailUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thumbnail_url'],
+      ),
+      certainty: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}certainty'],
+      ),
+      mentionedChannelIds: $CachedVideosTable.$convertermentionedChannelIds
+          .fromSql(
+            attachedDatabase.typeMapping.read(
+              DriftSqlType.string,
+              data['${effectivePrefix}mentioned_channel_ids'],
+            )!,
+          ),
+      videoTitle:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}video_title'],
+          )!,
+      channelName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}channel_name'],
+          )!,
+      channelAvatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel_avatar_url'],
+      ),
       isPendingNewMediaNotification:
-          attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}is_pending_new_media_notification'])!,
-      lastSeenTimestamp: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}last_seen_timestamp'])!,
-      scheduledLiveNotificationId: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}scheduled_live_notification_id']),
-      lastLiveNotificationSentTime: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}last_live_notification_sent_time']),
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_pending_new_media_notification'],
+          )!,
+      lastSeenTimestamp:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}last_seen_timestamp'],
+          )!,
+      scheduledLiveNotificationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scheduled_live_notification_id'],
+      ),
+      lastLiveNotificationSentTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_live_notification_sent_time'],
+      ),
       scheduledReminderNotificationId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}scheduled_reminder_notification_id'],
       ),
-      scheduledReminderTime: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}scheduled_reminder_time']),
-      userDismissedAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}user_dismissed_at']),
-      sentMentionTargetIds: $CachedVideosTable.$convertersentMentionTargetIds.fromSql(
-        attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}sent_mention_target_ids'])!,
+      scheduledReminderTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scheduled_reminder_time'],
       ),
+      userDismissedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_dismissed_at'],
+      ),
+      sentMentionTargetIds: $CachedVideosTable.$convertersentMentionTargetIds
+          .fromSql(
+            attachedDatabase.typeMapping.read(
+              DriftSqlType.string,
+              data['${effectivePrefix}sent_mention_target_ids'],
+            )!,
+          ),
     );
   }
 
@@ -375,8 +580,10 @@ class $CachedVideosTable extends CachedVideos with TableInfo<$CachedVideosTable,
     return $CachedVideosTable(attachedDatabase, alias);
   }
 
-  static TypeConverter<List<String>, String> $convertermentionedChannelIds = const StringListConverter();
-  static TypeConverter<List<String>, String> $convertersentMentionTargetIds = const StringListConverter();
+  static TypeConverter<List<String>, String> $convertermentionedChannelIds =
+      const StringListConverter();
+  static TypeConverter<List<String>, String> $convertersentMentionTargetIds =
+      const StringListConverter();
 }
 
 class CachedVideo extends DataClass implements Insertable<CachedVideo> {
@@ -452,23 +659,35 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       map['certainty'] = Variable<String>(certainty);
     }
     {
-      map['mentioned_channel_ids'] = Variable<String>($CachedVideosTable.$convertermentionedChannelIds.toSql(mentionedChannelIds));
+      map['mentioned_channel_ids'] = Variable<String>(
+        $CachedVideosTable.$convertermentionedChannelIds.toSql(
+          mentionedChannelIds,
+        ),
+      );
     }
     map['video_title'] = Variable<String>(videoTitle);
     map['channel_name'] = Variable<String>(channelName);
     if (!nullToAbsent || channelAvatarUrl != null) {
       map['channel_avatar_url'] = Variable<String>(channelAvatarUrl);
     }
-    map['is_pending_new_media_notification'] = Variable<bool>(isPendingNewMediaNotification);
+    map['is_pending_new_media_notification'] = Variable<bool>(
+      isPendingNewMediaNotification,
+    );
     map['last_seen_timestamp'] = Variable<int>(lastSeenTimestamp);
     if (!nullToAbsent || scheduledLiveNotificationId != null) {
-      map['scheduled_live_notification_id'] = Variable<int>(scheduledLiveNotificationId);
+      map['scheduled_live_notification_id'] = Variable<int>(
+        scheduledLiveNotificationId,
+      );
     }
     if (!nullToAbsent || lastLiveNotificationSentTime != null) {
-      map['last_live_notification_sent_time'] = Variable<int>(lastLiveNotificationSentTime);
+      map['last_live_notification_sent_time'] = Variable<int>(
+        lastLiveNotificationSentTime,
+      );
     }
     if (!nullToAbsent || scheduledReminderNotificationId != null) {
-      map['scheduled_reminder_notification_id'] = Variable<int>(scheduledReminderNotificationId);
+      map['scheduled_reminder_notification_id'] = Variable<int>(
+        scheduledReminderNotificationId,
+      );
     }
     if (!nullToAbsent || scheduledReminderTime != null) {
       map['scheduled_reminder_time'] = Variable<int>(scheduledReminderTime);
@@ -477,7 +696,11 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       map['user_dismissed_at'] = Variable<int>(userDismissedAt);
     }
     {
-      map['sent_mention_target_ids'] = Variable<String>($CachedVideosTable.$convertersentMentionTargetIds.toSql(sentMentionTargetIds));
+      map['sent_mention_target_ids'] = Variable<String>(
+        $CachedVideosTable.$convertersentMentionTargetIds.toSql(
+          sentMentionTargetIds,
+        ),
+      );
     }
     return map;
   }
@@ -486,31 +709,69 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     return CachedVideosCompanion(
       videoId: Value(videoId),
       channelId: Value(channelId),
-      topicId: topicId == null && nullToAbsent ? const Value.absent() : Value(topicId),
+      topicId:
+          topicId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(topicId),
       status: Value(status),
-      startScheduled: startScheduled == null && nullToAbsent ? const Value.absent() : Value(startScheduled),
-      startActual: startActual == null && nullToAbsent ? const Value.absent() : Value(startActual),
+      startScheduled:
+          startScheduled == null && nullToAbsent
+              ? const Value.absent()
+              : Value(startScheduled),
+      startActual:
+          startActual == null && nullToAbsent
+              ? const Value.absent()
+              : Value(startActual),
       availableAt: Value(availableAt),
-      videoType: videoType == null && nullToAbsent ? const Value.absent() : Value(videoType),
-      thumbnailUrl: thumbnailUrl == null && nullToAbsent ? const Value.absent() : Value(thumbnailUrl),
-      certainty: certainty == null && nullToAbsent ? const Value.absent() : Value(certainty),
+      videoType:
+          videoType == null && nullToAbsent
+              ? const Value.absent()
+              : Value(videoType),
+      thumbnailUrl:
+          thumbnailUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(thumbnailUrl),
+      certainty:
+          certainty == null && nullToAbsent
+              ? const Value.absent()
+              : Value(certainty),
       mentionedChannelIds: Value(mentionedChannelIds),
       videoTitle: Value(videoTitle),
       channelName: Value(channelName),
-      channelAvatarUrl: channelAvatarUrl == null && nullToAbsent ? const Value.absent() : Value(channelAvatarUrl),
+      channelAvatarUrl:
+          channelAvatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(channelAvatarUrl),
       isPendingNewMediaNotification: Value(isPendingNewMediaNotification),
       lastSeenTimestamp: Value(lastSeenTimestamp),
-      scheduledLiveNotificationId: scheduledLiveNotificationId == null && nullToAbsent ? const Value.absent() : Value(scheduledLiveNotificationId),
-      lastLiveNotificationSentTime: lastLiveNotificationSentTime == null && nullToAbsent ? const Value.absent() : Value(lastLiveNotificationSentTime),
+      scheduledLiveNotificationId:
+          scheduledLiveNotificationId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(scheduledLiveNotificationId),
+      lastLiveNotificationSentTime:
+          lastLiveNotificationSentTime == null && nullToAbsent
+              ? const Value.absent()
+              : Value(lastLiveNotificationSentTime),
       scheduledReminderNotificationId:
-          scheduledReminderNotificationId == null && nullToAbsent ? const Value.absent() : Value(scheduledReminderNotificationId),
-      scheduledReminderTime: scheduledReminderTime == null && nullToAbsent ? const Value.absent() : Value(scheduledReminderTime),
-      userDismissedAt: userDismissedAt == null && nullToAbsent ? const Value.absent() : Value(userDismissedAt),
+          scheduledReminderNotificationId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(scheduledReminderNotificationId),
+      scheduledReminderTime:
+          scheduledReminderTime == null && nullToAbsent
+              ? const Value.absent()
+              : Value(scheduledReminderTime),
+      userDismissedAt:
+          userDismissedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(userDismissedAt),
       sentMentionTargetIds: Value(sentMentionTargetIds),
     );
   }
 
-  factory CachedVideo.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory CachedVideo.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return CachedVideo(
       videoId: serializer.fromJson<String>(json['videoId']),
@@ -523,18 +784,32 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       videoType: serializer.fromJson<String?>(json['videoType']),
       thumbnailUrl: serializer.fromJson<String?>(json['thumbnailUrl']),
       certainty: serializer.fromJson<String?>(json['certainty']),
-      mentionedChannelIds: serializer.fromJson<List<String>>(json['mentionedChannelIds']),
+      mentionedChannelIds: serializer.fromJson<List<String>>(
+        json['mentionedChannelIds'],
+      ),
       videoTitle: serializer.fromJson<String>(json['videoTitle']),
       channelName: serializer.fromJson<String>(json['channelName']),
       channelAvatarUrl: serializer.fromJson<String?>(json['channelAvatarUrl']),
-      isPendingNewMediaNotification: serializer.fromJson<bool>(json['isPendingNewMediaNotification']),
+      isPendingNewMediaNotification: serializer.fromJson<bool>(
+        json['isPendingNewMediaNotification'],
+      ),
       lastSeenTimestamp: serializer.fromJson<int>(json['lastSeenTimestamp']),
-      scheduledLiveNotificationId: serializer.fromJson<int?>(json['scheduledLiveNotificationId']),
-      lastLiveNotificationSentTime: serializer.fromJson<int?>(json['lastLiveNotificationSentTime']),
-      scheduledReminderNotificationId: serializer.fromJson<int?>(json['scheduledReminderNotificationId']),
-      scheduledReminderTime: serializer.fromJson<int?>(json['scheduledReminderTime']),
+      scheduledLiveNotificationId: serializer.fromJson<int?>(
+        json['scheduledLiveNotificationId'],
+      ),
+      lastLiveNotificationSentTime: serializer.fromJson<int?>(
+        json['lastLiveNotificationSentTime'],
+      ),
+      scheduledReminderNotificationId: serializer.fromJson<int?>(
+        json['scheduledReminderNotificationId'],
+      ),
+      scheduledReminderTime: serializer.fromJson<int?>(
+        json['scheduledReminderTime'],
+      ),
       userDismissedAt: serializer.fromJson<int?>(json['userDismissedAt']),
-      sentMentionTargetIds: serializer.fromJson<List<String>>(json['sentMentionTargetIds']),
+      sentMentionTargetIds: serializer.fromJson<List<String>>(
+        json['sentMentionTargetIds'],
+      ),
     );
   }
   @override
@@ -551,18 +826,30 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       'videoType': serializer.toJson<String?>(videoType),
       'thumbnailUrl': serializer.toJson<String?>(thumbnailUrl),
       'certainty': serializer.toJson<String?>(certainty),
-      'mentionedChannelIds': serializer.toJson<List<String>>(mentionedChannelIds),
+      'mentionedChannelIds': serializer.toJson<List<String>>(
+        mentionedChannelIds,
+      ),
       'videoTitle': serializer.toJson<String>(videoTitle),
       'channelName': serializer.toJson<String>(channelName),
       'channelAvatarUrl': serializer.toJson<String?>(channelAvatarUrl),
-      'isPendingNewMediaNotification': serializer.toJson<bool>(isPendingNewMediaNotification),
+      'isPendingNewMediaNotification': serializer.toJson<bool>(
+        isPendingNewMediaNotification,
+      ),
       'lastSeenTimestamp': serializer.toJson<int>(lastSeenTimestamp),
-      'scheduledLiveNotificationId': serializer.toJson<int?>(scheduledLiveNotificationId),
-      'lastLiveNotificationSentTime': serializer.toJson<int?>(lastLiveNotificationSentTime),
-      'scheduledReminderNotificationId': serializer.toJson<int?>(scheduledReminderNotificationId),
+      'scheduledLiveNotificationId': serializer.toJson<int?>(
+        scheduledLiveNotificationId,
+      ),
+      'lastLiveNotificationSentTime': serializer.toJson<int?>(
+        lastLiveNotificationSentTime,
+      ),
+      'scheduledReminderNotificationId': serializer.toJson<int?>(
+        scheduledReminderNotificationId,
+      ),
       'scheduledReminderTime': serializer.toJson<int?>(scheduledReminderTime),
       'userDismissedAt': serializer.toJson<int?>(userDismissedAt),
-      'sentMentionTargetIds': serializer.toJson<List<String>>(sentMentionTargetIds),
+      'sentMentionTargetIds': serializer.toJson<List<String>>(
+        sentMentionTargetIds,
+      ),
     };
   }
 
@@ -594,7 +881,8 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     channelId: channelId ?? this.channelId,
     topicId: topicId.present ? topicId.value : this.topicId,
     status: status ?? this.status,
-    startScheduled: startScheduled.present ? startScheduled.value : this.startScheduled,
+    startScheduled:
+        startScheduled.present ? startScheduled.value : this.startScheduled,
     startActual: startActual.present ? startActual.value : this.startActual,
     availableAt: availableAt ?? this.availableAt,
     videoType: videoType.present ? videoType.value : this.videoType,
@@ -603,15 +891,31 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
     mentionedChannelIds: mentionedChannelIds ?? this.mentionedChannelIds,
     videoTitle: videoTitle ?? this.videoTitle,
     channelName: channelName ?? this.channelName,
-    channelAvatarUrl: channelAvatarUrl.present ? channelAvatarUrl.value : this.channelAvatarUrl,
-    isPendingNewMediaNotification: isPendingNewMediaNotification ?? this.isPendingNewMediaNotification,
+    channelAvatarUrl:
+        channelAvatarUrl.present
+            ? channelAvatarUrl.value
+            : this.channelAvatarUrl,
+    isPendingNewMediaNotification:
+        isPendingNewMediaNotification ?? this.isPendingNewMediaNotification,
     lastSeenTimestamp: lastSeenTimestamp ?? this.lastSeenTimestamp,
-    scheduledLiveNotificationId: scheduledLiveNotificationId.present ? scheduledLiveNotificationId.value : this.scheduledLiveNotificationId,
-    lastLiveNotificationSentTime: lastLiveNotificationSentTime.present ? lastLiveNotificationSentTime.value : this.lastLiveNotificationSentTime,
+    scheduledLiveNotificationId:
+        scheduledLiveNotificationId.present
+            ? scheduledLiveNotificationId.value
+            : this.scheduledLiveNotificationId,
+    lastLiveNotificationSentTime:
+        lastLiveNotificationSentTime.present
+            ? lastLiveNotificationSentTime.value
+            : this.lastLiveNotificationSentTime,
     scheduledReminderNotificationId:
-        scheduledReminderNotificationId.present ? scheduledReminderNotificationId.value : this.scheduledReminderNotificationId,
-    scheduledReminderTime: scheduledReminderTime.present ? scheduledReminderTime.value : this.scheduledReminderTime,
-    userDismissedAt: userDismissedAt.present ? userDismissedAt.value : this.userDismissedAt,
+        scheduledReminderNotificationId.present
+            ? scheduledReminderNotificationId.value
+            : this.scheduledReminderNotificationId,
+    scheduledReminderTime:
+        scheduledReminderTime.present
+            ? scheduledReminderTime.value
+            : this.scheduledReminderTime,
+    userDismissedAt:
+        userDismissedAt.present ? userDismissedAt.value : this.userDismissedAt,
     sentMentionTargetIds: sentMentionTargetIds ?? this.sentMentionTargetIds,
   );
   CachedVideo copyWithCompanion(CachedVideosCompanion data) {
@@ -620,28 +924,64 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
       channelId: data.channelId.present ? data.channelId.value : this.channelId,
       topicId: data.topicId.present ? data.topicId.value : this.topicId,
       status: data.status.present ? data.status.value : this.status,
-      startScheduled: data.startScheduled.present ? data.startScheduled.value : this.startScheduled,
-      startActual: data.startActual.present ? data.startActual.value : this.startActual,
-      availableAt: data.availableAt.present ? data.availableAt.value : this.availableAt,
+      startScheduled:
+          data.startScheduled.present
+              ? data.startScheduled.value
+              : this.startScheduled,
+      startActual:
+          data.startActual.present ? data.startActual.value : this.startActual,
+      availableAt:
+          data.availableAt.present ? data.availableAt.value : this.availableAt,
       videoType: data.videoType.present ? data.videoType.value : this.videoType,
-      thumbnailUrl: data.thumbnailUrl.present ? data.thumbnailUrl.value : this.thumbnailUrl,
+      thumbnailUrl:
+          data.thumbnailUrl.present
+              ? data.thumbnailUrl.value
+              : this.thumbnailUrl,
       certainty: data.certainty.present ? data.certainty.value : this.certainty,
-      mentionedChannelIds: data.mentionedChannelIds.present ? data.mentionedChannelIds.value : this.mentionedChannelIds,
-      videoTitle: data.videoTitle.present ? data.videoTitle.value : this.videoTitle,
-      channelName: data.channelName.present ? data.channelName.value : this.channelName,
-      channelAvatarUrl: data.channelAvatarUrl.present ? data.channelAvatarUrl.value : this.channelAvatarUrl,
+      mentionedChannelIds:
+          data.mentionedChannelIds.present
+              ? data.mentionedChannelIds.value
+              : this.mentionedChannelIds,
+      videoTitle:
+          data.videoTitle.present ? data.videoTitle.value : this.videoTitle,
+      channelName:
+          data.channelName.present ? data.channelName.value : this.channelName,
+      channelAvatarUrl:
+          data.channelAvatarUrl.present
+              ? data.channelAvatarUrl.value
+              : this.channelAvatarUrl,
       isPendingNewMediaNotification:
-          data.isPendingNewMediaNotification.present ? data.isPendingNewMediaNotification.value : this.isPendingNewMediaNotification,
-      lastSeenTimestamp: data.lastSeenTimestamp.present ? data.lastSeenTimestamp.value : this.lastSeenTimestamp,
+          data.isPendingNewMediaNotification.present
+              ? data.isPendingNewMediaNotification.value
+              : this.isPendingNewMediaNotification,
+      lastSeenTimestamp:
+          data.lastSeenTimestamp.present
+              ? data.lastSeenTimestamp.value
+              : this.lastSeenTimestamp,
       scheduledLiveNotificationId:
-          data.scheduledLiveNotificationId.present ? data.scheduledLiveNotificationId.value : this.scheduledLiveNotificationId,
+          data.scheduledLiveNotificationId.present
+              ? data.scheduledLiveNotificationId.value
+              : this.scheduledLiveNotificationId,
       lastLiveNotificationSentTime:
-          data.lastLiveNotificationSentTime.present ? data.lastLiveNotificationSentTime.value : this.lastLiveNotificationSentTime,
+          data.lastLiveNotificationSentTime.present
+              ? data.lastLiveNotificationSentTime.value
+              : this.lastLiveNotificationSentTime,
       scheduledReminderNotificationId:
-          data.scheduledReminderNotificationId.present ? data.scheduledReminderNotificationId.value : this.scheduledReminderNotificationId,
-      scheduledReminderTime: data.scheduledReminderTime.present ? data.scheduledReminderTime.value : this.scheduledReminderTime,
-      userDismissedAt: data.userDismissedAt.present ? data.userDismissedAt.value : this.userDismissedAt,
-      sentMentionTargetIds: data.sentMentionTargetIds.present ? data.sentMentionTargetIds.value : this.sentMentionTargetIds,
+          data.scheduledReminderNotificationId.present
+              ? data.scheduledReminderNotificationId.value
+              : this.scheduledReminderNotificationId,
+      scheduledReminderTime:
+          data.scheduledReminderTime.present
+              ? data.scheduledReminderTime.value
+              : this.scheduledReminderTime,
+      userDismissedAt:
+          data.userDismissedAt.present
+              ? data.userDismissedAt.value
+              : this.userDismissedAt,
+      sentMentionTargetIds:
+          data.sentMentionTargetIds.present
+              ? data.sentMentionTargetIds.value
+              : this.sentMentionTargetIds,
     );
   }
 
@@ -662,11 +1002,17 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           ..write('videoTitle: $videoTitle, ')
           ..write('channelName: $channelName, ')
           ..write('channelAvatarUrl: $channelAvatarUrl, ')
-          ..write('isPendingNewMediaNotification: $isPendingNewMediaNotification, ')
+          ..write(
+            'isPendingNewMediaNotification: $isPendingNewMediaNotification, ',
+          )
           ..write('lastSeenTimestamp: $lastSeenTimestamp, ')
           ..write('scheduledLiveNotificationId: $scheduledLiveNotificationId, ')
-          ..write('lastLiveNotificationSentTime: $lastLiveNotificationSentTime, ')
-          ..write('scheduledReminderNotificationId: $scheduledReminderNotificationId, ')
+          ..write(
+            'lastLiveNotificationSentTime: $lastLiveNotificationSentTime, ',
+          )
+          ..write(
+            'scheduledReminderNotificationId: $scheduledReminderNotificationId, ',
+          )
           ..write('scheduledReminderTime: $scheduledReminderTime, ')
           ..write('userDismissedAt: $userDismissedAt, ')
           ..write('sentMentionTargetIds: $sentMentionTargetIds')
@@ -717,11 +1063,15 @@ class CachedVideo extends DataClass implements Insertable<CachedVideo> {
           other.videoTitle == this.videoTitle &&
           other.channelName == this.channelName &&
           other.channelAvatarUrl == this.channelAvatarUrl &&
-          other.isPendingNewMediaNotification == this.isPendingNewMediaNotification &&
+          other.isPendingNewMediaNotification ==
+              this.isPendingNewMediaNotification &&
           other.lastSeenTimestamp == this.lastSeenTimestamp &&
-          other.scheduledLiveNotificationId == this.scheduledLiveNotificationId &&
-          other.lastLiveNotificationSentTime == this.lastLiveNotificationSentTime &&
-          other.scheduledReminderNotificationId == this.scheduledReminderNotificationId &&
+          other.scheduledLiveNotificationId ==
+              this.scheduledLiveNotificationId &&
+          other.lastLiveNotificationSentTime ==
+              this.lastLiveNotificationSentTime &&
+          other.scheduledReminderNotificationId ==
+              this.scheduledReminderNotificationId &&
           other.scheduledReminderTime == this.scheduledReminderTime &&
           other.userDismissedAt == this.userDismissedAt &&
           other.sentMentionTargetIds == this.sentMentionTargetIds);
@@ -840,18 +1190,25 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       if (videoType != null) 'video_type': videoType,
       if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
       if (certainty != null) 'certainty': certainty,
-      if (mentionedChannelIds != null) 'mentioned_channel_ids': mentionedChannelIds,
+      if (mentionedChannelIds != null)
+        'mentioned_channel_ids': mentionedChannelIds,
       if (videoTitle != null) 'video_title': videoTitle,
       if (channelName != null) 'channel_name': channelName,
       if (channelAvatarUrl != null) 'channel_avatar_url': channelAvatarUrl,
-      if (isPendingNewMediaNotification != null) 'is_pending_new_media_notification': isPendingNewMediaNotification,
+      if (isPendingNewMediaNotification != null)
+        'is_pending_new_media_notification': isPendingNewMediaNotification,
       if (lastSeenTimestamp != null) 'last_seen_timestamp': lastSeenTimestamp,
-      if (scheduledLiveNotificationId != null) 'scheduled_live_notification_id': scheduledLiveNotificationId,
-      if (lastLiveNotificationSentTime != null) 'last_live_notification_sent_time': lastLiveNotificationSentTime,
-      if (scheduledReminderNotificationId != null) 'scheduled_reminder_notification_id': scheduledReminderNotificationId,
-      if (scheduledReminderTime != null) 'scheduled_reminder_time': scheduledReminderTime,
+      if (scheduledLiveNotificationId != null)
+        'scheduled_live_notification_id': scheduledLiveNotificationId,
+      if (lastLiveNotificationSentTime != null)
+        'last_live_notification_sent_time': lastLiveNotificationSentTime,
+      if (scheduledReminderNotificationId != null)
+        'scheduled_reminder_notification_id': scheduledReminderNotificationId,
+      if (scheduledReminderTime != null)
+        'scheduled_reminder_time': scheduledReminderTime,
       if (userDismissedAt != null) 'user_dismissed_at': userDismissedAt,
-      if (sentMentionTargetIds != null) 'sent_mention_target_ids': sentMentionTargetIds,
+      if (sentMentionTargetIds != null)
+        'sent_mention_target_ids': sentMentionTargetIds,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -896,12 +1253,18 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       videoTitle: videoTitle ?? this.videoTitle,
       channelName: channelName ?? this.channelName,
       channelAvatarUrl: channelAvatarUrl ?? this.channelAvatarUrl,
-      isPendingNewMediaNotification: isPendingNewMediaNotification ?? this.isPendingNewMediaNotification,
+      isPendingNewMediaNotification:
+          isPendingNewMediaNotification ?? this.isPendingNewMediaNotification,
       lastSeenTimestamp: lastSeenTimestamp ?? this.lastSeenTimestamp,
-      scheduledLiveNotificationId: scheduledLiveNotificationId ?? this.scheduledLiveNotificationId,
-      lastLiveNotificationSentTime: lastLiveNotificationSentTime ?? this.lastLiveNotificationSentTime,
-      scheduledReminderNotificationId: scheduledReminderNotificationId ?? this.scheduledReminderNotificationId,
-      scheduledReminderTime: scheduledReminderTime ?? this.scheduledReminderTime,
+      scheduledLiveNotificationId:
+          scheduledLiveNotificationId ?? this.scheduledLiveNotificationId,
+      lastLiveNotificationSentTime:
+          lastLiveNotificationSentTime ?? this.lastLiveNotificationSentTime,
+      scheduledReminderNotificationId:
+          scheduledReminderNotificationId ??
+          this.scheduledReminderNotificationId,
+      scheduledReminderTime:
+          scheduledReminderTime ?? this.scheduledReminderTime,
       userDismissedAt: userDismissedAt ?? this.userDismissedAt,
       sentMentionTargetIds: sentMentionTargetIds ?? this.sentMentionTargetIds,
       rowid: rowid ?? this.rowid,
@@ -942,7 +1305,11 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       map['certainty'] = Variable<String>(certainty.value);
     }
     if (mentionedChannelIds.present) {
-      map['mentioned_channel_ids'] = Variable<String>($CachedVideosTable.$convertermentionedChannelIds.toSql(mentionedChannelIds.value));
+      map['mentioned_channel_ids'] = Variable<String>(
+        $CachedVideosTable.$convertermentionedChannelIds.toSql(
+          mentionedChannelIds.value,
+        ),
+      );
     }
     if (videoTitle.present) {
       map['video_title'] = Variable<String>(videoTitle.value);
@@ -954,28 +1321,42 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
       map['channel_avatar_url'] = Variable<String>(channelAvatarUrl.value);
     }
     if (isPendingNewMediaNotification.present) {
-      map['is_pending_new_media_notification'] = Variable<bool>(isPendingNewMediaNotification.value);
+      map['is_pending_new_media_notification'] = Variable<bool>(
+        isPendingNewMediaNotification.value,
+      );
     }
     if (lastSeenTimestamp.present) {
       map['last_seen_timestamp'] = Variable<int>(lastSeenTimestamp.value);
     }
     if (scheduledLiveNotificationId.present) {
-      map['scheduled_live_notification_id'] = Variable<int>(scheduledLiveNotificationId.value);
+      map['scheduled_live_notification_id'] = Variable<int>(
+        scheduledLiveNotificationId.value,
+      );
     }
     if (lastLiveNotificationSentTime.present) {
-      map['last_live_notification_sent_time'] = Variable<int>(lastLiveNotificationSentTime.value);
+      map['last_live_notification_sent_time'] = Variable<int>(
+        lastLiveNotificationSentTime.value,
+      );
     }
     if (scheduledReminderNotificationId.present) {
-      map['scheduled_reminder_notification_id'] = Variable<int>(scheduledReminderNotificationId.value);
+      map['scheduled_reminder_notification_id'] = Variable<int>(
+        scheduledReminderNotificationId.value,
+      );
     }
     if (scheduledReminderTime.present) {
-      map['scheduled_reminder_time'] = Variable<int>(scheduledReminderTime.value);
+      map['scheduled_reminder_time'] = Variable<int>(
+        scheduledReminderTime.value,
+      );
     }
     if (userDismissedAt.present) {
       map['user_dismissed_at'] = Variable<int>(userDismissedAt.value);
     }
     if (sentMentionTargetIds.present) {
-      map['sent_mention_target_ids'] = Variable<String>($CachedVideosTable.$convertersentMentionTargetIds.toSql(sentMentionTargetIds.value));
+      map['sent_mention_target_ids'] = Variable<String>(
+        $CachedVideosTable.$convertersentMentionTargetIds.toSql(
+          sentMentionTargetIds.value,
+        ),
+      );
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -1000,11 +1381,17 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
           ..write('videoTitle: $videoTitle, ')
           ..write('channelName: $channelName, ')
           ..write('channelAvatarUrl: $channelAvatarUrl, ')
-          ..write('isPendingNewMediaNotification: $isPendingNewMediaNotification, ')
+          ..write(
+            'isPendingNewMediaNotification: $isPendingNewMediaNotification, ',
+          )
           ..write('lastSeenTimestamp: $lastSeenTimestamp, ')
           ..write('scheduledLiveNotificationId: $scheduledLiveNotificationId, ')
-          ..write('lastLiveNotificationSentTime: $lastLiveNotificationSentTime, ')
-          ..write('scheduledReminderNotificationId: $scheduledReminderNotificationId, ')
+          ..write(
+            'lastLiveNotificationSentTime: $lastLiveNotificationSentTime, ',
+          )
+          ..write(
+            'scheduledReminderNotificationId: $scheduledReminderNotificationId, ',
+          )
           ..write('scheduledReminderTime: $scheduledReminderTime, ')
           ..write('userDismissedAt: $userDismissedAt, ')
           ..write('sentMentionTargetIds: $sentMentionTargetIds, ')
@@ -1019,7 +1406,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $CachedVideosTable cachedVideos = $CachedVideosTable(this);
   @override
-  Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [cachedVideos];
 }
@@ -1077,7 +1465,8 @@ typedef $$CachedVideosTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$CachedVideosTableFilterComposer extends Composer<_$AppDatabase, $CachedVideosTable> {
+class $$CachedVideosTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedVideosTable> {
   $$CachedVideosTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -1085,59 +1474,121 @@ class $$CachedVideosTableFilterComposer extends Composer<_$AppDatabase, $CachedV
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get videoId => $composableBuilder(column: $table.videoId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get videoId => $composableBuilder(
+    column: $table.videoId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get channelId => $composableBuilder(column: $table.channelId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get channelId => $composableBuilder(
+    column: $table.channelId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get topicId => $composableBuilder(column: $table.topicId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get topicId => $composableBuilder(
+    column: $table.topicId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get status => $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get startScheduled => $composableBuilder(column: $table.startScheduled, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get startScheduled => $composableBuilder(
+    column: $table.startScheduled,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get startActual => $composableBuilder(column: $table.startActual, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get startActual => $composableBuilder(
+    column: $table.startActual,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get availableAt => $composableBuilder(column: $table.availableAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get availableAt => $composableBuilder(
+    column: $table.availableAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get videoType => $composableBuilder(column: $table.videoType, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get videoType => $composableBuilder(
+    column: $table.videoType,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get thumbnailUrl => $composableBuilder(column: $table.thumbnailUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get thumbnailUrl => $composableBuilder(
+    column: $table.thumbnailUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get certainty => $composableBuilder(column: $table.certainty, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get certainty => $composableBuilder(
+    column: $table.certainty,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnWithTypeConverterFilters<List<String>, List<String>, String> get mentionedChannelIds =>
-      $composableBuilder(column: $table.mentionedChannelIds, builder: (column) => ColumnWithTypeConverterFilters(column));
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get mentionedChannelIds => $composableBuilder(
+    column: $table.mentionedChannelIds,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
 
-  ColumnFilters<String> get videoTitle => $composableBuilder(column: $table.videoTitle, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get videoTitle => $composableBuilder(
+    column: $table.videoTitle,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get channelName => $composableBuilder(column: $table.channelName, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get channelName => $composableBuilder(
+    column: $table.channelName,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get channelAvatarUrl => $composableBuilder(column: $table.channelAvatarUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get channelAvatarUrl => $composableBuilder(
+    column: $table.channelAvatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get isPendingNewMediaNotification =>
-      $composableBuilder(column: $table.isPendingNewMediaNotification, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get isPendingNewMediaNotification => $composableBuilder(
+    column: $table.isPendingNewMediaNotification,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get lastSeenTimestamp => $composableBuilder(column: $table.lastSeenTimestamp, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get lastSeenTimestamp => $composableBuilder(
+    column: $table.lastSeenTimestamp,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get scheduledLiveNotificationId =>
-      $composableBuilder(column: $table.scheduledLiveNotificationId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get scheduledLiveNotificationId => $composableBuilder(
+    column: $table.scheduledLiveNotificationId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get lastLiveNotificationSentTime =>
-      $composableBuilder(column: $table.lastLiveNotificationSentTime, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get lastLiveNotificationSentTime => $composableBuilder(
+    column: $table.lastLiveNotificationSentTime,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get scheduledReminderNotificationId =>
-      $composableBuilder(column: $table.scheduledReminderNotificationId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get scheduledReminderNotificationId => $composableBuilder(
+    column: $table.scheduledReminderNotificationId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get scheduledReminderTime =>
-      $composableBuilder(column: $table.scheduledReminderTime, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get scheduledReminderTime => $composableBuilder(
+    column: $table.scheduledReminderTime,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get userDismissedAt => $composableBuilder(column: $table.userDismissedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get userDismissedAt => $composableBuilder(
+    column: $table.userDismissedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnWithTypeConverterFilters<List<String>, List<String>, String> get sentMentionTargetIds =>
-      $composableBuilder(column: $table.sentMentionTargetIds, builder: (column) => ColumnWithTypeConverterFilters(column));
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get sentMentionTargetIds => $composableBuilder(
+    column: $table.sentMentionTargetIds,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
 }
 
-class $$CachedVideosTableOrderingComposer extends Composer<_$AppDatabase, $CachedVideosTable> {
+class $$CachedVideosTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedVideosTable> {
   $$CachedVideosTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -1145,59 +1596,120 @@ class $$CachedVideosTableOrderingComposer extends Composer<_$AppDatabase, $Cache
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get videoId => $composableBuilder(column: $table.videoId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get videoId => $composableBuilder(
+    column: $table.videoId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get channelId => $composableBuilder(column: $table.channelId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get channelId => $composableBuilder(
+    column: $table.channelId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get topicId => $composableBuilder(column: $table.topicId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get topicId => $composableBuilder(
+    column: $table.topicId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get status => $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get startScheduled => $composableBuilder(column: $table.startScheduled, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get startScheduled => $composableBuilder(
+    column: $table.startScheduled,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get startActual => $composableBuilder(column: $table.startActual, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get startActual => $composableBuilder(
+    column: $table.startActual,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get availableAt => $composableBuilder(column: $table.availableAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get availableAt => $composableBuilder(
+    column: $table.availableAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get videoType => $composableBuilder(column: $table.videoType, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get videoType => $composableBuilder(
+    column: $table.videoType,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get thumbnailUrl => $composableBuilder(column: $table.thumbnailUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get thumbnailUrl => $composableBuilder(
+    column: $table.thumbnailUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get certainty => $composableBuilder(column: $table.certainty, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get certainty => $composableBuilder(
+    column: $table.certainty,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get mentionedChannelIds =>
-      $composableBuilder(column: $table.mentionedChannelIds, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get mentionedChannelIds => $composableBuilder(
+    column: $table.mentionedChannelIds,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get videoTitle => $composableBuilder(column: $table.videoTitle, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get videoTitle => $composableBuilder(
+    column: $table.videoTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get channelName => $composableBuilder(column: $table.channelName, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get channelName => $composableBuilder(
+    column: $table.channelName,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get channelAvatarUrl => $composableBuilder(column: $table.channelAvatarUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get channelAvatarUrl => $composableBuilder(
+    column: $table.channelAvatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get isPendingNewMediaNotification =>
-      $composableBuilder(column: $table.isPendingNewMediaNotification, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get isPendingNewMediaNotification => $composableBuilder(
+    column: $table.isPendingNewMediaNotification,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get lastSeenTimestamp => $composableBuilder(column: $table.lastSeenTimestamp, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get lastSeenTimestamp => $composableBuilder(
+    column: $table.lastSeenTimestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get scheduledLiveNotificationId =>
-      $composableBuilder(column: $table.scheduledLiveNotificationId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get scheduledLiveNotificationId => $composableBuilder(
+    column: $table.scheduledLiveNotificationId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get lastLiveNotificationSentTime =>
-      $composableBuilder(column: $table.lastLiveNotificationSentTime, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get lastLiveNotificationSentTime => $composableBuilder(
+    column: $table.lastLiveNotificationSentTime,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get scheduledReminderNotificationId =>
-      $composableBuilder(column: $table.scheduledReminderNotificationId, builder: (column) => ColumnOrderings(column));
+      $composableBuilder(
+        column: $table.scheduledReminderNotificationId,
+        builder: (column) => ColumnOrderings(column),
+      );
 
-  ColumnOrderings<int> get scheduledReminderTime =>
-      $composableBuilder(column: $table.scheduledReminderTime, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get scheduledReminderTime => $composableBuilder(
+    column: $table.scheduledReminderTime,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get userDismissedAt => $composableBuilder(column: $table.userDismissedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get userDismissedAt => $composableBuilder(
+    column: $table.userDismissedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get sentMentionTargetIds =>
-      $composableBuilder(column: $table.sentMentionTargetIds, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get sentMentionTargetIds => $composableBuilder(
+    column: $table.sentMentionTargetIds,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$CachedVideosTableAnnotationComposer extends Composer<_$AppDatabase, $CachedVideosTable> {
+class $$CachedVideosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedVideosTable> {
   $$CachedVideosTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -1205,54 +1717,106 @@ class $$CachedVideosTableAnnotationComposer extends Composer<_$AppDatabase, $Cac
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get videoId => $composableBuilder(column: $table.videoId, builder: (column) => column);
+  GeneratedColumn<String> get videoId =>
+      $composableBuilder(column: $table.videoId, builder: (column) => column);
 
-  GeneratedColumn<String> get channelId => $composableBuilder(column: $table.channelId, builder: (column) => column);
+  GeneratedColumn<String> get channelId =>
+      $composableBuilder(column: $table.channelId, builder: (column) => column);
 
-  GeneratedColumn<String> get topicId => $composableBuilder(column: $table.topicId, builder: (column) => column);
+  GeneratedColumn<String> get topicId =>
+      $composableBuilder(column: $table.topicId, builder: (column) => column);
 
-  GeneratedColumn<String> get status => $composableBuilder(column: $table.status, builder: (column) => column);
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<String> get startScheduled => $composableBuilder(column: $table.startScheduled, builder: (column) => column);
+  GeneratedColumn<String> get startScheduled => $composableBuilder(
+    column: $table.startScheduled,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get startActual => $composableBuilder(column: $table.startActual, builder: (column) => column);
+  GeneratedColumn<String> get startActual => $composableBuilder(
+    column: $table.startActual,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get availableAt => $composableBuilder(column: $table.availableAt, builder: (column) => column);
+  GeneratedColumn<String> get availableAt => $composableBuilder(
+    column: $table.availableAt,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get videoType => $composableBuilder(column: $table.videoType, builder: (column) => column);
+  GeneratedColumn<String> get videoType =>
+      $composableBuilder(column: $table.videoType, builder: (column) => column);
 
-  GeneratedColumn<String> get thumbnailUrl => $composableBuilder(column: $table.thumbnailUrl, builder: (column) => column);
+  GeneratedColumn<String> get thumbnailUrl => $composableBuilder(
+    column: $table.thumbnailUrl,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get certainty => $composableBuilder(column: $table.certainty, builder: (column) => column);
+  GeneratedColumn<String> get certainty =>
+      $composableBuilder(column: $table.certainty, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<List<String>, String> get mentionedChannelIds =>
-      $composableBuilder(column: $table.mentionedChannelIds, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<List<String>, String>
+  get mentionedChannelIds => $composableBuilder(
+    column: $table.mentionedChannelIds,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get videoTitle => $composableBuilder(column: $table.videoTitle, builder: (column) => column);
+  GeneratedColumn<String> get videoTitle => $composableBuilder(
+    column: $table.videoTitle,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get channelName => $composableBuilder(column: $table.channelName, builder: (column) => column);
+  GeneratedColumn<String> get channelName => $composableBuilder(
+    column: $table.channelName,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get channelAvatarUrl => $composableBuilder(column: $table.channelAvatarUrl, builder: (column) => column);
+  GeneratedColumn<String> get channelAvatarUrl => $composableBuilder(
+    column: $table.channelAvatarUrl,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<bool> get isPendingNewMediaNotification =>
-      $composableBuilder(column: $table.isPendingNewMediaNotification, builder: (column) => column);
+  GeneratedColumn<bool> get isPendingNewMediaNotification => $composableBuilder(
+    column: $table.isPendingNewMediaNotification,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get lastSeenTimestamp => $composableBuilder(column: $table.lastSeenTimestamp, builder: (column) => column);
+  GeneratedColumn<int> get lastSeenTimestamp => $composableBuilder(
+    column: $table.lastSeenTimestamp,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get scheduledLiveNotificationId => $composableBuilder(column: $table.scheduledLiveNotificationId, builder: (column) => column);
+  GeneratedColumn<int> get scheduledLiveNotificationId => $composableBuilder(
+    column: $table.scheduledLiveNotificationId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get lastLiveNotificationSentTime =>
-      $composableBuilder(column: $table.lastLiveNotificationSentTime, builder: (column) => column);
+  GeneratedColumn<int> get lastLiveNotificationSentTime => $composableBuilder(
+    column: $table.lastLiveNotificationSentTime,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get scheduledReminderNotificationId =>
-      $composableBuilder(column: $table.scheduledReminderNotificationId, builder: (column) => column);
+      $composableBuilder(
+        column: $table.scheduledReminderNotificationId,
+        builder: (column) => column,
+      );
 
-  GeneratedColumn<int> get scheduledReminderTime => $composableBuilder(column: $table.scheduledReminderTime, builder: (column) => column);
+  GeneratedColumn<int> get scheduledReminderTime => $composableBuilder(
+    column: $table.scheduledReminderTime,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get userDismissedAt => $composableBuilder(column: $table.userDismissedAt, builder: (column) => column);
+  GeneratedColumn<int> get userDismissedAt => $composableBuilder(
+    column: $table.userDismissedAt,
+    builder: (column) => column,
+  );
 
-  GeneratedColumnWithTypeConverter<List<String>, String> get sentMentionTargetIds =>
-      $composableBuilder(column: $table.sentMentionTargetIds, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<List<String>, String>
+  get sentMentionTargetIds => $composableBuilder(
+    column: $table.sentMentionTargetIds,
+    builder: (column) => column,
+  );
 }
 
 class $$CachedVideosTableTableManager
@@ -1266,7 +1830,10 @@ class $$CachedVideosTableTableManager
           $$CachedVideosTableAnnotationComposer,
           $$CachedVideosTableCreateCompanionBuilder,
           $$CachedVideosTableUpdateCompanionBuilder,
-          (CachedVideo, BaseReferences<_$AppDatabase, $CachedVideosTable, CachedVideo>),
+          (
+            CachedVideo,
+            BaseReferences<_$AppDatabase, $CachedVideosTable, CachedVideo>,
+          ),
           CachedVideo,
           PrefetchHooks Function()
         > {
@@ -1275,9 +1842,13 @@ class $$CachedVideosTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$CachedVideosTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$CachedVideosTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$CachedVideosTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$CachedVideosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$CachedVideosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$CachedVideosTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> videoId = const Value.absent(),
@@ -1294,11 +1865,13 @@ class $$CachedVideosTableTableManager
                 Value<String> videoTitle = const Value.absent(),
                 Value<String> channelName = const Value.absent(),
                 Value<String?> channelAvatarUrl = const Value.absent(),
-                Value<bool> isPendingNewMediaNotification = const Value.absent(),
+                Value<bool> isPendingNewMediaNotification =
+                    const Value.absent(),
                 Value<int> lastSeenTimestamp = const Value.absent(),
                 Value<int?> scheduledLiveNotificationId = const Value.absent(),
                 Value<int?> lastLiveNotificationSentTime = const Value.absent(),
-                Value<int?> scheduledReminderNotificationId = const Value.absent(),
+                Value<int?> scheduledReminderNotificationId =
+                    const Value.absent(),
                 Value<int?> scheduledReminderTime = const Value.absent(),
                 Value<int?> userDismissedAt = const Value.absent(),
                 Value<List<String>> sentMentionTargetIds = const Value.absent(),
@@ -1322,7 +1895,8 @@ class $$CachedVideosTableTableManager
                 lastSeenTimestamp: lastSeenTimestamp,
                 scheduledLiveNotificationId: scheduledLiveNotificationId,
                 lastLiveNotificationSentTime: lastLiveNotificationSentTime,
-                scheduledReminderNotificationId: scheduledReminderNotificationId,
+                scheduledReminderNotificationId:
+                    scheduledReminderNotificationId,
                 scheduledReminderTime: scheduledReminderTime,
                 userDismissedAt: userDismissedAt,
                 sentMentionTargetIds: sentMentionTargetIds,
@@ -1344,11 +1918,13 @@ class $$CachedVideosTableTableManager
                 Value<String> videoTitle = const Value.absent(),
                 Value<String> channelName = const Value.absent(),
                 Value<String?> channelAvatarUrl = const Value.absent(),
-                Value<bool> isPendingNewMediaNotification = const Value.absent(),
+                Value<bool> isPendingNewMediaNotification =
+                    const Value.absent(),
                 required int lastSeenTimestamp,
                 Value<int?> scheduledLiveNotificationId = const Value.absent(),
                 Value<int?> lastLiveNotificationSentTime = const Value.absent(),
-                Value<int?> scheduledReminderNotificationId = const Value.absent(),
+                Value<int?> scheduledReminderNotificationId =
+                    const Value.absent(),
                 Value<int?> scheduledReminderTime = const Value.absent(),
                 Value<int?> userDismissedAt = const Value.absent(),
                 Value<List<String>> sentMentionTargetIds = const Value.absent(),
@@ -1372,13 +1948,23 @@ class $$CachedVideosTableTableManager
                 lastSeenTimestamp: lastSeenTimestamp,
                 scheduledLiveNotificationId: scheduledLiveNotificationId,
                 lastLiveNotificationSentTime: lastLiveNotificationSentTime,
-                scheduledReminderNotificationId: scheduledReminderNotificationId,
+                scheduledReminderNotificationId:
+                    scheduledReminderNotificationId,
                 scheduledReminderTime: scheduledReminderTime,
                 userDismissedAt: userDismissedAt,
                 sentMentionTargetIds: sentMentionTargetIds,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -1394,7 +1980,10 @@ typedef $$CachedVideosTableProcessedTableManager =
       $$CachedVideosTableAnnotationComposer,
       $$CachedVideosTableCreateCompanionBuilder,
       $$CachedVideosTableUpdateCompanionBuilder,
-      (CachedVideo, BaseReferences<_$AppDatabase, $CachedVideosTable, CachedVideo>),
+      (
+        CachedVideo,
+        BaseReferences<_$AppDatabase, $CachedVideosTable, CachedVideo>,
+      ),
       CachedVideo,
       PrefetchHooks Function()
     >;
@@ -1402,5 +1991,6 @@ typedef $$CachedVideosTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$CachedVideosTableTableManager get cachedVideos => $$CachedVideosTableTableManager(_db, _db.cachedVideos);
+  $$CachedVideosTableTableManager get cachedVideos =>
+      $$CachedVideosTableTableManager(_db, _db.cachedVideos);
 }

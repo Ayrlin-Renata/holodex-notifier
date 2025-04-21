@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NotificationInstruction {
 
- String get videoId; NotificationEventType get eventType; String get channelId; String get channelName; String get videoTitle; String? get videoType; String? get channelAvatarUrl; DateTime get availableAt; String? get mentionTargetChannelId; String? get mentionTargetChannelName; List<String>? get mentionedChannelNames;// {{ Add this field }}
- String? get videoThumbnailUrl; String? get videoSourceLink;
+ String get videoId; NotificationEventType get eventType; String get channelId; String get channelName; String get videoTitle; String? get videoType; String? get channelAvatarUrl; DateTime get availableAt; String? get mentionTargetChannelId; String? get mentionTargetChannelName; List<String>? get mentionedChannelNames; String? get videoThumbnailUrl; String? get videoSourceLink;
 /// Create a copy of NotificationInstruction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -112,7 +111,6 @@ class _NotificationInstruction implements NotificationInstruction {
   return EqualUnmodifiableListView(value);
 }
 
-// {{ Add this field }}
 @override final  String? videoThumbnailUrl;
 @override final  String? videoSourceLink;
 
