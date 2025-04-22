@@ -118,6 +118,14 @@ class CreditsCard extends ConsumerWidget {
           subtitle: 'Holodex.net',
           url: 'https://holodex.net',
         ),
+        _buildLinkTile(
+          context,
+          ref,
+          icon: const Icon(Icons.play_arrow),
+          title: 'COVER Corporation',
+          subtitle: 'Derivative Works Guidelines',
+          url: 'https://hololivepro.com/en/terms/',
+        ),
       ],
     );
   }
