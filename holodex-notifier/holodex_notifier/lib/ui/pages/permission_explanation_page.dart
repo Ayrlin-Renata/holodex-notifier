@@ -18,7 +18,6 @@ class PermissionExplanationPage extends HookConsumerWidget {
     final batteryState = useState<AsyncValue<bool>>(const AsyncValue.loading());
     final isLoading = useState(false);
     final needsNavigation = useState(false);
-    final requestedBatterySettings = useState(false);
     final appLifecycleState = useAppLifecycleState();
 
     final checkBatteryStatus = useCallback(() async {
@@ -64,15 +63,14 @@ class PermissionExplanationPage extends HookConsumerWidget {
 
     useEffect(() {
       logger.trace(
-        "[Permission Page Effect Lifecycle] State changed to: $appLifecycleState. requestedBatterySettings=${requestedBatterySettings.value}",
+        "[Permission Page Effect Lifecycle] State changed to: $appLifecycleState.",
       );
-      if (appLifecycleState == AppLifecycleState.resumed && requestedBatterySettings.value) {
-        logger.info("[Permission Page Effect Lifecycle] App resumed after requesting settings. Calling checkBatteryStatus.");
-        requestedBatterySettings.value = false;
+      if (appLifecycleState == AppLifecycleState.resumed) {
+        logger.info("[Permission Page Effect Lifecycle] App resumed. Calling checkBatteryStatus.");
         checkBatteryStatus();
       }
       return null;
-    }, [appLifecycleState, requestedBatterySettings, checkBatteryStatus]);
+    }, [appLifecycleState, checkBatteryStatus]);
 
     useEffect(() {
       final bool isBattDisabled = batteryState.value.maybeWhen(data: (d) => d, orElse: () => false);
@@ -119,24 +117,24 @@ class PermissionExplanationPage extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Why These Permissions?', style: theme.textTheme.headlineSmall),
+            Text('Hand \'em over.', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 16),
             _PermissionItem(
               icon: Icons.notifications_active_outlined,
               title: 'Notifications',
-              description: 'Required to show alerts when followed streams are about to start or go live.',
+              description: '...to send you notifications for livestreams, new uploads, and scheduled reminders.',
             ),
             _PermissionItem(
               icon: Icons.schedule_outlined,
-              title: 'Schedule Exact Alarm (Android)',
-              description: 'Needed to schedule notifications precisely, ensuring reminders appear at the correct time before a stream starts.',
+              title: 'Schedule Exact Alarm',
+              description: 'Android 12+ requires this in order to send notifications at specific times, or else the notifications might be late.',
             ),
             if (Platform.isAndroid)
               _PermissionItem(
                 icon: Icons.battery_alert_outlined,
                 title: 'Disable Battery Optimization',
                 description:
-                    'Android can stop background tasks to save power. Disabling optimization for this app ensures reliable stream checking and timely notifications.',
+                    'Battery Optimization can stop the background process needed to retrieve the latest data. If that happens, the notifications will just randomly stop until you open the app again.\nYou can monitor the battery usage in your Settings.',
                 trailing: batteryState.value.when(
                   data:
                       (isDisabled) =>
@@ -189,19 +187,18 @@ class PermissionExplanationPage extends HookConsumerWidget {
                           final bool requiresRequest = batteryState.value.maybeWhen(
                             data: (isDisabled) => !isDisabled,
                             loading: () => true,
-                            error: (_, s) => true,
+                            error: (_, __) => true,
                             orElse: () => true,
                           );
 
                           if (requiresRequest) {
                             logger.info(
-                              "[Permission Page Button] Battery opt requires request (State: ${batteryState.value}). Requesting user action...",
+                              "[Permission Page Button] Battery optimization needs to be disabled (Current State: ${batteryState.value}). Requesting user action...",
                             );
-                            requestedBatterySettings.value = true;
                             await notificationService.requestBatteryOptimizationDisabled();
-                            logger.info("[Permission Page Button] Directed user to battery settings/prompt. Waiting for resume.");
+                            logger.info("[Permission Page Button] System settings requested for battery optimization.");
                           } else {
-                            logger.info("[Permission Page Button] Battery optimization already disabled or state is data(true). No request needed.");
+                            logger.info("[Permission Page Button] Battery optimization already disabled or state reflects disabled. No request needed.");
                           }
                         } else {
                           logger.info("[Permission Page Button] Skipping battery optimization step (Not Android).");

@@ -45,7 +45,7 @@ class ChannelSettingsTile extends ConsumerWidget {
                   Wrap(
                     spacing: 4.0,
                     runSpacing: 0.0,
-                    alignment: WrapAlignment.spaceBetween,
+                    alignment: WrapAlignment.start,
                     children: [
                       _buildToggleChip(
                         context: context,
