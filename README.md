@@ -11,7 +11,7 @@ sometimes your oshi’s friend announces they’re collabing in 20 hours on thie
 and then you’re like, “but this was literally on holodex 20 hours early, if i just had notifications, i wouldn’t have been late to the stream…”
 
 # download
-https://github.com/Ayrlin-Renata/holodex-notifier/releases
+[releases on GitHub](https://github.com/Ayrlin-Renata/holodex-notifier/releases)
 
 # but what does it actually do?
 
