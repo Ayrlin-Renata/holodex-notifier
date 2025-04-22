@@ -82,6 +82,7 @@ class NotificationDecisionService implements INotificationDecisionService {
     final DateTime currentSystemTime = DateTime.now();
 
     final Set<String> mentionsDispatchedThisCycle = {};
+    final Set<String> mentionsScheduledThisCycle = {};
     _logger.debug("[DecisionService] ($videoId) Determining actions. Mention context: ${mentionedForChannels ?? 'None'}");
 
     try {
@@ -184,14 +185,9 @@ class NotificationDecisionService implements INotificationDecisionService {
         final List<String> alreadySentMentions = cachedVideo?.sentMentionTargetIds ?? [];
 
         for (final mentionedChannelId in mentionedForChannels) {
-          if (alreadySentMentions.contains(mentionedChannelId) || mentionsDispatchedThisCycle.contains(mentionedChannelId)) {
-            if (alreadySentMentions.contains(mentionedChannelId)) {
-              _logger.trace('[DecisionService] ($videoId) Skipping mention dispatch: Already sent for target $mentionedChannelId (from cache).');
-            } else {
-              _logger.trace(
-                '[DecisionService] ($videoId) Skipping mention dispatch: Already dispatched in this cycle for target $mentionedChannelId.',
-              );
-            }
+          if (alreadySentMentions.contains(mentionedChannelId) ||
+              (mentionsScheduledThisCycle.contains(mentionedChannelId) && mentionsDispatchedThisCycle.contains(mentionedChannelId))) {
+            _logger.trace('[DecisionService] ($videoId) Skipping mention dispatch: Already sent for target $mentionedChannelId (from cache).');
             continue;
           }
 
@@ -218,22 +214,38 @@ class NotificationDecisionService implements INotificationDecisionService {
               } else {
                 final mentionDetails = fetchedVideo.mentions?.firstWhereOrNull((m) => m.id == mentionedChannelId);
                 final targetChannelName = mentionDetails?.name ?? mentionTargetSettings.name;
-                _logger.info(
-                  '[DecisionService] ($videoId) User wants mentions for $mentionedChannelId ($targetChannelName). Dispatching Mention notification.',
-                );
-                actions.add(
-                  NotificationAction.dispatch(
-                    instruction: _createNotificationInstruction(
-                      fetchedVideo,
-                      NotificationEventType.mention,
-                      mentionTargetId: mentionedChannelId,
-                      mentionTargetName: targetChannelName,
-                      mentionedChannelNames: await _getMentionedChannelNames(fetchedVideo.mentions, allChannelSettings),
-                    ),
-                  ),
-                );
 
-                mentionsDispatchedThisCycle.add(mentionedChannelId);
+                DateTime? scheduledTime = fetchedVideo.startScheduled;
+                final bool shouldBeScheduled = scheduledTime != null && !mentionsScheduledThisCycle.contains(mentionedChannelId);
+                if (shouldBeScheduled) {
+                  _logger.debug('[DecisionService] Scheduling Mention notification for $scheduledTime.');
+                  NotificationInstruction scheduleNotif = _createNotificationInstruction(
+                    fetchedVideo,
+                    NotificationEventType.live,
+                    mentionTargetId: mentionedChannelId,
+                    mentionTargetName: targetChannelName,
+                    mentionedChannelNames: await _getMentionedChannelNames(fetchedVideo.mentions, allChannelSettings),
+                  );
+                  actions.add(NotificationAction.schedule(instruction: scheduleNotif, scheduleTime: scheduledTime, videoId: videoId));
+                  mentionsScheduledThisCycle.add(mentionedChannelId);
+                } else {
+                  _logger.debug('[DecisionService] Did not schedule Mention notification for $videoId.');
+                }
+
+                if (!mentionsDispatchedThisCycle.contains(mentionedChannelId)) {
+                  _logger.info(
+                    '[DecisionService] ($videoId) User wants mentions for $mentionedChannelId ($targetChannelName). Dispatching Mention notification.',
+                  );
+                  NotificationInstruction dispatchNotif = _createNotificationInstruction(
+                    fetchedVideo,
+                    NotificationEventType.mention,
+                    mentionTargetId: mentionedChannelId,
+                    mentionTargetName: targetChannelName,
+                    mentionedChannelNames: await _getMentionedChannelNames(fetchedVideo.mentions, allChannelSettings),
+                  );
+                  actions.add(NotificationAction.dispatch(instruction: dispatchNotif));
+                  mentionsDispatchedThisCycle.add(mentionedChannelId);
+                }
 
                 final newSentList = [...alreadySentMentions, ...mentionsDispatchedThisCycle];
                 _logger.debug(

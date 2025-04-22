@@ -224,17 +224,17 @@ class MockISettingsService extends _i1.Mock implements _i4.ISettingsService {
           as _i5.Future<void>);
 
   @override
-  _i5.Future<bool> getIsFirstLaunch() =>
+  _i5.Future<bool> getFeatureSeen(String? featureKey) =>
       (super.noSuchMethod(
-            Invocation.method(#getIsFirstLaunch, []),
+            Invocation.method(#getFeatureSeen, [featureKey]),
             returnValue: _i5.Future<bool>.value(false),
           )
           as _i5.Future<bool>);
 
   @override
-  _i5.Future<void> setIsFirstLaunch(bool? isFirst) =>
+  _i5.Future<void> setFeatureSeen(String? featureKey) =>
       (super.noSuchMethod(
-            Invocation.method(#setIsFirstLaunch, [isFirst]),
+            Invocation.method(#setFeatureSeen, [featureKey]),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
           )

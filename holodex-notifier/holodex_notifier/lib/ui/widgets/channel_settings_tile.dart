@@ -17,7 +17,7 @@ class ChannelSettingsTile extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
         child: Row(
           children: [
             SizedBox(
@@ -45,6 +45,7 @@ class ChannelSettingsTile extends ConsumerWidget {
                   Wrap(
                     spacing: 4.0,
                     runSpacing: 0.0,
+                    alignment: WrapAlignment.spaceBetween,
                     children: [
                       _buildToggleChip(
                         context: context,

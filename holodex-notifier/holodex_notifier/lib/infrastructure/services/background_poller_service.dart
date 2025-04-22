@@ -82,7 +82,6 @@ class BackgroundPollerService implements IBackgroundPollingService {
         _logger.info('[BG Poller Service] startService() called successfully.');
       } catch (e, s) {
         _logger.error('[BG Poller Service] ERROR calling startService()', e, s);
-        
       }
     } else {
       _logger.info('[BG Poller Service] Service is already running.');
@@ -108,7 +107,7 @@ class BackgroundPollerService implements IBackgroundPollingService {
       return running;
     } catch (e, s) {
       _logger.error('[BG Poller Service] ERROR checking if service is running', e, s);
-      return false; 
+      return false;
     }
   }
 
@@ -136,15 +135,12 @@ class BackgroundPollerService implements IBackgroundPollingService {
 }
 
 Timer? pollingTimer;
-Duration currentPollFrequency = const Duration(minutes: 10); 
-bool isPolling = false; 
-ProviderContainer? _backgroundContainer; 
+Duration currentPollFrequency = const Duration(minutes: 10);
+bool isPolling = false;
+ProviderContainer? _backgroundContainer;
 
 @pragma('vm:entry-point')
 Future<void> onStart(ServiceInstance service) async {
-  
-  
-  
   // ignore: avoid_print
   print("BG Isolate: onStart ENTRY POINT.");
 
@@ -153,7 +149,6 @@ Future<void> onStart(ServiceInstance service) async {
     // ignore: avoid_print
     print("BG Isolate: DartPluginRegistrant ensured.");
 
-    
     _backgroundContainer = ProviderContainer(overrides: [main_providers.isolateContextProvider.overrideWithValue(IsolateContext.background)]);
     // ignore: avoid_print
     print("BG Isolate: ProviderContainer created.");
@@ -166,12 +161,10 @@ Future<void> onStart(ServiceInstance service) async {
       logger.info('BG Isolate: Timezones initialized.');
     } catch (e, s) {
       logger.error("BG Isolate: Failed to initialize timezones.", e, s);
-      
     }
 
     logger.info('BG Isolate: STARTED successfully.');
 
-    
     if (service is AndroidServiceInstance) {
       service.on('setAsForeground').listen((event) {
         try {
@@ -197,17 +190,17 @@ Future<void> onStart(ServiceInstance service) async {
         logger.info("BG Isolate Listen(stopService): Received.");
         pollingTimer?.cancel();
         logger.info("BG Isolate Listen(stopService): Polling timer cancelled.");
-        service.stopSelf(); 
+        service.stopSelf();
         logger.info("BG Isolate Listen(stopService): stopSelf() called.");
-        
+
         _backgroundContainer?.dispose();
         _backgroundContainer = null;
         logger.info("BG Isolate Listen(stopService): Container disposed.");
       } catch (e, s) {
         logger.error("BG Isolate Listen(stopService): ERROR", e, s);
-        
+
         try {
-          service.stopSelf(); 
+          service.stopSelf();
           _backgroundContainer?.dispose();
           _backgroundContainer = null;
         } catch (_) {} // Ignore cleanup errors during error handling
@@ -233,16 +226,15 @@ Future<void> onStart(ServiceInstance service) async {
             logger.error('BG Isolate Listen(triggerPoll): Failed to set starting foreground notification', e, s);
           }
         }
-        
+
         if (_backgroundContainer == null) {
           logger.fatal("BG Isolate Listen(triggerPoll): Container is NULL before executing poll cycle. Aborting poll.");
           throw Exception("Background container was null before manual poll execution.");
         }
-        await _executePollCycle(_backgroundContainer!); 
+        await _executePollCycle(_backgroundContainer!);
       } catch (e, s) {
         logger.fatal("BG Isolate Listen(triggerPoll): Unhandled FATAL error during MANUAL poll cycle execution.", e, s);
         try {
-          
           _backgroundContainer?.read(backgroundLastErrorProvider.notifier).state = "Manual Poll FATAL Error: ${e.toString().split('\n').first}";
         } catch (notifierError, notifierStack) {
           logger.error("BG Isolate Listen(triggerPoll): Failed to update error state during FATAL poll error.", notifierError, notifierStack);
@@ -252,7 +244,7 @@ Future<void> onStart(ServiceInstance service) async {
         logger.info('BG Isolate Listen(triggerPoll): --- Manual Poll END ---');
         if (service is AndroidServiceInstance) {
           try {
-            final lastError = _backgroundContainer?.read(backgroundLastErrorProvider); 
+            final lastError = _backgroundContainer?.read(backgroundLastErrorProvider);
             service.setForegroundNotificationInfo(
               title: "Holodex Notifier",
               content:
@@ -270,7 +262,6 @@ Future<void> onStart(ServiceInstance service) async {
 
     service.on('updateSetting').listen((event) async {
       try {
-        
         if (event == null || event['key'] == null || _backgroundContainer == null) {
           logger.warning("BG Isolate Listen(updateSetting): Received invalid event or container is null: $event");
           return;
@@ -283,7 +274,6 @@ Future<void> onStart(ServiceInstance service) async {
         if (key == 'pollFrequency' && value is int) {
           final newFrequency = Duration(minutes: value);
           if (newFrequency != currentPollFrequency && newFrequency.inMinutes > 0) {
-            
             logger.info("BG Isolate Listen(updateSetting): Updating poll frequency to $value minutes.");
             currentPollFrequency = newFrequency;
             pollingTimer?.cancel();
@@ -292,9 +282,8 @@ Future<void> onStart(ServiceInstance service) async {
               logger.warning("BG Isolate Listen(updateSetting): Poll active during frequency update. New timer starts after current poll.");
             } else {
               logger.debug("BG Isolate Listen(updateSetting): Restarting timer with new frequency immediately.");
-              
+
               if (_backgroundContainer != null) {
-                
                 await startPollingTimer(_backgroundContainer!, service);
               } else {
                 logger.error("BG Isolate Listen(updateSetting): Container is NULL, cannot restart timer.");
@@ -307,17 +296,14 @@ Future<void> onStart(ServiceInstance service) async {
           }
         } else if (key == 'reminderLeadTime' && value is int) {
           logger.info("BG Isolate Listen(updateSetting): Received reminderLeadTime update ($value min). Will use on next poll cycle.");
-          
         } else if (key == 'apiKey') {
           logger.debug("BG Isolate Listen(updateSetting): API Key update notification received. No immediate background action.");
-          
-          
         } else if (key == 'notificationFormat') {
           logger.info("BG Isolate Listen(updateSetting): Received 'notificationFormat' update.");
           if (_backgroundContainer != null) {
             try {
               final notificationService = _backgroundContainer!.read(notificationServiceProvider);
-              await notificationService.reloadFormatConfig(); 
+              await notificationService.reloadFormatConfig();
               logger.info("BG Isolate Listen(updateSetting): Instructed NotificationService to reload format config.");
             } catch (e, s) {
               logger.error("BG Isolate Listen(updateSetting): Error instructing NotificationService to reload format config.", e, s);
@@ -330,12 +316,9 @@ Future<void> onStart(ServiceInstance service) async {
         }
       } catch (e, s) {
         logger.error("BG Isolate Listen(updateSetting): Unhandled ERROR in listener callback", e, s);
-        
       }
     });
-    
 
-    
     ISettingsService? settingsService;
     try {
       logger.info("BG Isolate: Starting main initialization logic...");
@@ -347,7 +330,7 @@ Future<void> onStart(ServiceInstance service) async {
       logger.debug("BG Isolate: Waiting for Main Isolate readiness flag...");
       bool mainReady = false;
       int waitAttempts = 0;
-      const maxWaitAttempts = 30; 
+      const maxWaitAttempts = 30;
       while (!mainReady && waitAttempts < maxWaitAttempts) {
         waitAttempts++;
         try {
@@ -355,7 +338,7 @@ Future<void> onStart(ServiceInstance service) async {
         } catch (e, s) {
           logger.error("BG Isolate: Error checking main readiness flag (Attempt $waitAttempts/$maxWaitAttempts). Retrying in 2s...", e, s);
           await Future.delayed(const Duration(seconds: 2));
-          continue; 
+          continue;
         }
 
         if (!mainReady) {
@@ -375,17 +358,13 @@ Future<void> onStart(ServiceInstance service) async {
       final notificationServiceInstance = await _backgroundContainer!.read(notificationServiceFutureProvider.future);
       logger.info("BG Isolate: Notification Service resolved.");
 
-      
       if (notificationServiceInstance is LocalNotificationService) {
         try {
           logger.debug("BG Isolate: Ensuring Notification Format Config is loaded in Background...");
           await notificationServiceInstance.loadFormatConfig();
           logger.info("BG Isolate: Notification Format Config loading attempted/ensured.");
         } catch (e, s) {
-          
           logger.warning("BG Isolate: WARNING: Failed to load Notification Format Config in background.", e, s);
-          
-          
         }
       } else {
         logger.warning("BG Isolate: Resolved Notification Service is not LocalNotificationService type.");
@@ -395,40 +374,37 @@ Future<void> onStart(ServiceInstance service) async {
       if (_backgroundContainer == null) throw Exception("Background Container is null before starting timer");
       currentPollFrequency = await settingsService!.getPollFrequency();
       logger.info("BG Isolate: Initial poll frequency read: ${currentPollFrequency.inMinutes} minutes.");
-      await startPollingTimer(_backgroundContainer!, service); 
+      await startPollingTimer(_backgroundContainer!, service);
     } catch (e, s) {
-      
       logger.fatal("BG Isolate: FATAL error during main background initialization.", e, s);
       try {
-        service.stopSelf(); 
-        _backgroundContainer?.dispose(); 
+        service.stopSelf();
+        _backgroundContainer?.dispose();
         _backgroundContainer = null;
       } catch (stopErr, stopST) {
         logger.error("BG Isolate: Failed to stop service/dispose container during FATAL init error.", stopErr, stopST);
       }
     }
-    
   } catch (e, s) {
-    
     // ignore: avoid_print
     print("BG Isolate: VERY EARLY FATAL ERROR in onStart: $e\n$s");
-    
+
     try {
       service.stopSelf();
     } catch (_) {}
-      
+
     _backgroundContainer?.dispose();
     _backgroundContainer = null;
   }
 }
 
 Future<void> startPollingTimer(ProviderContainer container, ServiceInstance service) async {
-  ILoggingService? logger; 
+  ILoggingService? logger;
   try {
-    logger = container.read(loggingServiceProvider)!; 
+    logger = container.read(loggingServiceProvider)!;
     logger.info("BG Isolate: startPollingTimer invoked.");
 
-    final ISettingsService settingsService = container.read(settingsServiceProvider); 
+    final ISettingsService settingsService = container.read(settingsServiceProvider);
 
     pollingTimer?.cancel();
     logger.debug("BG Isolate Timer Control: Previous timer (if any) cancelled.");
@@ -443,10 +419,8 @@ Future<void> startPollingTimer(ProviderContainer container, ServiceInstance serv
     logger.info("BG Isolate Timer Control: Setting poll frequency to: ${currentPollFrequency.inMinutes} minutes");
 
     pollingTimer = Timer.periodic(currentPollFrequency, (timer) async {
-      
       ILoggingService? callbackLogger;
       try {
-        
         callbackLogger = container.read(loggingServiceProvider)!;
         callbackLogger.trace("BG Isolate Timer Tick: Timer fired. Checking polling status.");
 
@@ -457,7 +431,6 @@ Future<void> startPollingTimer(ProviderContainer container, ServiceInstance serv
         callbackLogger.info('BG Isolate Timer Tick: --- Timed Poll START ---');
         isPolling = true;
 
-        
         if (service is AndroidServiceInstance) {
           try {
             service.setForegroundNotificationInfo(
@@ -470,23 +443,20 @@ Future<void> startPollingTimer(ProviderContainer container, ServiceInstance serv
           }
         }
 
-        
-        await _executePollCycle(container); 
+        await _executePollCycle(container);
       } catch (e, s) {
-        
-        final currentLogger = callbackLogger ?? container.read(loggingServiceProvider)!; 
+        final currentLogger = callbackLogger ?? container.read(loggingServiceProvider)!;
         currentLogger.fatal("BG Isolate Timer Tick: Unhandled FATAL error during TIMED poll cycle.", e, s);
         try {
-          
           container.read(backgroundLastErrorProvider.notifier).state = "Timed Poll FATAL Error: ${e.toString().split('\n').first}";
         } catch (notifierError, notifierStack) {
           currentLogger.error("BG Isolate Timer Tick: Failed to update error state during FATAL poll error.", notifierError, notifierStack);
         }
       } finally {
         final currentLogger = callbackLogger ?? container.read(loggingServiceProvider)!;
-        isPolling = false; 
+        isPolling = false;
         currentLogger.info('BG Isolate Timer Tick: --- Timed Poll END ---');
-        
+
         if (service is AndroidServiceInstance) {
           try {
             final lastError = container.read(backgroundLastErrorProvider);
@@ -502,22 +472,16 @@ Future<void> startPollingTimer(ProviderContainer container, ServiceInstance serv
             currentLogger.error('BG Isolate Timer Tick: Failed to set finished foreground notification', e, s);
           }
         }
-        
+
         currentLogger.trace("BG Isolate Timer Tick: Waiting for next tick in ${currentPollFrequency.inMinutes} min.");
       }
-      
     });
     logger.info("BG Isolate Timer Control: New Polling timer started successfully for ${currentPollFrequency.inMinutes} minutes.");
   } catch (e, s) {
-    final currentLogger = logger ?? container.read(loggingServiceProvider)!; 
+    final currentLogger = logger ?? container.read(loggingServiceProvider)!;
     currentLogger.fatal("BG Isolate Timer Control: FATAL error setting up timer.", e, s);
-    pollingTimer?.cancel(); 
+    pollingTimer?.cancel();
     try {
-      
-      
-      
-      
-      
       currentLogger.error("BG Isolate Timer Control: Timer setup failed, background tasks will likely stop functioning correctly.");
     } catch (stopErr, stopST) {
       currentLogger.error("BG Isolate Timer Control: Error during timer setup's error handling.", stopErr, stopST);
@@ -526,7 +490,6 @@ Future<void> startPollingTimer(ProviderContainer container, ServiceInstance serv
 }
 
 Future<void> _executePollCycle(ProviderContainer container) async {
-  
   ILoggingService logger;
   ISettingsService settingsService;
   IConnectivityService connectivityService;
@@ -546,48 +509,44 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     actionHandler = container.read(notificationActionHandlerProvider);
     errorNotifier = container.read(backgroundLastErrorProvider.notifier);
   } catch (e, s) {
-    
     final tempLogger = container.exists(loggingServiceProvider) ? container.read(loggingServiceProvider) : null;
     if (tempLogger == null) {
       // ignore: avoid_print
       print("BG Poll Cycle: FATAL ERROR resolving dependencies. Cycle cannot run. $e\n$s");
     }
-    
+
     try {
       container.read(backgroundLastErrorProvider.notifier).state = "FATAL Dependency Error: $e";
     } catch (_) {}
-    return; 
+    return;
   }
 
   logger.info("BG Poll Cycle: --- _executePollCycle START ---");
-  String currentCycleError = ''; 
+  String currentCycleError = '';
 
   try {
-    
     try {
       logger.debug("BG Poll Cycle: Checking connectivity...");
       final bool isConnected = await connectivityService.isConnected();
       if (!isConnected) {
         currentCycleError = 'No internet connection.';
         logger.warning("BG Poll Cycle: $currentCycleError Skipping poll this cycle.");
-        
-        
-        return; 
+
+        return;
       }
       logger.debug("BG Poll Cycle: Internet connection confirmed.");
     } catch (e, s) {
       currentCycleError = "Connectivity Check Error: ${e.toString().split('\n').first}";
       logger.error("BG Poll Cycle: Failed connectivity check.", e, s);
-      
-      errorNotifier.state = currentCycleError; 
-      return; 
+
+      errorNotifier.state = currentCycleError;
+      return;
     }
 
     final DateTime currentPollTime = DateTime.now().toUtc();
     logger.info("BG Poll Cycle: Starting poll sequence at ${currentPollTime.toIso8601String()}");
-    final DateTime fromTime = currentPollTime; 
+    final DateTime fromTime = currentPollTime;
 
-    
     Duration reminderLeadTime;
     List<ChannelSubscriptionSetting> channelSettingsList;
     try {
@@ -600,13 +559,13 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       currentCycleError = "Settings Load Error: ${e.toString().split('\n').first}";
       logger.error("BG Poll Cycle: Failed to load critical settings.", e, s);
       errorNotifier.state = currentCycleError;
-      return; 
+      return;
     }
 
     if (channelSettingsList.isEmpty) {
       logger.info("BG Poll Cycle: No channels subscribed. Poll cycle complete (No API fetch needed).");
-      await settingsService.setLastPollTime(currentPollTime); 
-      errorNotifier.state = null; 
+      await settingsService.setLastPollTime(currentPollTime);
+      errorNotifier.state = null;
       return;
     }
 
@@ -614,7 +573,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     final Set<String> subscribedIds = channelSettingsList.map((s) => s.channelId).toSet();
     logger.debug("BG Poll Cycle: Subscribed IDs: ${subscribedIds.length}");
 
-    
     List<VideoFull> liveFeedVideos = [];
     List<VideoFull> allCollabVideos = [];
 
@@ -625,8 +583,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
     } catch (e, s) {
       logger.error("BG Poll Cycle: Error fetching live feed videos.", e, s);
       if (currentCycleError.isEmpty) currentCycleError = "Live Feed Fetch Error: ${e.toString().split('\n').first}";
-      
-      
     }
 
     logger.debug(
@@ -639,7 +595,7 @@ Future<void> _executePollCycle(ProviderContainer container) async {
         continue;
       }
 
-      final bool includeClips = channelSetting.notifyClips; 
+      final bool includeClips = channelSetting.notifyClips;
       logger.trace("[BG Poll Cycle] Fetching collabs for $channelId (includeClips: $includeClips, from: ${fromTime.toIso8601String()})");
       try {
         final collabVids = await apiService.fetchCollabVideos(channelId: channelId, includeClips: includeClips, from: fromTime);
@@ -648,11 +604,9 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       } catch (e, s) {
         logger.error("BG Poll Cycle: Error fetching collab videos for channel $channelId.", e, s);
         if (currentCycleError.isEmpty) currentCycleError = "Collab Fetch Error ($channelId): ${e.toString().split('\n').first}";
-        
       }
     }
 
-    
     List<VideoFull> distinctVideos = [];
     Map<String, Set<String>> mentionContextMap = {};
     try {
@@ -683,11 +637,10 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       currentCycleError = "Data Processing Error: ${e.toString().split('\n').first}";
       logger.error("BG Poll Cycle: Error during video data processing (dedup/mapping).", e, s);
       errorNotifier.state = currentCycleError;
-      
+
       return;
     }
 
-    
     final List<NotificationAction> allActions = [];
     int processedCount = 0;
     int processingErrorCount = 0;
@@ -697,18 +650,15 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       for (final fetchedVideo in distinctVideos) {
         final videoId = fetchedVideo.id;
         try {
-          
           CachedVideo? cachedVideo;
           try {
             cachedVideo = await cacheService.getVideo(videoId);
           } catch (cacheError, cacheStack) {
             logger.warning("BG Poll Cycle ($videoId): Failed to get cached video state. Proceeding without cache.", cacheError, cacheStack);
-            
           }
 
           final Set<String>? mentionedForChannels = mentionContextMap[videoId];
 
-          
           List<NotificationAction> videoActions = [];
           try {
             videoActions = await decisionService.determineActionsForVideoUpdate(
@@ -726,41 +676,33 @@ Future<void> _executePollCycle(ProviderContainer container) async {
             if (currentCycleError.isEmpty) {
               currentCycleError = "Decision Error ($videoId): ${decisionError.toString().split('\n').first}";
             }
-            
+
             continue;
           }
 
-          
           try {
             final channelSetting = channelSettingsMap[fetchedVideo.channel.id];
             if (channelSetting != null && fetchedVideo.channel.photo != null && channelSetting.avatarUrl != fetchedVideo.channel.photo) {
               await settingsService.updateChannelAvatar(fetchedVideo.channel.id, fetchedVideo.channel.photo);
               logger.trace("[BG Poll Cycle] ($videoId): Attempted passive avatar update for subscribed channel.");
-            } else if (channelSetting != null) {
-              
-            }
-            
+            } else if (channelSetting != null) {}
           } catch (e, s) {
             logger.error("[BG Poll Cycle] ($videoId): Error during passive avatar update.", e, s);
-            
           }
 
           processedCount++;
         } catch (e, s) {
-          
           logger.error("BG Poll Cycle: Unhandled loop error processing video $videoId.", e, s);
           processingErrorCount++;
           if (currentCycleError.isEmpty) {
             currentCycleError = "Video Loop Error ($videoId): ${e.toString().split('\n').first}";
           }
-          
         }
       }
       logger.debug(
         "BG Poll Cycle: Finished determining actions. Processed $processedCount videos ($processingErrorCount errors). Total actions: ${allActions.length}.",
       );
 
-      
       if (allActions.isNotEmpty) {
         logger.info("BG Poll Cycle: Executing ${allActions.length} collected notification actions...");
         try {
@@ -777,25 +719,22 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       logger.info("BG Poll Cycle: No distinct videos found after fetching/deduplication. No actions needed.");
     }
 
-    
     if (currentCycleError.isNotEmpty) {
       logger.warning("BG Poll Cycle: Cycle completed with errors: $currentCycleError");
-      errorNotifier.state = currentCycleError; 
+      errorNotifier.state = currentCycleError;
     } else {
       logger.info("BG Poll Cycle: Cycle completed successfully.");
-      errorNotifier.state = null; 
+      errorNotifier.state = null;
     }
     try {
       await settingsService.setLastPollTime(currentPollTime);
       logger.info("BG Poll Cycle: Updated last successful poll time to ${currentPollTime.toIso8601String()}");
     } catch (e, s) {
       logger.error("BG Poll Cycle: Failed to update last poll time in settings.", e, s);
-      
-      
+
       errorNotifier.state = "${errorNotifier.state ?? ""} | Failed to save poll time.";
     }
   } catch (e, s) {
-    
     logger.fatal("BG Poll Cycle: Unhandled FATAL error during cycle execution.", e, s);
     try {
       errorNotifier.state = "FATAL Poll Cycle Error: ${e.toString().split('\n').first}";
@@ -803,7 +742,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
       logger.error("BG Poll Cycle: Failed to update error state during FATAL cycle error.", notifierError, notifierStack);
     }
   } finally {
-    
     logger.info("BG Poll Cycle: --- _executePollCycle END ---");
   }
 }

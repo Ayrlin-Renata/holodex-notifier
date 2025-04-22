@@ -49,7 +49,7 @@ class HolodexApiService implements IApiService {
       '[API Service - Collabs] Fetching collab videos for channel: $channelId (includeClips: $includeClips, from: ${from.toIso8601String()})...',
     );
 
-    final List<String> includeParts = ['live_info'];
+    final List<String> includeParts = ['live_info', 'mentions'];
     if (includeClips) {
       includeParts.add('clips');
     }
@@ -57,10 +57,16 @@ class HolodexApiService implements IApiService {
     _logger.trace('[API Service - Collabs] Using include parameter: "$includeParam"');
 
     try {
-      _logger.debug('[API Service - Collabs] Requesting /channels/$channelId/collabs');
+      _logger.debug('[API Service - Collabs] Requesting /videos');
       final response = await _dio.get(
-        '/channels/$channelId/collabs',
-        queryParameters: {'lang': 'en', 'type': 'stream,placeholder', 'include': includeParam, 'from': from.toIso8601String()},
+        '/videos',
+        queryParameters: {
+          'mentioned_channel_id': channelId,
+          'lang': 'en',
+          'type': 'stream,placeholder',
+          'include': includeParam,
+          'from': from.toIso8601String(),
+        },
       );
 
       if (response.statusCode == 200 && response.data is List) {

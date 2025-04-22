@@ -15,6 +15,6 @@ abstract class INotificationService {
   Future<void> reloadFormatConfig();
 
   Future<Map<Permission, PermissionStatus>> requestRequiredPermissions();
-  Future<bool> isBatteryOptimizationDisabled(); 
-  Future<bool> requestBatteryOptimizationDisabled(); 
+  Future<bool> isBatteryOptimizationDisabled();
+  Future<bool> requestBatteryOptimizationDisabled();
 }
