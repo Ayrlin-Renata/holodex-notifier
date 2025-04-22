@@ -588,18 +588,18 @@ class LocalNotificationService implements INotificationService {
 
      final DateTime now = DateTime.now();
      final DateTime eventTime = instruction.availableAt;
-     final DateTime localEventTime = eventTime.toLocal(); // Use local time for display formatting
+     final DateTime localEventTime = eventTime.toLocal(); 
 
     String timeToEventString = '';
     String timeToNotifString = '';
 
-    // {{ Fix Formatting Mentioned Channels }}
-    // Use the specific target name if available (for mention notifications)
-    // Otherwise, join the list if provided (less common for standard formats)
+    
+    
+    
     String mentionedChannelsDisplay = instruction.mentionTargetChannelName ??
         (instruction.mentionedChannelNames != null && instruction.mentionedChannelNames!.isNotEmpty
             ? instruction.mentionedChannelNames!.join(', ')
-            : ''); // Default to empty string if no target and no list
+            : ''); 
 
 
     try {
@@ -620,7 +620,7 @@ class LocalNotificationService implements INotificationService {
             timeToNotifString = (localScheduledTime.isBefore(now)) ? "now" : "soon";
        }
     } else {
-        timeToNotifString = "now"; // Use "now" for immediate, easier to read
+        timeToNotifString = "now"; 
        _logger.trace("[Format] timeToNotifString set to 'now' (immediate notification)");
     }
 
@@ -639,7 +639,7 @@ class LocalNotificationService implements INotificationService {
 
     Map<String, String> replacements = {
       '{channelName}': instruction.channelName,
-       // {{Fix: Use the calculated display string}}
+       
       '{mentionedChannels}': mentionedChannelsDisplay,
       '{mediaTitle}': instruction.videoTitle,
       '{mediaType}': mediaType,

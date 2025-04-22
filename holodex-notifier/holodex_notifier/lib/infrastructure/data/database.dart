@@ -132,8 +132,15 @@ class AppDatabase extends _$AppDatabase {
     return (select(cachedVideos)..where((t) => t.status.equals(statusFilter))).get();
   }
 
-  Future<List<CachedVideo>> getVideosByChannelInternal(String channelIdFilter) {
-    return (select(cachedVideos)..where((t) => t.channelId.equals(channelIdFilter))).get();
+  Future<List<CachedVideo>> getVideosMentioningChannelInternal(String channelId) {
+    return (select(cachedVideos)..where((t) => t.mentionedChannelIds.like('%"$channelId"%'))) 
+    .get();
+    
+  }
+
+  
+  Future<List<CachedVideo>> getVideosByChannelInternal(String channelId) {
+    return (select(cachedVideos)..where((t) => t.channelId.equals(channelId))).get();
   }
 
   Future<List<CachedVideo>> getMembersOnlyVideosByChannelInternal(String channelIdFilter) {

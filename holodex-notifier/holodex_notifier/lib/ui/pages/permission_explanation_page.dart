@@ -144,7 +144,7 @@ class PermissionExplanationPage extends HookConsumerWidget {
                               ? Icon(Icons.check_circle_outline, color: Colors.green[700], key: const ValueKey('batt_ok'))
                               : Icon(Icons.error_outline, color: Colors.orange[700], key: const ValueKey('batt_warn')),
                   loading:
-                      () => const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2), key: ValueKey('batt_loading')),
+                      () => const SizedBox(width: 20, height: 20, key: ValueKey('batt_loading'), child: CircularProgressIndicator(strokeWidth: 2)),
                   error: (err, stack) {
                     logger.error("[Permission Page Build BattItem] Error state in batteryState: $err");
                     return Icon(Icons.cancel_outlined, color: theme.colorScheme.error, key: const ValueKey('batt_error'));
@@ -237,12 +237,12 @@ class _PermissionItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+      color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ListTile(
         leading: Icon(icon, color: Theme.of(context).colorScheme.onSecondaryContainer),
         title: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer)),
-        subtitle: Text(description, style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.8))),
+        subtitle: Text(description, style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer.withValues(alpha: 0.8))),
         trailing: trailing,
       ),
     );
