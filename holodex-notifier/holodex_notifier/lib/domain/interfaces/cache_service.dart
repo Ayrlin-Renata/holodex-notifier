@@ -16,6 +16,7 @@ abstract class ICacheService {
   Future<List<CachedVideo>> getVideosWithScheduledReminders();
   Future<void> updateScheduledReminderNotificationId(String videoId, int? notificationId);
   Future<void> updateScheduledReminderTime(String videoId, DateTime? time);
+  Future<List<CachedVideo>> getVideosByChannel(String channelId);
   Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId);
   Future<List<CachedVideo>> getClipVideosByChannel(String channelId);
   Future<List<String>> getSentMentionTargets(String videoId);

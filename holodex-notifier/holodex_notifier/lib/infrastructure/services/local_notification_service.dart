@@ -583,40 +583,45 @@ class LocalNotificationService implements INotificationService {
     NotificationFormat format, {
     required DateTime? scheduledTime,
   }) {
-    _logger.trace("[Format] Input: type=${instruction.eventType}, videoId=${instruction.videoId}, scheduledTime=$scheduledTime");
-    _logger.trace("[Format] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
+     _logger.trace("[Format] Input: type=${instruction.eventType}, videoId=${instruction.videoId}, scheduledTime=$scheduledTime");
+     _logger.trace("[Format] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
 
-    final DateTime now = DateTime.now();
-    final DateTime eventTime = instruction.availableAt;
-    final DateTime localEventTime = eventTime.toLocal();
+     final DateTime now = DateTime.now();
+     final DateTime eventTime = instruction.availableAt;
+     final DateTime localEventTime = eventTime.toLocal(); // Use local time for display formatting
 
     String timeToEventString = '';
     String timeToNotifString = '';
 
-    final int mentionedChannelNamesLength = instruction.mentionedChannelNames?.length ?? 0;
-    final String mentionedChannels =
-        (mentionedChannelNamesLength > 1 ? instruction.mentionedChannelNames?.join(', ') : instruction.mentionedChannelNames?.first) ?? '';
+    // {{ Fix Formatting Mentioned Channels }}
+    // Use the specific target name if available (for mention notifications)
+    // Otherwise, join the list if provided (less common for standard formats)
+    String mentionedChannelsDisplay = instruction.mentionTargetChannelName ??
+        (instruction.mentionedChannelNames != null && instruction.mentionedChannelNames!.isNotEmpty
+            ? instruction.mentionedChannelNames!.join(', ')
+            : ''); // Default to empty string if no target and no list
+
 
     try {
-      timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
-      _logger.trace("[Format] Calculated timeToEventString: '$timeToEventString' (from $localEventTime)");
+        timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
+        _logger.trace("[Format] Calculated timeToEventString: '$timeToEventString' (from $localEventTime)");
     } catch (e) {
       _logger.error("Error formatting timeToEventString using eventTime: $localEventTime", e);
       timeToEventString = (localEventTime.isBefore(now)) ? "just now" : "soon";
     }
 
     if (scheduledTime != null) {
-      final DateTime localScheduledTime = scheduledTime.toLocal();
-      try {
-        timeToNotifString = timeago.format(localScheduledTime, locale: 'en_short', allowFromNow: true);
-        _logger.trace("[Format] Calculated timeToNotifString: '$timeToNotifString' (from $localScheduledTime)");
-      } catch (e) {
-        _logger.error("Error formatting timeToNotifString using scheduledTime: $localScheduledTime", e);
-        timeToNotifString = (localScheduledTime.isBefore(now)) ? "now" : "soon";
-      }
+        final DateTime localScheduledTime = scheduledTime.toLocal();
+        try {
+            timeToNotifString = timeago.format(localScheduledTime, locale: 'en_short', allowFromNow: true);
+           _logger.trace("[Format] Calculated timeToNotifString: '$timeToNotifString' (from $localScheduledTime)");
+        } catch (e) {
+           _logger.error("Error formatting timeToNotifString using scheduledTime: $localScheduledTime", e);
+            timeToNotifString = (localScheduledTime.isBefore(now)) ? "now" : "soon";
+       }
     } else {
-      timeToNotifString = "Now";
-      _logger.trace("[Format] timeToNotifString set to 'Now' (immediate notification)");
+        timeToNotifString = "now"; // Use "now" for immediate, easier to read
+       _logger.trace("[Format] timeToNotifString set to 'now' (immediate notification)");
     }
 
     final String mediaTime = DateFormat.jm().format(localEventTime);
@@ -626,15 +631,16 @@ class LocalNotificationService implements INotificationService {
 
     String dateYMD = DateFormat('yyyy-MM-dd').format(localEventTime);
     String dateDMY = DateFormat('dd-MM-yyyy').format(localEventTime);
-    String dateMDY = DateFormat('MM-dd-yyyy').format(localEventTime);
+     String dateMDY = DateFormat('MM-dd-yyyy').format(localEventTime);
     String dateMD = DateFormat('MM-dd').format(localEventTime);
-    String dateDM = DateFormat('dd-MM').format(localEventTime);
-    String dateAsia =
-        '${DateFormat('yyyy').format(localEventTime)}年${DateFormat('MM').format(localEventTime)}月${DateFormat('dd').format(localEventTime)}日';
+     String dateDM = DateFormat('dd-MM').format(localEventTime);
+     String dateAsia = '${DateFormat('yyyy').format(localEventTime)}年${DateFormat('MM').format(localEventTime)}月${DateFormat('dd').format(localEventTime)}日';
+
 
     Map<String, String> replacements = {
       '{channelName}': instruction.channelName,
-      '{mentionedChannels}': mentionedChannels,
+       // {{Fix: Use the calculated display string}}
+      '{mentionedChannels}': mentionedChannelsDisplay,
       '{mediaTitle}': instruction.videoTitle,
       '{mediaType}': mediaType,
       '{mediaTypeCaps}': mediaTypeCaps,
@@ -642,10 +648,10 @@ class LocalNotificationService implements INotificationService {
       '{timeToEvent}': timeToEventString,
       '{timeToNotif}': timeToNotifString,
       '{mediaDateYMD}': dateYMD,
-      '{mediaDateDMY}': dateDMY,
+       '{mediaDateDMY}': dateDMY,
       '{mediaDateMDY}': dateMDY,
-      '{mediaDateMD}': dateMD,
-      '{mediaDateDM}': dateDM,
+       '{mediaDateMD}': dateMD,
+       '{mediaDateDM}': dateDM,
       '{mediaDateAsia}': dateAsia,
       '{newLine}': '\n',
     };
@@ -653,12 +659,13 @@ class LocalNotificationService implements INotificationService {
     String title = format.titleTemplate;
     String body = format.bodyTemplate;
 
+
     replacements.forEach((key, value) {
       title = title.replaceAll(key, value);
       body = body.replaceAll(key, value);
     });
 
-    _logger.trace("[Format] Result -> Title='$title', Body='$body'");
+     _logger.trace("[Format] Result -> Title='$title', Body='$body'");
     return (title: title, body: body);
   }
 

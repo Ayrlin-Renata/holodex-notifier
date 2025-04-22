@@ -80,6 +80,8 @@ class DriftCacheService implements ICacheService {
   }
 
   @override
+  Future<List<CachedVideo>> getVideosByChannel(String channelId) => _db.getVideosByChannelInternal(channelId);
+  @override
   Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId) => _db.getMembersOnlyVideosByChannelInternal(channelId);
 
   @override

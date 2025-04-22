@@ -1,6 +1,6 @@
 // ignore_for_file: unused_local_variable
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:holodex_notifier/domain/models/notification_action.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
@@ -22,12 +22,15 @@ void main() {
           channelAvatarUrl: 'avatar_url',
           availableAt: DateTime.now(),
         );
-        final action = NotificationAction.schedule(
+        final action = ScheduleNotificationAction(
           instruction: instruction,
           scheduleTime: scheduleTime,
           videoId: videoId,
         );
-        throw UnimplementedError();
+
+        expect(action.instruction, instruction);
+        expect(action.scheduleTime, scheduleTime);
+        expect(action.videoId, videoId);
       });
     });
 
@@ -36,12 +39,15 @@ void main() {
         const notificationId = 123;
         const videoId = 'test-video';
         const type = NotificationEventType.live;
-        final action = NotificationAction.cancel(
+        final action = CancelNotificationAction(
           notificationId: notificationId,
           videoId: videoId,
           type: type,
         );
-        throw UnimplementedError();
+
+        expect(action.notificationId, notificationId);
+        expect(action.videoId, videoId);
+        expect(action.type, NotificationEventType.live);
       });
     });
 
@@ -57,8 +63,9 @@ void main() {
           channelAvatarUrl: 'avatar_url',
           availableAt: DateTime.now(),
         );
-        final action = NotificationAction.dispatch(instruction: instruction);
-        throw UnimplementedError();
+        final action = DispatchNotificationAction(instruction: instruction);
+
+        expect(action.instruction, instruction);
       });
     });
 
@@ -69,11 +76,35 @@ void main() {
           videoId: Value(videoId),
           status: Value('live'),
         );
-        final action = NotificationAction.updateCache(
+        final action = UpdateCacheAction(
           videoId: videoId,
           companion: companion,
         );
-        throw UnimplementedError();
+
+        expect(action.videoId, videoId);
+        expect(action.companion, companion);
+      });
+    });
+
+    group('UntrackAndCleanAction', () {
+      test('UntrackAndCleanAction properties', () {
+        const videoId = 'testVideoIdUntrack';
+        const liveId = 123;
+        const reminderId = 456;
+
+        final action = UntrackAndCleanAction(
+          videoId: videoId,
+          liveNotificationId: liveId,
+          reminderNotificationId: reminderId,
+        );
+
+        expect(action.videoId, videoId);
+        expect(action.liveNotificationId, liveId);
+        expect(action.reminderNotificationId, reminderId);
+
+        final actionNoIds = UntrackAndCleanAction(videoId: videoId);
+        expect(actionNoIds.liveNotificationId, isNull);
+        expect(actionNoIds.reminderNotificationId, isNull);
       });
     });
   });
