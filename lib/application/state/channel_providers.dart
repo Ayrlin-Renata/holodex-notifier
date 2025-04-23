@@ -261,3 +261,12 @@ final debouncedChannelSearchProvider = FutureProvider.autoDispose<List<Channel>>
 final channelSearchQueryProvider = StateProvider<String>((ref) {
   return '';
 });
+
+final channelNameProvider = FutureProvider.family<String?, String>((ref, channelId) async {
+  if (channelId.isEmpty) return null;
+
+  final cacheService = ref.watch(cacheServiceProvider);
+  final name = await cacheService.getChannelName(channelId);
+
+  return name;
+}, name: 'channelNameProvider');

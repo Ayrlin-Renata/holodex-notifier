@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
@@ -82,12 +83,12 @@ class DriftCacheService implements ICacheService {
   @override
   Future<List<CachedVideo>> getVideosByChannel(String channelId) => _db.getVideosByChannelInternal(channelId);
 
-    @override
+  @override
   Future<List<CachedVideo>> getVideosMentioningChannel(String channelId) {
     _logger.trace("[DriftCacheService] Getting videos mentioning channel $channelId.");
     return _db.getVideosMentioningChannelInternal(channelId);
   }
-  
+
   @override
   Future<List<CachedVideo>> getMembersOnlyVideosByChannel(String channelId) => _db.getMembersOnlyVideosByChannelInternal(channelId);
 
@@ -129,5 +130,31 @@ class DriftCacheService implements ICacheService {
     _logger.debug("[DriftCacheService] Updating dismissal status for video $videoId to $isDismissed");
     final int? dismissalTimestamp = isDismissed ? DateTime.now().millisecondsSinceEpoch : null;
     return _db.updateDismissalStatusInternal(videoId, dismissalTimestamp);
+  }
+
+  @override
+  Future<void> upsertChannelNames(Map<String, String> channelNames) async {
+    if (channelNames.isEmpty) return;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final entries =
+        channelNames.entries.map((entry) {
+          return ChannelNameCacheCompanion(channelId: Value(entry.key), channelName: Value(entry.value), lastUpdated: Value(timestamp));
+        }).toList();
+    try {
+      await _db.upsertChannelNames(entries);
+      _logger.trace("CacheService: Upserted ${entries.length} channel names.");
+    } catch (e, s) {
+      _logger.error("CacheService: Failed to upsert channel names", e, s);
+    }
+  }
+
+  @override
+  Future<String?> getChannelName(String channelId) async {
+    try {
+      return await _db.getChannelNameInternal(channelId);
+    } catch (e, s) {
+      _logger.error("CacheService: Failed to get channel name for $channelId", e, s);
+      return null;
+    }
   }
 }

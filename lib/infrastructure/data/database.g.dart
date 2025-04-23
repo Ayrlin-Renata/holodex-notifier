@@ -1401,15 +1401,302 @@ class CachedVideosCompanion extends UpdateCompanion<CachedVideo> {
   }
 }
 
+class $ChannelNameCacheTable extends ChannelNameCache
+    with TableInfo<$ChannelNameCacheTable, ChannelNameCacheEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChannelNameCacheTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _channelIdMeta = const VerificationMeta(
+    'channelId',
+  );
+  @override
+  late final GeneratedColumn<String> channelId = GeneratedColumn<String>(
+    'channel_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _channelNameMeta = const VerificationMeta(
+    'channelName',
+  );
+  @override
+  late final GeneratedColumn<String> channelName = GeneratedColumn<String>(
+    'channel_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastUpdatedMeta = const VerificationMeta(
+    'lastUpdated',
+  );
+  @override
+  late final GeneratedColumn<int> lastUpdated = GeneratedColumn<int>(
+    'last_updated',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [channelId, channelName, lastUpdated];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'channel_name_cache';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChannelNameCacheEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('channel_id')) {
+      context.handle(
+        _channelIdMeta,
+        channelId.isAcceptableOrUnknown(data['channel_id']!, _channelIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_channelIdMeta);
+    }
+    if (data.containsKey('channel_name')) {
+      context.handle(
+        _channelNameMeta,
+        channelName.isAcceptableOrUnknown(
+          data['channel_name']!,
+          _channelNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_channelNameMeta);
+    }
+    if (data.containsKey('last_updated')) {
+      context.handle(
+        _lastUpdatedMeta,
+        lastUpdated.isAcceptableOrUnknown(
+          data['last_updated']!,
+          _lastUpdatedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastUpdatedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {channelId};
+  @override
+  ChannelNameCacheEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChannelNameCacheEntry(
+      channelId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}channel_id'],
+          )!,
+      channelName:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}channel_name'],
+          )!,
+      lastUpdated:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}last_updated'],
+          )!,
+    );
+  }
+
+  @override
+  $ChannelNameCacheTable createAlias(String alias) {
+    return $ChannelNameCacheTable(attachedDatabase, alias);
+  }
+}
+
+class ChannelNameCacheEntry extends DataClass
+    implements Insertable<ChannelNameCacheEntry> {
+  final String channelId;
+  final String channelName;
+  final int lastUpdated;
+  const ChannelNameCacheEntry({
+    required this.channelId,
+    required this.channelName,
+    required this.lastUpdated,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['channel_id'] = Variable<String>(channelId);
+    map['channel_name'] = Variable<String>(channelName);
+    map['last_updated'] = Variable<int>(lastUpdated);
+    return map;
+  }
+
+  ChannelNameCacheCompanion toCompanion(bool nullToAbsent) {
+    return ChannelNameCacheCompanion(
+      channelId: Value(channelId),
+      channelName: Value(channelName),
+      lastUpdated: Value(lastUpdated),
+    );
+  }
+
+  factory ChannelNameCacheEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChannelNameCacheEntry(
+      channelId: serializer.fromJson<String>(json['channelId']),
+      channelName: serializer.fromJson<String>(json['channelName']),
+      lastUpdated: serializer.fromJson<int>(json['lastUpdated']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'channelId': serializer.toJson<String>(channelId),
+      'channelName': serializer.toJson<String>(channelName),
+      'lastUpdated': serializer.toJson<int>(lastUpdated),
+    };
+  }
+
+  ChannelNameCacheEntry copyWith({
+    String? channelId,
+    String? channelName,
+    int? lastUpdated,
+  }) => ChannelNameCacheEntry(
+    channelId: channelId ?? this.channelId,
+    channelName: channelName ?? this.channelName,
+    lastUpdated: lastUpdated ?? this.lastUpdated,
+  );
+  ChannelNameCacheEntry copyWithCompanion(ChannelNameCacheCompanion data) {
+    return ChannelNameCacheEntry(
+      channelId: data.channelId.present ? data.channelId.value : this.channelId,
+      channelName:
+          data.channelName.present ? data.channelName.value : this.channelName,
+      lastUpdated:
+          data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChannelNameCacheEntry(')
+          ..write('channelId: $channelId, ')
+          ..write('channelName: $channelName, ')
+          ..write('lastUpdated: $lastUpdated')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(channelId, channelName, lastUpdated);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChannelNameCacheEntry &&
+          other.channelId == this.channelId &&
+          other.channelName == this.channelName &&
+          other.lastUpdated == this.lastUpdated);
+}
+
+class ChannelNameCacheCompanion extends UpdateCompanion<ChannelNameCacheEntry> {
+  final Value<String> channelId;
+  final Value<String> channelName;
+  final Value<int> lastUpdated;
+  final Value<int> rowid;
+  const ChannelNameCacheCompanion({
+    this.channelId = const Value.absent(),
+    this.channelName = const Value.absent(),
+    this.lastUpdated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChannelNameCacheCompanion.insert({
+    required String channelId,
+    required String channelName,
+    required int lastUpdated,
+    this.rowid = const Value.absent(),
+  }) : channelId = Value(channelId),
+       channelName = Value(channelName),
+       lastUpdated = Value(lastUpdated);
+  static Insertable<ChannelNameCacheEntry> custom({
+    Expression<String>? channelId,
+    Expression<String>? channelName,
+    Expression<int>? lastUpdated,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (channelId != null) 'channel_id': channelId,
+      if (channelName != null) 'channel_name': channelName,
+      if (lastUpdated != null) 'last_updated': lastUpdated,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChannelNameCacheCompanion copyWith({
+    Value<String>? channelId,
+    Value<String>? channelName,
+    Value<int>? lastUpdated,
+    Value<int>? rowid,
+  }) {
+    return ChannelNameCacheCompanion(
+      channelId: channelId ?? this.channelId,
+      channelName: channelName ?? this.channelName,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (channelId.present) {
+      map['channel_id'] = Variable<String>(channelId.value);
+    }
+    if (channelName.present) {
+      map['channel_name'] = Variable<String>(channelName.value);
+    }
+    if (lastUpdated.present) {
+      map['last_updated'] = Variable<int>(lastUpdated.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChannelNameCacheCompanion(')
+          ..write('channelId: $channelId, ')
+          ..write('channelName: $channelName, ')
+          ..write('lastUpdated: $lastUpdated, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $CachedVideosTable cachedVideos = $CachedVideosTable(this);
+  late final $ChannelNameCacheTable channelNameCache = $ChannelNameCacheTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [cachedVideos];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    cachedVideos,
+    channelNameCache,
+  ];
 }
 
 typedef $$CachedVideosTableCreateCompanionBuilder =
@@ -1987,10 +2274,202 @@ typedef $$CachedVideosTableProcessedTableManager =
       CachedVideo,
       PrefetchHooks Function()
     >;
+typedef $$ChannelNameCacheTableCreateCompanionBuilder =
+    ChannelNameCacheCompanion Function({
+      required String channelId,
+      required String channelName,
+      required int lastUpdated,
+      Value<int> rowid,
+    });
+typedef $$ChannelNameCacheTableUpdateCompanionBuilder =
+    ChannelNameCacheCompanion Function({
+      Value<String> channelId,
+      Value<String> channelName,
+      Value<int> lastUpdated,
+      Value<int> rowid,
+    });
+
+class $$ChannelNameCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $ChannelNameCacheTable> {
+  $$ChannelNameCacheTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get channelId => $composableBuilder(
+    column: $table.channelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channelName => $composableBuilder(
+    column: $table.channelName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastUpdated => $composableBuilder(
+    column: $table.lastUpdated,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChannelNameCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChannelNameCacheTable> {
+  $$ChannelNameCacheTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get channelId => $composableBuilder(
+    column: $table.channelId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channelName => $composableBuilder(
+    column: $table.channelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastUpdated => $composableBuilder(
+    column: $table.lastUpdated,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChannelNameCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChannelNameCacheTable> {
+  $$ChannelNameCacheTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get channelId =>
+      $composableBuilder(column: $table.channelId, builder: (column) => column);
+
+  GeneratedColumn<String> get channelName => $composableBuilder(
+    column: $table.channelName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastUpdated => $composableBuilder(
+    column: $table.lastUpdated,
+    builder: (column) => column,
+  );
+}
+
+class $$ChannelNameCacheTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChannelNameCacheTable,
+          ChannelNameCacheEntry,
+          $$ChannelNameCacheTableFilterComposer,
+          $$ChannelNameCacheTableOrderingComposer,
+          $$ChannelNameCacheTableAnnotationComposer,
+          $$ChannelNameCacheTableCreateCompanionBuilder,
+          $$ChannelNameCacheTableUpdateCompanionBuilder,
+          (
+            ChannelNameCacheEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $ChannelNameCacheTable,
+              ChannelNameCacheEntry
+            >,
+          ),
+          ChannelNameCacheEntry,
+          PrefetchHooks Function()
+        > {
+  $$ChannelNameCacheTableTableManager(
+    _$AppDatabase db,
+    $ChannelNameCacheTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () =>
+                  $$ChannelNameCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$ChannelNameCacheTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$ChannelNameCacheTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> channelId = const Value.absent(),
+                Value<String> channelName = const Value.absent(),
+                Value<int> lastUpdated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChannelNameCacheCompanion(
+                channelId: channelId,
+                channelName: channelName,
+                lastUpdated: lastUpdated,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String channelId,
+                required String channelName,
+                required int lastUpdated,
+                Value<int> rowid = const Value.absent(),
+              }) => ChannelNameCacheCompanion.insert(
+                channelId: channelId,
+                channelName: channelName,
+                lastUpdated: lastUpdated,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChannelNameCacheTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChannelNameCacheTable,
+      ChannelNameCacheEntry,
+      $$ChannelNameCacheTableFilterComposer,
+      $$ChannelNameCacheTableOrderingComposer,
+      $$ChannelNameCacheTableAnnotationComposer,
+      $$ChannelNameCacheTableCreateCompanionBuilder,
+      $$ChannelNameCacheTableUpdateCompanionBuilder,
+      (
+        ChannelNameCacheEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $ChannelNameCacheTable,
+          ChannelNameCacheEntry
+        >,
+      ),
+      ChannelNameCacheEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$CachedVideosTableTableManager get cachedVideos =>
       $$CachedVideosTableTableManager(_db, _db.cachedVideos);
+  $$ChannelNameCacheTableTableManager get channelNameCache =>
+      $$ChannelNameCacheTableTableManager(_db, _db.channelNameCache);
 }

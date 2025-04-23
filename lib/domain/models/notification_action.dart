@@ -1,7 +1,3 @@
-
-
-
-
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 
@@ -39,4 +35,12 @@ class UntrackAndCleanAction extends NotificationAction {
   final int? liveNotificationId;
   final int? reminderNotificationId;
   const UntrackAndCleanAction({required this.videoId, this.liveNotificationId, this.reminderNotificationId});
+}
+
+class UpdateChannelNameCacheAction extends NotificationAction {
+  final Map<String, String> channelNames;
+  UpdateChannelNameCacheAction({required this.channelNames});
+
+  @override
+  String toString() => 'UpdateChannelNameCacheAction(count: ${channelNames.length})';
 }

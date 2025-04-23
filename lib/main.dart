@@ -215,8 +215,8 @@ Future<void> logAlarm(Object e, StackTrace s) async {
   print("[${DateTime.now()}] ALARM CALLBACK: Attempting to write error to log file...");
   try {
     final directory = Directory('/storage/emulated/0/Documents/HolodexNotifier/logs');
-    await directory.create(recursive: true); 
-  
+    await directory.create(recursive: true);
+
     final file = File('${directory.path}/background_alarm_error_log.txt');
     await file.writeAsString('[${DateTime.now()}] Error calling startService(): $e\n$s\n', mode: FileMode.append);
     print("[${DateTime.now()}] ALARM CALLBACK: Error written to log file successfully.");
@@ -224,7 +224,6 @@ Future<void> logAlarm(Object e, StackTrace s) async {
     print("[${DateTime.now()}] ALARM CALLBACK: Failed to write error to log file: $logError\n$logStack");
   }
 }
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

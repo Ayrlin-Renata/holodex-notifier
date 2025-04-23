@@ -73,37 +73,53 @@ class CachedVideos extends Table {
   Set<Column> get primaryKey => {videoId};
 }
 
-@DriftDatabase(tables: [CachedVideos])
+@DataClassName('ChannelNameCacheEntry')
+class ChannelNameCache extends Table {
+  TextColumn get channelId => text().named('channel_id')();
+  TextColumn get channelName => text().named('channel_name')();
+  IntColumn get lastUpdated => integer().named('last_updated')();
+
+  @override
+  Set<Column> get primaryKey => {channelId};
+}
+
+@DriftDatabase(tables: [CachedVideos, ChannelNameCache])
 class AppDatabase extends _$AppDatabase {
   final ILoggingService _logger;
   AppDatabase(super.e, this._logger);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
+      _logger.info("Drift DB onCreate: Creating all tables for schema v$schemaVersion...");
       await m.createAll();
-      _logger.info("Drift DB [v$schemaVersion]: Tables created.");
+      _logger.info("Drift DB onCreate: Tables created.");
     },
     onUpgrade: (Migrator m, int from, int to) async {
-      _logger.info("Drift DB: Upgrading schema from v$from to v$to...");
+      _logger.info("Drift DB onUpgrade: Upgrading schema from v$from to v$to...");
       for (int targetVersion = from + 1; targetVersion <= to; targetVersion++) {
-        _logger.info("Drift DB: Applying migration to v$targetVersion...");
+        _logger.info("Drift DB onUpgrade: Applying migration to v$targetVersion...");
         switch (targetVersion) {
+          case 2:
+            await m.createTable(channelNameCache);
+            _logger.info("Drift DB Migration V2: Created channelNameCache table.");
+            break;
           default:
-            _logger.warning("Drift DB: No migration logic defined for v$targetVersion");
+            _logger.warning("Drift DB onUpgrade: No migration logic defined for v$targetVersion");
         }
-        _logger.info("Drift DB: Migration to v$targetVersion applied.");
+        _logger.info("Drift DB onUpgrade: Migration to v$targetVersion applied.");
       }
     },
     beforeOpen: (details) async {
       _logger.info(
         "Drift DB: Opening database. Was Created: ${details.wasCreated}, Version Before: ${details.versionBefore}, Current Version: ${details.versionNow}",
       );
-      await customStatement('PRAGMA foreign_keys = ON;');
+
       await customStatement('PRAGMA journal_mode=WAL;');
+      await customStatement('PRAGMA foreign_keys = ON;');
     },
   );
 
@@ -133,12 +149,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<CachedVideo>> getVideosMentioningChannelInternal(String channelId) {
-    return (select(cachedVideos)..where((t) => t.mentionedChannelIds.like('%"$channelId"%'))) 
-    .get();
-    
+    return (select(cachedVideos)..where((t) => t.mentionedChannelIds.like('%"$channelId"%'))).get();
   }
 
-  
   Future<List<CachedVideo>> getVideosByChannelInternal(String channelId) {
     return (select(cachedVideos)..where((t) => t.channelId.equals(channelId))).get();
   }
@@ -249,6 +262,17 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> updateSentMentionTargetsInternal(String videoId, List<String> targetIds) {
     return (update(cachedVideos)..where((t) => t.videoId.equals(videoId))).write(CachedVideosCompanion(sentMentionTargetIds: Value(targetIds)));
+  }
+
+  Future<void> upsertChannelNames(List<ChannelNameCacheCompanion> entries) async {
+    await batch((batch) {
+      batch.insertAllOnConflictUpdate(channelNameCache, entries);
+    });
+  }
+
+  Future<String?> getChannelNameInternal(String channelId) async {
+    final result = await (select(channelNameCache)..where((t) => t.channelId.equals(channelId))).getSingleOrNull();
+    return result?.channelName;
   }
 }
 

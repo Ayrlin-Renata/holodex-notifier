@@ -25,4 +25,6 @@ abstract class ICacheService {
   Future<List<CachedVideo>> getDismissedScheduledVideos();
   Future<void> updateDismissalStatus(String videoId, bool isDismissed);
   Future<int> countScheduledVideos();
+  Future<void> upsertChannelNames(Map<String, String> channelNames);
+  Future<String?> getChannelName(String channelId);
 }

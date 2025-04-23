@@ -4,29 +4,14 @@ import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ({String title, String body}) formatNotificationContent({
   required NotificationFormatConfig config,
   required NotificationEventType eventType,
   required String channelName,
   required String videoTitle,
-  required String? videoType, 
-  required DateTime availableAt, 
-  required DateTime? notificationScheduledTime, 
+  required String? videoType,
+  required DateTime availableAt,
+  required DateTime? notificationScheduledTime,
   required String? mentionTargetChannelName,
   required List<String>? mentionedChannelNames,
   required ILoggingService logger,
@@ -35,19 +20,16 @@ import 'package:timeago/timeago.dart' as timeago;
   final format = config.formats[eventType] ?? NotificationFormatConfig.defaultConfig().formats[eventType]!;
   logger.trace("[FormatUtil] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
 
-  final DateTime now = DateTime.now(); 
-  
+  final DateTime now = DateTime.now();
+
   final DateTime localEventTime = availableAt.toLocal();
 
-  
   final DateTime? localNotificationTime = notificationScheduledTime?.toLocal();
 
   String timeToEventString = '';
   String timeToNotifString = '';
 
-  
   try {
-    
     timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
     logger.trace("[FormatUtil] Calculated timeToEventString: '$timeToEventString' (from local event time: $localEventTime)");
   } catch (e) {
@@ -55,7 +37,6 @@ import 'package:timeago/timeago.dart' as timeago;
     timeToEventString = (localEventTime.isBefore(now)) ? "just now" : "soon";
   }
 
-  
   if (localNotificationTime != null) {
     try {
       timeToNotifString = timeago.format(localNotificationTime, locale: 'en_short', allowFromNow: true);
@@ -65,17 +46,13 @@ import 'package:timeago/timeago.dart' as timeago;
       timeToNotifString = (localNotificationTime.isBefore(now)) ? "now" : "soon";
     }
   } else {
-    
     timeToNotifString = "now";
     logger.trace("[FormatUtil] timeToNotifString set to 'now' (immediate notification)");
   }
 
-  String mentionedChannelsDisplay = mentionTargetChannelName ??
-      (mentionedChannelNames != null && mentionedChannelNames.isNotEmpty
-          ? mentionedChannelNames.join(', ')
-          : '');
+  String mentionedChannelsDisplay =
+      mentionTargetChannelName ?? (mentionedChannelNames != null && mentionedChannelNames.isNotEmpty ? mentionedChannelNames.join(', ') : '');
 
-  
   final String mediaTime = DateFormat.jm().format(localEventTime);
   final String actualVideoType = videoType ?? 'media';
   final String mediaTypeUserFriendly = ((actualVideoType == 'placeholder') ? 'media' : actualVideoType);
@@ -95,9 +72,9 @@ import 'package:timeago/timeago.dart' as timeago;
     '{mediaTitle}': videoTitle,
     '{mediaType}': mediaTypeUserFriendly,
     '{mediaTypeCaps}': mediaTypeCaps,
-    '{mediaTime}': mediaTime, 
-    '{timeToEvent}': timeToEventString, 
-    '{timeToNotif}': timeToNotifString, 
+    '{mediaTime}': mediaTime,
+    '{timeToEvent}': timeToEventString,
+    '{timeToNotif}': timeToNotifString,
     '{mediaDateYMD}': dateYMD,
     '{mediaDateDMY}': dateDMY,
     '{mediaDateMDY}': dateMDY,

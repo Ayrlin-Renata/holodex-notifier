@@ -3,14 +3,14 @@
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:collection/collection.dart'; 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:holodex_notifier/application/state/channel_providers.dart'; 
+import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
-import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart'; 
+import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -55,66 +55,125 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
     );
   }
 
-  
-  Widget _buildInfoBar(ScheduledNotificationItem item, List<ChannelSubscriptionSetting> subscribedChannels, ThemeData theme, BuildContext context) {
+  Widget _buildInfoBar(ScheduledNotificationItem item, List<ChannelSubscriptionSetting> subscribedChannels, ThemeData theme, WidgetRef ref) {
     final videoData = item.videoData;
     final mentionedIds = videoData.mentionedChannelIds;
-    final dateFormat = DateFormat.jm(); 
+    final dateFormat = DateFormat.jm();
     final scheduledTimeLocal = item.scheduledTime.toLocal();
 
-    List<Widget> mentionChips = [];
-    if (mentionedIds.isNotEmpty) {
-      mentionChips.add(
-        Padding(
-          padding: const EdgeInsets.only(left: 8.0, right: 4.0), 
-          child: Icon(Icons.alternate_email, size: 14, color: theme.colorScheme.onSurfaceVariant),
-        ),
-      );
-      for (String id in mentionedIds) {
-        final sub = subscribedChannels.firstWhereOrNull((s) => s.channelId == id);
-        final bool isSubscribed = sub != null;
-        final String name = sub?.name ?? id; 
-
-        mentionChips.add(
-          Padding(
-            
-            padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 0.0),
-            child: Tooltip(
-              message: isSubscribed ? '$name (Subscribed)' : name,
-              child: Chip(
-                label: Text(name),
-                labelStyle: theme.textTheme.labelSmall?.copyWith(
-                  color: isSubscribed ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
-                  fontWeight: isSubscribed ? FontWeight.bold : FontWeight.normal,
-                ),
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0),
-                backgroundColor: isSubscribed ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7) : theme.colorScheme.surfaceContainerHighest,
-                side: BorderSide.none,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+    if (mentionedIds.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
+        margin: const EdgeInsets.only(bottom: 8.0),
+        constraints: const BoxConstraints(minHeight: 28),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 2.0,
+          runSpacing: 0.0,
+          children: [
+            const SizedBox(width: 4),
+            Icon(
+              item.type == NotificationEventType.reminder ? Icons.notifications_active_outlined : Icons.timer_outlined,
+              size: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 4),
+            Tooltip(
+              message:
+                  item.type == NotificationEventType.reminder
+                      ? 'Reminder scheduled for ${dateFormat.format(scheduledTimeLocal)}'
+                      : 'Live notification scheduled for ${dateFormat.format(scheduledTimeLocal)}',
+              child: Text(
+                dateFormat.format(scheduledTimeLocal),
+                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ),
+          ],
+        ),
+      );
+    }
+
+    List<Widget> mentionWidgets = [];
+    mentionWidgets.add(
+      Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 4.0),
+        child: Icon(Icons.alternate_email, size: 14, color: theme.colorScheme.onSurfaceVariant),
+      ),
+    );
+
+    for (String id in mentionedIds) {
+      final nameAsyncValue = ref.watch(channelNameProvider(id));
+      final sub = subscribedChannels.firstWhereOrNull((s) => s.channelId == id);
+      final bool isSubscribed = sub != null;
+
+      mentionWidgets.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 0.0),
+          child: nameAsyncValue.when(
+            loading:
+                () => Chip(
+                  label: Text(
+                    id.substring(0, min(id.length, 6)) + (id.length > 6 ? '...' : ''),
+                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  side: BorderSide.none,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+            error:
+                (err, stack) => Tooltip(
+                  message: 'Error loading name for $id',
+                  child: Chip(
+                    label: Text(id, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.error)),
+
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0),
+                    backgroundColor: theme.colorScheme.errorContainer,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                ),
+            data: (cachedName) {
+              final String name = cachedName ?? sub?.name ?? id;
+              return Tooltip(
+                message: isSubscribed ? '$name (Subscribed)' : name,
+                child: Chip(
+                  label: Text(name, overflow: TextOverflow.ellipsis),
+                  labelStyle: theme.textTheme.labelSmall?.copyWith(
+                    color: isSubscribed ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: isSubscribed ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 0),
+                  backgroundColor:
+                      isSubscribed ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7) : theme.colorScheme.surfaceContainerHighest,
+                  side: BorderSide.none,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              );
+            },
           ),
-        );
-      }
+        ),
+      );
     }
 
     return Container(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      margin: const EdgeInsets.only(bottom: 0.0), 
-      constraints: const BoxConstraints(minHeight: 28), 
+      padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
+      margin: const EdgeInsets.only(bottom: 8.0),
+      constraints: const BoxConstraints(minHeight: 28),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 2.0, 
-        runSpacing: 0.0, 
+        spacing: 2.0,
+        runSpacing: 2.0,
         children: [
-          const SizedBox(width: 4),
           Icon(
             item.type == NotificationEventType.reminder ? Icons.notifications_active_outlined : Icons.timer_outlined,
             size: 14,
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 4), 
+          const SizedBox(width: 4),
           Tooltip(
             message:
                 item.type == NotificationEventType.reminder
@@ -125,12 +184,11 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
               style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
-          if (mentionChips.isNotEmpty) ...mentionChips,
+          ...mentionWidgets,
         ],
       ),
     );
   }
-  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,9 +199,8 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
     final cacheService = ref.watch(cacheServiceProvider);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final isExpanded = useState(false);
-    
+
     final subscribedChannels = ref.watch(channelListProvider);
-    
 
     logger.trace(
       "[ScheduledNotificationsCard] Build. Filtered Async state: isRefreshing=${scheduledListAsync.isRefreshing}, isLoading=${scheduledListAsync.isLoading}, hasValue=${scheduledListAsync.hasValue}, hasError=${scheduledListAsync.hasError}",
@@ -195,7 +252,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                 }
 
                 final bool isPlaceholder = videoData.videoType == 'placeholder';
-                final String? sourceLink = null; 
+                final String? sourceLink = null;
                 final String youtubeLink = 'https://www.youtube.com/watch?v=${videoData.videoId}';
                 final String holodexLink = 'https://holodex.net/watch/${videoData.videoId}';
 
@@ -225,15 +282,12 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                     title: listTileContent,
                     children: <Widget>[
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 0, bottom: 16), 
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 0, bottom: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            
-                            _buildInfoBar(item, subscribedChannels, theme, context),
-                            
+                            _buildInfoBar(item, subscribedChannels, theme, ref),
 
-                            
                             if (imageUrl != null && imageUrl.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -273,7 +327,6 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                                 ),
                               ),
 
-                            
                             OverflowBar(
                               alignment: MainAxisAlignment.spaceEvenly,
                               children: [

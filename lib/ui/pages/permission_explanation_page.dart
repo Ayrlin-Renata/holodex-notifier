@@ -62,9 +62,7 @@ class PermissionExplanationPage extends HookConsumerWidget {
     }, [checkBatteryStatus]);
 
     useEffect(() {
-      logger.trace(
-        "[Permission Page Effect Lifecycle] State changed to: $appLifecycleState.",
-      );
+      logger.trace("[Permission Page Effect Lifecycle] State changed to: $appLifecycleState.");
       if (appLifecycleState == AppLifecycleState.resumed) {
         logger.info("[Permission Page Effect Lifecycle] App resumed. Calling checkBatteryStatus.");
         checkBatteryStatus();
@@ -198,7 +196,9 @@ class PermissionExplanationPage extends HookConsumerWidget {
                             await notificationService.requestBatteryOptimizationDisabled();
                             logger.info("[Permission Page Button] System settings requested for battery optimization.");
                           } else {
-                            logger.info("[Permission Page Button] Battery optimization already disabled or state reflects disabled. No request needed.");
+                            logger.info(
+                              "[Permission Page Button] Battery optimization already disabled or state reflects disabled. No request needed.",
+                            );
                           }
                         } else {
                           logger.info("[Permission Page Button] Skipping battery optimization step (Not Android).");
