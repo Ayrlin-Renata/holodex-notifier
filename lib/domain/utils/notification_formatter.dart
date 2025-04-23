@@ -4,29 +4,29 @@ import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-/// Formats notification title and body based on provided data and configuration.
-///
-/// Parameters:
-/// - `config`: The loaded NotificationFormatConfig.
-/// - `eventType`: The type of notification event (live, reminder, etc.).
-/// - `channelName`: Name of the video's primary channel.
-/// - `videoTitle`: Title of the video/media.
-/// - `videoType`: Type of the video ('stream', 'clip', 'placeholder').
-/// - `availableAt`: The actual time the event is available/scheduled (UTC).
-/// - `notificationScheduledTime`: The time this specific notification is scheduled to be shown (UTC). Can be null for immediate notifications.
-/// - `mentionTargetChannelName`: Name of the specific channel being mentioned (for Mention events).
-/// - `mentionedChannelNames`: List of names of all mentioned channels (used if mentionTargetChannelName is null).
-/// - `logger`: Logging service instance.
-///
-/// Returns a record containing the formatted title and body.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ({String title, String body}) formatNotificationContent({
   required NotificationFormatConfig config,
   required NotificationEventType eventType,
   required String channelName,
   required String videoTitle,
-  required String? videoType, // Can be null from CachedVideo
-  required DateTime availableAt, // The actual EVENT time (UTC)
-  required DateTime? notificationScheduledTime, // When the NOTIFICATION is shown (UTC)
+  required String? videoType, 
+  required DateTime availableAt, 
+  required DateTime? notificationScheduledTime, 
   required String? mentionTargetChannelName,
   required List<String>? mentionedChannelNames,
   required ILoggingService logger,
@@ -35,19 +35,19 @@ import 'package:timeago/timeago.dart' as timeago;
   final format = config.formats[eventType] ?? NotificationFormatConfig.defaultConfig().formats[eventType]!;
   logger.trace("[FormatUtil] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
 
-  final DateTime now = DateTime.now(); // Local time for comparison
-  // --- Use event time (availableAt) for event-related formatting ---
+  final DateTime now = DateTime.now(); 
+  
   final DateTime localEventTime = availableAt.toLocal();
 
-  // --- Use notification schedule time for time-to-notification formatting ---
+  
   final DateTime? localNotificationTime = notificationScheduledTime?.toLocal();
 
   String timeToEventString = '';
   String timeToNotifString = '';
 
-  // Calculate time relative to the EVENT time
+  
   try {
-    // Ensure timeago uses the local time equivalent of the event time
+    
     timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
     logger.trace("[FormatUtil] Calculated timeToEventString: '$timeToEventString' (from local event time: $localEventTime)");
   } catch (e) {
@@ -55,7 +55,7 @@ import 'package:timeago/timeago.dart' as timeago;
     timeToEventString = (localEventTime.isBefore(now)) ? "just now" : "soon";
   }
 
-  // Calculate time relative to the NOTIFICATION show time
+  
   if (localNotificationTime != null) {
     try {
       timeToNotifString = timeago.format(localNotificationTime, locale: 'en_short', allowFromNow: true);
@@ -65,7 +65,7 @@ import 'package:timeago/timeago.dart' as timeago;
       timeToNotifString = (localNotificationTime.isBefore(now)) ? "now" : "soon";
     }
   } else {
-    // Immediate notification
+    
     timeToNotifString = "now";
     logger.trace("[FormatUtil] timeToNotifString set to 'now' (immediate notification)");
   }
@@ -75,7 +75,7 @@ import 'package:timeago/timeago.dart' as timeago;
           ? mentionedChannelNames.join(', ')
           : '');
 
-  // --- Use localEventTime for displaying the event's time/date ---
+  
   final String mediaTime = DateFormat.jm().format(localEventTime);
   final String actualVideoType = videoType ?? 'media';
   final String mediaTypeUserFriendly = ((actualVideoType == 'placeholder') ? 'media' : actualVideoType);
@@ -95,9 +95,9 @@ import 'package:timeago/timeago.dart' as timeago;
     '{mediaTitle}': videoTitle,
     '{mediaType}': mediaTypeUserFriendly,
     '{mediaTypeCaps}': mediaTypeCaps,
-    '{mediaTime}': mediaTime, // Based on event time
-    '{timeToEvent}': timeToEventString, // Based on event time
-    '{timeToNotif}': timeToNotifString, // Based on notification show time
+    '{mediaTime}': mediaTime, 
+    '{timeToEvent}': timeToEventString, 
+    '{timeToNotif}': timeToNotifString, 
     '{mediaDateYMD}': dateYMD,
     '{mediaDateDMY}': dateDMY,
     '{mediaDateMDY}': dateMDY,

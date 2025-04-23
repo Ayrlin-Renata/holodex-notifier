@@ -23,9 +23,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
-// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\infrastructure\services\local_notification_service.dart
-// ... other imports ...
-import 'package:holodex_notifier/domain/utils/notification_formatter.dart'; // <-- NEW IMPORT
+
+
+import 'package:holodex_notifier/domain/utils/notification_formatter.dart'; 
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
@@ -48,16 +48,16 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
     return;
   }
 
-  // --- ADJUST PAYLOAD HANDLING FOR SOURCE URL (See Step 2) ---
+  
   String? videoId;
   String? sourceUrl;
   try {
     final decodedPayload = jsonDecode(payload) as Map<String, dynamic>;
     videoId = decodedPayload['videoId'] as String?;
-    sourceUrl = decodedPayload['sourceUrl'] as String?; // Will be null if not included
+    sourceUrl = decodedPayload['sourceUrl'] as String?; 
   } catch (e) {
     if (kDebugMode) print("Tap Handler: Failed to decode JSON payload '$payload'. Assuming plain video ID. Error: $e");
-    // Fallback: Treat the entire payload as the video ID if JSON decoding fails
+    
     videoId = payload;
     sourceUrl = null;
   }
@@ -68,18 +68,18 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
   }
   if (kDebugMode) print("Tap Handler: Decoded videoId=$videoId, sourceUrl=$sourceUrl");
 
-  // --- END ADJUST PAYLOAD HANDLING ---
+  
 
   String? urlToLaunch;
-  bool openApp = false; // Currently unused logic
+  bool openApp = false; 
 
   if (actionId == LocalNotificationService.actionOpenYoutube) {
     urlToLaunch = 'https://www.youtube.com/watch?v=$videoId';
   } else if (actionId == LocalNotificationService.actionOpenHolodex) {
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   } else if (actionId == LocalNotificationService.actionOpenSource) {
-    // --- USE SOURCE URL FROM PAYLOAD (See Step 2) ---
-    urlToLaunch = sourceUrl; // Use the sourceUrl parsed from payload
+    
+    urlToLaunch = sourceUrl; 
     if (urlToLaunch == null) {
       if (kDebugMode) {
         print(
@@ -88,18 +88,18 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
       }
       urlToLaunch = 'https://holodex.net/watch/$videoId';
     }
-    // --- END USE SOURCE URL ---
+    
   } else if (actionId == LocalNotificationService.actionOpenApp) {
     openApp = true;
-    // NOTE: This logic doesn't currently do anything if 'openApp' is true.
+    
     if (kDebugMode) {
       print("Tap Handler: App open action requested for video $videoId. (Currently does nothing)");
     }
-    // If you need to open the app, this is where you'd add logic,
-    // possibly using platform channels or another plugin if called from background.
-    return; // Exit early if only opening app.
+    
+    
+    return; 
   } else {
-    // Main body tap (actionId is null)
+    
     if (kDebugMode) {
       print("Tap Handler: Main notification tap. Defaulting to Holodex.");
     }
@@ -109,22 +109,22 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
   final uri = Uri.tryParse(urlToLaunch);
   if (uri != null) {
     try {
-      // --- CHOOSE LAUNCH METHOD BASED ON CONTEXT ---
+      
       if (isBackground && Platform.isAndroid) {
         if (kDebugMode) {
           print("Attempting to launch $uri from background using AndroidIntent...");
         }
         final AndroidIntent intent = AndroidIntent(
-          action: 'action_view', // Equivalent to Android's Intent.ACTION_VIEW
+          action: 'action_view', 
           data: uri.toString(),
-          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK], // Critical for background launch
+          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK], 
         );
         await intent.launch();
         if (kDebugMode) {
           print("AndroidIntent launch attempted for $uri.");
         }
       } else {
-        // Use url_launcher for foreground or non-Android platforms
+        
         if (kDebugMode) {
           print("Attempting to launch $uri using url_launcher...");
         }
@@ -139,19 +139,19 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
           }
         }
       }
-      // --- END CHOOSE LAUNCH METHOD ---
+      
     } catch (e, s) {
       if (kDebugMode) {
         print('Error launching URL $uri (isBackground: $isBackground): $e\n$s');
       }
-      // Optionally log error to logger service here
-      // _logger?.error('Error launching URL $uri', e, s); // Need to handle potential null logger in background isolate
+      
+      
     }
   } else {
     if (kDebugMode) {
       print('Failed to parse URI: $urlToLaunch');
     }
-    // _logger?.error('Failed to parse URI: $urlToLaunch');
+    
   }
 }
 
@@ -433,33 +433,33 @@ class LocalNotificationService implements INotificationService {
   Future<int?> showNotification(NotificationInstruction instruction) async {
     _logger.debug("[ShowNotification] Start instruction: ${instruction.eventType}, videoId: ${instruction.videoId}");
     try {
-      await _ensureConfigLoaded(); // Ensures _formatConfigInternal is loaded
-      final config = _formatConfigInternal!; // Use the loaded config
+      await _ensureConfigLoaded(); 
+      final config = _formatConfigInternal!; 
 
-      // --- CALL NEW FORMATTER ---
+      
       final formatted = formatNotificationContent(
         config: config,
         eventType: instruction.eventType,
         channelName: instruction.channelName,
         videoTitle: instruction.videoTitle,
         videoType: instruction.videoType,
-        availableAt: instruction.availableAt, // Event time (UTC)
-        notificationScheduledTime: null, // Immediate notification (UTC)
+        availableAt: instruction.availableAt, 
+        notificationScheduledTime: null, 
         mentionTargetChannelName: instruction.mentionTargetChannelName,
         mentionedChannelNames: instruction.mentionedChannelNames,
         logger: _logger,
       );
-      // --- END CALL ---
+      
 
-      // Null check removed as formatter throws if config is bad, returns empty strings otherwise
+      
       final title = formatted.title;
       final body = formatted.body;
-      // ... create payload (same as before) ...
+      
       final payloadMap = <String, String>{'videoId': instruction.videoId};
       if (instruction.videoType == 'placeholder' &&
           instruction.videoSourceLink != null &&
           instruction.videoSourceLink!.isNotEmpty) {
-        // We need the format config to decide if the source link action *will* be shown
+        
         final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
         if (format.showSourceLink) {
           payloadMap['sourceUrl'] = instruction.videoSourceLink!;
@@ -517,7 +517,7 @@ class LocalNotificationService implements INotificationService {
       final Priority priority = _getPriorityFromId(channelId);
       _logger.debug("[ShowNotification] Using channel: $channelId");
 
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!); // pass the specific format config
+      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!); 
 
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         channelId,
@@ -553,33 +553,33 @@ class LocalNotificationService implements INotificationService {
   Future<int?> scheduleNotification({required NotificationInstruction instruction, required DateTime scheduledTime}) async {
     _logger.debug("[ScheduleNotification] Start instruction: ${instruction.eventType}, videoId: ${instruction.videoId}, time: $scheduledTime");
     try {
-      await _ensureConfigLoaded(); // Ensures _formatConfigInternal is loaded
-      final config = _formatConfigInternal!; // Use the loaded config
+      await _ensureConfigLoaded(); 
+      final config = _formatConfigInternal!; 
 
-      // --- CALL NEW FORMATTER ---
+      
       final formatted = formatNotificationContent(
         config: config,
         eventType: instruction.eventType,
         channelName: instruction.channelName,
         videoTitle: instruction.videoTitle,
         videoType: instruction.videoType,
-        availableAt: instruction.availableAt, // Event time UTC
-        notificationScheduledTime: scheduledTime, // Notification show time UTC
+        availableAt: instruction.availableAt, 
+        notificationScheduledTime: scheduledTime, 
         mentionTargetChannelName: instruction.mentionTargetChannelName,
         mentionedChannelNames: instruction.mentionedChannelNames,
         logger: _logger,
       );
-      // --- END CALL ---
+      
 
-      // Null check removed
+      
       final title = formatted.title;
       final body = formatted.body;
-      // ... create payload (same as before) ...
+      
       final payloadMap = <String, String>{'videoId': instruction.videoId};
       if (instruction.videoType == 'placeholder' &&
           instruction.videoSourceLink != null &&
           instruction.videoSourceLink!.isNotEmpty) {
-        // We need the format config to decide if the source link action *will* be shown
+        
         final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
         if (format.showSourceLink) {
           payloadMap['sourceUrl'] = instruction.videoSourceLink!;
@@ -589,7 +589,7 @@ class LocalNotificationService implements INotificationService {
       final payload = jsonEncode(payloadMap);
       _logger.debug("[ScheduleNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
 
-      // ... rest of scheduleNotification (channel selection, details, plugin call) ...
+      
       final String channelId = _getChannelIdForScheduleInstruction(instruction);
       final String channelName = _getChannelNameFromId(channelId);
       final String channelDesc = _getChannelDescFromId(channelId);
@@ -597,7 +597,7 @@ class LocalNotificationService implements INotificationService {
       final Priority priority = _getPriorityFromId(channelId);
       _logger.debug("[ScheduleNotification] Using channel: $channelId");
 
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!); // Pass the correct format
+      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!); 
 
       AndroidBitmap<Object>? largeIconBitmap;
       if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
@@ -651,12 +651,12 @@ class LocalNotificationService implements INotificationService {
     }
   }
 
-  // _buildAndroidActions needs the specific format config
+  
   List<AndroidNotificationAction> _buildAndroidActions(NotificationInstruction instruction, NotificationFormat format) {
-    // ... existing logic ...
-    // Make sure you are using the passed `format` object correctly here
-    // to check format.showYoutubeLink, etc.
-    // ...
+    
+    
+    
+    
     final List<AndroidNotificationAction> actions = [];
     final String? sourceLink = instruction.videoSourceLink;
     final bool isPlaceholder = instruction.videoType == 'placeholder';

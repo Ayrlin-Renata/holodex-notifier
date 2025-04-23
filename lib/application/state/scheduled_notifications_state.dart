@@ -8,7 +8,7 @@ import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
-import 'package:holodex_notifier/domain/utils/notification_formatter.dart'; // <-- NEW IMPORT
+import 'package:holodex_notifier/domain/utils/notification_formatter.dart'; 
 
 class ScheduledNotificationItem {
   final CachedVideo videoData;
@@ -124,12 +124,12 @@ final notificationFormatConfigProvider = FutureProvider.autoDispose<Notification
 final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<List<ScheduledNotificationItem>>>((ref) {
   final baseAsyncValue = ref.watch(scheduledNotificationsProvider);
   final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
-  final channelSettingsList = ref.watch(channelListProvider); // Assumes this provides List<ChannelSubscriptionSetting>
+  final channelSettingsList = ref.watch(channelListProvider); 
   final allowedTypes = ref.watch(scheduledFilterTypeProvider);
   final selectedChannelId = ref.watch(scheduledFilterChannelProvider);
   final logger = ref.watch(loggingServiceProvider);
 
-  // ... existing loading/error checks ...
+  
   if (baseAsyncValue.hasError) return AsyncError(baseAsyncValue.error!, baseAsyncValue.stackTrace!);
   if (formatConfigAsyncValue.hasError) {
     logger.error("[FilteredScheduled] Error loading formatConfig: ${formatConfigAsyncValue.error}");
@@ -141,14 +141,14 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
   final NotificationFormatConfig? formatConfig = formatConfigAsyncValue.valueOrNull;
   if (formatConfig == null) {
     logger.error("[FilteredScheduled] Format config is null after loading check. Cannot format items.");
-    return const AsyncValue.data([]); // Return empty data if config failed unexpectedy
+    return const AsyncValue.data([]); 
   }
 
   final List<ScheduledNotificationItem> expandedItems = [];
   final DateTime now = DateTime.now();
 
   for (final video in videoList) {
-    // Helper to get mentioned channel names from the full list
+    
     List<String>? mentionedNames = video.mentionedChannelIds.isNotEmpty
       ? channelSettingsList
           .where((channel) => video.mentionedChannelIds.contains(channel.channelId))
@@ -156,43 +156,43 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
           .toList()
       : null;
     if (mentionedNames != null && mentionedNames.isEmpty) {
-        mentionedNames = null; // fallback if no names were found
+        mentionedNames = null; 
         logger.trace("[FilteredScheduled] (${video.videoId}) Could not find names for mentioned IDs ${video.mentionedChannelIds}, using null.");
     }
 
 
-    // Try converting CachedVideo dates to DateTime (UTC)
+    
     DateTime? eventTimeUtc = DateTime.tryParse(video.availableAt)?.toUtc();
     if (eventTimeUtc == null) {
        logger.error("[FilteredScheduled] (${video.videoId}) Failed to parse availableAt: ${video.availableAt}");
-       continue; // Skip video if essential time is missing
+       continue; 
      }
 
 
-    // Process Reminder
+    
     if (video.scheduledReminderNotificationId != null && video.scheduledReminderTime != null) {
       try {
-        final reminderTimeUtc = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!, isUtc: true); // Assume stored as UTC ms
-        if (reminderTimeUtc.isAfter(DateTime.now().toUtc())) { // Compare UTC now
-          // --- CALL NEW FORMATTER ---
+        final reminderTimeUtc = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!, isUtc: true); 
+        if (reminderTimeUtc.isAfter(DateTime.now().toUtc())) { 
+          
           final formatted = formatNotificationContent(
             config: formatConfig,
             eventType: NotificationEventType.reminder,
             channelName: video.channelName,
             videoTitle: video.videoTitle,
             videoType: video.videoType,
-            availableAt: eventTimeUtc,           // Actual event time (UTC)
-            notificationScheduledTime: reminderTimeUtc, // Notification show time (UTC)
-            mentionTargetChannelName: null,       // Reminders aren't typically targeted
+            availableAt: eventTimeUtc,           
+            notificationScheduledTime: reminderTimeUtc, 
+            mentionTargetChannelName: null,       
             mentionedChannelNames: mentionedNames,
             logger: logger,
           );
-          // --- END CALL ---
+          
           expandedItems.add(
             ScheduledNotificationItem(
               videoData: video,
               type: NotificationEventType.reminder,
-              scheduledTime: reminderTimeUtc.toLocal(), // Store local time for UI display
+              scheduledTime: reminderTimeUtc.toLocal(), 
               formattedTitle: formatted.title,
               formattedBody: formatted.body,
             ),
@@ -203,30 +203,30 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
       }
     }
 
-    // Process Live Schedule
+    
     if (video.scheduledLiveNotificationId != null && video.startScheduled != null) {
       try {
-        final liveTimeUtc = DateTime.tryParse(video.startScheduled!)?.toUtc(); // Parse startScheduled as UTC
-        if (liveTimeUtc != null && liveTimeUtc.isAfter(DateTime.now().toUtc())) { // Compare UTC now
-          // --- CALL NEW FORMATTER ---
+        final liveTimeUtc = DateTime.tryParse(video.startScheduled!)?.toUtc(); 
+        if (liveTimeUtc != null && liveTimeUtc.isAfter(DateTime.now().toUtc())) { 
+          
           final formatted = formatNotificationContent(
             config: formatConfig,
             eventType: NotificationEventType.live,
             channelName: video.channelName,
             videoTitle: video.videoTitle,
             videoType: video.videoType,
-            availableAt: liveTimeUtc, // For live, event *is* schedule time
-            notificationScheduledTime: liveTimeUtc, // Notification show time (UTC)
+            availableAt: liveTimeUtc, 
+            notificationScheduledTime: liveTimeUtc, 
             mentionTargetChannelName: null,
             mentionedChannelNames: mentionedNames,
             logger: logger,
           );
-          // --- END CALL ---
+          
           expandedItems.add(
             ScheduledNotificationItem(
               videoData: video,
               type: NotificationEventType.live,
-              scheduledTime: liveTimeUtc.toLocal(), // Store local time for UI display
+              scheduledTime: liveTimeUtc.toLocal(), 
               formattedTitle: formatted.title,
               formattedBody: formatted.body,
             ),
@@ -240,7 +240,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
     }
   }
 
-  // ... filtering and sorting logic remain the same ...
+  
     final List<ScheduledNotificationItem> filteredItems =
        expandedItems.where((item) {
          bool typeMatch = allowedTypes.contains(item.type);
@@ -250,7 +250,7 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
          return true;
        }).toList();
 
-   filteredItems.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)); // Sort by local time
+   filteredItems.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)); 
 
   return AsyncData(filteredItems);
 
@@ -260,19 +260,19 @@ final dismissedNotificationsNotifierProvider = StateNotifierProvider.autoDispose
   (ref) {
     final logger = ref.watch(loggingServiceProvider);
     final cacheService = ref.watch(cacheServiceProvider);
-    // Depend on the format config and channel list futures indirectly
-    // The notifier constructor now handles waiting/combining these.
+    
+    
     final formatConfigAsyncValue = ref.watch(notificationFormatConfigProvider);
-    final channelSettingsAsyncValue = ref.watch(channelListProvider.select((value) => AsyncValue.data(value))); // Ensure it's AsyncValue
+    final channelSettingsAsyncValue = ref.watch(channelListProvider.select((value) => AsyncValue.data(value))); 
 
     final notifier = DismissedNotificationsNotifier(logger, cacheService, formatConfigAsyncValue, channelSettingsAsyncValue);
-    // No need to manually load here, constructor handles it
+    
     return notifier;
   },
-  name: 'dismissedNotificationsNotifierProvider', // Update name here too
+  name: 'dismissedNotificationsNotifierProvider', 
 );
 
-// --- Refactor DismissedNotificationsNotifier ---
+
 class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<ScheduledNotificationItem>>> {
   final ILoggingService _logger;
   final ICacheService _cacheService;
@@ -347,22 +347,22 @@ class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<Sched
       DateTime? notificationScheduledTimeUtc;
       NotificationEventType? type;
 
-      // Determine the primary type and times for the dismissed item
+      
       if (video.scheduledReminderNotificationId != null && video.scheduledReminderTime != null) {
         type = NotificationEventType.reminder;
         notificationScheduledTimeUtc = DateTime.fromMillisecondsSinceEpoch(video.scheduledReminderTime!, isUtc: true);
-        // Reminder's event time is still availableAt
+        
         eventTimeUtc = DateTime.tryParse(video.availableAt)?.toUtc();
       } else if (video.scheduledLiveNotificationId != null && video.startScheduled != null) {
         type = NotificationEventType.live;
         notificationScheduledTimeUtc = DateTime.tryParse(video.startScheduled!)?.toUtc();
-        // Live's event time is the same as its scheduled time
+        
         eventTimeUtc = notificationScheduledTimeUtc;
       }
 
       if (type != null && notificationScheduledTimeUtc != null && eventTimeUtc != null) {
         try {
-          // Helper to get mentioned channel names
+          
           List<String>? mentionedNames = video.mentionedChannelIds.isNotEmpty
             ? channelSettingsList
                 .where((channel) => video.mentionedChannelIds.contains(channel.channelId))
@@ -371,26 +371,26 @@ class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<Sched
             : null;
            if (mentionedNames != null && mentionedNames.isEmpty) mentionedNames = null;
 
-          // --- CALL NEW FORMATTER ---
+          
           final formatted = formatNotificationContent(
              config: config,
              eventType: type,
              channelName: video.channelName,
              videoTitle: video.videoTitle,
              videoType: video.videoType,
-             availableAt: eventTimeUtc, // Pass actual event time (UTC)
-             notificationScheduledTime: notificationScheduledTimeUtc, // Pass notification show time (UTC)
-             mentionTargetChannelName: null, // Dismissed items unlikely targeted
+             availableAt: eventTimeUtc, 
+             notificationScheduledTime: notificationScheduledTimeUtc, 
+             mentionTargetChannelName: null, 
              mentionedChannelNames: mentionedNames,
              logger: logger,
            );
-          // --- END CALL ---
+          
 
           items.add(
             ScheduledNotificationItem(
               videoData: video,
               type: type,
-              scheduledTime: notificationScheduledTimeUtc.toLocal(), // Store local time for UI
+              scheduledTime: notificationScheduledTimeUtc.toLocal(), 
               formattedTitle: formatted.title,
               formattedBody: formatted.body,
             ),
@@ -400,15 +400,15 @@ class DismissedNotificationsNotifier extends StateNotifier<AsyncValue<List<Sched
         }
       } else {
          logger.warning("[DismissedNotifier:_formatItems] Could not determine valid type/time for dismissed video ${video.videoId}");
-         // Attempt to get availableAt even if schedule info is bad, for potential minimum display
+         
          eventTimeUtc = DateTime.tryParse(video.availableAt)?.toUtc();
          if (eventTimeUtc != null) {
-            // Could potentially add a fallback item with minimal info if needed
+            
          }
       }
     }
-     // Optionally sort dismissed items if needed, e.g., by dismissal time or original schedule time
-    // items.sort((a, b) => b.videoData.userDismissedAt?.compareTo(a.videoData.userDismissedAt ?? 0) ?? 0); // Sort by dismissal time desc
+     
+    
     return items;
   }
 
