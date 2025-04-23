@@ -145,7 +145,6 @@ final filteredScheduledNotificationsProvider = Provider.autoDispose<AsyncValue<L
   }
 
   final List<ScheduledNotificationItem> expandedItems = [];
-  final DateTime now = DateTime.now();
 
   for (final video in videoList) {
     

@@ -12,9 +12,7 @@ import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
 import 'package:holodex_notifier/domain/models/notification_format_config.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
-import 'package:intl/intl.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
@@ -192,14 +190,6 @@ class LocalNotificationService implements INotificationService {
 
   NotificationFormatConfig? _formatConfigInternal;
   bool _configLoadAttempted = false;
-
-  NotificationFormatConfig get _formatConfig {
-    if (_formatConfigInternal == null) {
-      _logger.fatal("_formatConfig accessed before successful load! Ensure loadFormatConfig() or _ensureConfigLoaded() is called first.");
-      throw StateError("Notification Format Config not loaded!");
-    }
-    return _formatConfigInternal!;
-  }
 
   Future<void> loadFormatConfig() async {
     if (_configLoadAttempted) {

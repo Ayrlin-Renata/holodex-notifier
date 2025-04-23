@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print, unused_local_variable
 
-import 'dart:isolate';
 import 'dart:ui';
 import 'dart:async';
 import 'dart:io';
@@ -294,7 +293,7 @@ Future<void> main() async {
       info.writeln('--- System Info ---');
       info.writeln('Error getting device info: $e');
     }
-    info.writeln('App Version: alpha-0.1.1');
+    info.writeln('App Version: alpha-0.1.2');
     info.writeln('-------------------');
     return info.toString();
   }

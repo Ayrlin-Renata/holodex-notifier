@@ -1,5 +1,5 @@
 {
-  "appVersion": "0.1.1-alpha",
+  "appVersion": "0.1.2-alpha",
   "defaultPollFrequencyMinutes": 10,
   "defaultReminderLeadTimeMinutes": 0,
   "maxLogFileSizeMB": 5,
