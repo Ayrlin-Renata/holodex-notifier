@@ -26,3 +26,7 @@ you do need a holodex account so you can get an API key tho.
 i’ve included a button to share logs and also my socials and email, so feel free to just drop the logs in my inbox with a quick description of the issue
 
 …or you could submit an issue on github, if you feel like it.
+
+# platforms
+
+Holodex Notifier is intended to be multiplatform, but is only available on Android via sideloading for now. if there's demand for it, i intend to put it on the Play store and potentially the App store. 
