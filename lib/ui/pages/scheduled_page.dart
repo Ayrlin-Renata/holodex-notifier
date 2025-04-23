@@ -268,7 +268,7 @@ class DismissedNotificationsArea extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    final dismissedItemsAsync = ref.watch(dismissedNotificationsProvider);
+    final dismissedItemsAsync = ref.watch(dismissedNotificationsNotifierProvider);
     final appController = ref.watch(appControllerProvider);
 
     return dismissedItemsAsync.when(
@@ -331,7 +331,7 @@ class DismissedNotificationsArea extends ConsumerWidget {
                           );
 
                           // ignore: unused_result
-                          ref.refresh(dismissedNotificationsProvider);
+                          ref.refresh(dismissedNotificationsNotifierProvider);
                         },
                       ),
                     ),

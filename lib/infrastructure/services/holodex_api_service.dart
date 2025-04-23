@@ -21,7 +21,7 @@ class HolodexApiService implements IApiService {
 
     try {
       _logger.debug('[API Service - Live] Requesting /users/live with channels: $channelsParam');
-      final response = await _dio.get('/users/live', queryParameters: {'channels': channelsParam});
+      final response = await _dio.get('/users/live', queryParameters: {'channels': channelsParam, 'includePlaceholder': true});
 
       if (response.statusCode == 200 && response.data is List) {
         final videosData = List<Map<String, dynamic>>.from(response.data);

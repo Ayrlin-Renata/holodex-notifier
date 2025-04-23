@@ -154,7 +154,7 @@ Future<void> onStart(ServiceInstance service) async {
     print("BG Isolate: ProviderContainer created.");
 
     final ILoggingService logger = _backgroundContainer!.read(loggingServiceProvider);
-    logger.info('BG Isolate: Logger Service obtained from Container.');
+    logger.info('BG Isolate: onStart() called, Logger Service obtained from Container.');
 
     try {
       tz.initializeTimeZones();
@@ -663,7 +663,6 @@ Future<void> _executePollCycle(ProviderContainer container) async {
           try {
             videoActions = await decisionService.determineActionsForVideoUpdate(
               fetchedVideo: fetchedVideo,
-
               cachedVideo: cachedVideo,
               allChannelSettings: channelSettingsList,
               mentionedForChannels: mentionedForChannels,

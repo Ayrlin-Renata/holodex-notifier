@@ -147,6 +147,10 @@ class LoggerService implements ILoggingServiceWithOutput {
     _logger.i('LoggerService: Getting all log file paths.');
     try {
       final logFilePaths = await _rotatingFileWriter.getAllLogFilePaths();
+
+      const alarmFilePath = '/storage/emulated/0/Documents/HolodexNotifier/logs/background_alarm_error_log.txt';
+      logFilePaths.add(alarmFilePath);
+
       if (logFilePaths.isEmpty) {
         _logger.w('LoggerService: No log file paths found.');
         return [];

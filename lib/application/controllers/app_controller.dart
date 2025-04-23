@@ -465,7 +465,7 @@ class AppController {
       }
 
       _ref.refresh(scheduledNotificationsProvider);
-      _ref.refresh(dismissedNotificationsProvider);
+      _ref.refresh(dismissedNotificationsNotifierProvider);
       _loggingService.debug("AppController: Refreshed providers after restore.");
     } catch (e, s) {
       _loggingService.error("AppController: Failed to restore notification for ${itemToRestore.videoData.videoId}", e, s);

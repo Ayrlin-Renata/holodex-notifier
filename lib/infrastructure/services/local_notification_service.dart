@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -15,11 +16,16 @@ import 'package:intl/intl.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
+// f:\Fun\Dev\holodex-notifier\holodex-notifier\holodex_notifier\lib\infrastructure\services\local_notification_service.dart
+// ... other imports ...
+import 'package:holodex_notifier/domain/utils/notification_formatter.dart'; // <-- NEW IMPORT
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
@@ -42,55 +48,110 @@ Future<void> _handleTap({required String? payload, required String? actionId, re
     return;
   }
 
-  final String videoId = payload;
+  // --- ADJUST PAYLOAD HANDLING FOR SOURCE URL (See Step 2) ---
+  String? videoId;
+  String? sourceUrl;
+  try {
+    final decodedPayload = jsonDecode(payload) as Map<String, dynamic>;
+    videoId = decodedPayload['videoId'] as String?;
+    sourceUrl = decodedPayload['sourceUrl'] as String?; // Will be null if not included
+  } catch (e) {
+    if (kDebugMode) print("Tap Handler: Failed to decode JSON payload '$payload'. Assuming plain video ID. Error: $e");
+    // Fallback: Treat the entire payload as the video ID if JSON decoding fails
+    videoId = payload;
+    sourceUrl = null;
+  }
+
+  if (videoId == null) {
+    if (kDebugMode) print("Tap Handler: videoId missing from payload '$payload'. Ignoring tap.");
+    return;
+  }
+  if (kDebugMode) print("Tap Handler: Decoded videoId=$videoId, sourceUrl=$sourceUrl");
+
+  // --- END ADJUST PAYLOAD HANDLING ---
+
   String? urlToLaunch;
-  bool openApp = false;
+  bool openApp = false; // Currently unused logic
 
   if (actionId == LocalNotificationService.actionOpenYoutube) {
     urlToLaunch = 'https://www.youtube.com/watch?v=$videoId';
   } else if (actionId == LocalNotificationService.actionOpenHolodex) {
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   } else if (actionId == LocalNotificationService.actionOpenSource) {
-    urlToLaunch = 'https://holodex.net/watch/$videoId';
-    if (kDebugMode) {
-      print("Tap Handler WARNING: action_open_source tapped. Source link not directly available in payload. Falling back to Holodex page: $videoId");
+    // --- USE SOURCE URL FROM PAYLOAD (See Step 2) ---
+    urlToLaunch = sourceUrl; // Use the sourceUrl parsed from payload
+    if (urlToLaunch == null) {
+      if (kDebugMode) {
+        print(
+          "Tap Handler WARNING: action_open_source tapped but sourceUrl not found in payload '$payload'. Falling back to Holodex for video $videoId",
+        );
+      }
+      urlToLaunch = 'https://holodex.net/watch/$videoId';
     }
+    // --- END USE SOURCE URL ---
   } else if (actionId == LocalNotificationService.actionOpenApp) {
     openApp = true;
+    // NOTE: This logic doesn't currently do anything if 'openApp' is true.
     if (kDebugMode) {
-      print("Tap Handler: App open action requested for video $videoId.");
+      print("Tap Handler: App open action requested for video $videoId. (Currently does nothing)");
     }
+    // If you need to open the app, this is where you'd add logic,
+    // possibly using platform channels or another plugin if called from background.
+    return; // Exit early if only opening app.
   } else {
+    // Main body tap (actionId is null)
     if (kDebugMode) {
       print("Tap Handler: Main notification tap. Defaulting to Holodex.");
     }
     urlToLaunch = 'https://holodex.net/watch/$videoId';
   }
 
-  if (urlToLaunch != null) {
-    final uri = Uri.tryParse(urlToLaunch);
-    if (uri != null) {
-      try {
+  final uri = Uri.tryParse(urlToLaunch);
+  if (uri != null) {
+    try {
+      // --- CHOOSE LAUNCH METHOD BASED ON CONTEXT ---
+      if (isBackground && Platform.isAndroid) {
+        if (kDebugMode) {
+          print("Attempting to launch $uri from background using AndroidIntent...");
+        }
+        final AndroidIntent intent = AndroidIntent(
+          action: 'action_view', // Equivalent to Android's Intent.ACTION_VIEW
+          data: uri.toString(),
+          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK], // Critical for background launch
+        );
+        await intent.launch();
+        if (kDebugMode) {
+          print("AndroidIntent launch attempted for $uri.");
+        }
+      } else {
+        // Use url_launcher for foreground or non-Android platforms
+        if (kDebugMode) {
+          print("Attempting to launch $uri using url_launcher...");
+        }
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
           if (kDebugMode) {
-            print("Launched URL: $uri");
+            print("Launched URL via url_launcher: $uri");
           }
         } else {
           if (kDebugMode) {
-            print('Could not launch URI: $uri');
+            print('url_launcher could not launch URI: $uri');
           }
         }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error launching URL $uri: $e');
-        }
       }
-    } else {
+      // --- END CHOOSE LAUNCH METHOD ---
+    } catch (e, s) {
       if (kDebugMode) {
-        print('Failed to parse URI: $urlToLaunch');
+        print('Error launching URL $uri (isBackground: $isBackground): $e\n$s');
       }
+      // Optionally log error to logger service here
+      // _logger?.error('Error launching URL $uri', e, s); // Need to handle potential null logger in background isolate
     }
+  } else {
+    if (kDebugMode) {
+      print('Failed to parse URI: $urlToLaunch');
+    }
+    // _logger?.error('Failed to parse URI: $urlToLaunch');
   }
 }
 
@@ -372,20 +433,40 @@ class LocalNotificationService implements INotificationService {
   Future<int?> showNotification(NotificationInstruction instruction) async {
     _logger.debug("[ShowNotification] Start instruction: ${instruction.eventType}, videoId: ${instruction.videoId}");
     try {
-      await _ensureConfigLoaded();
-      final config = _formatConfig;
-      final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
-      _logger.trace("[ShowNotification] Using format config: ${format.toJson()}");
+      await _ensureConfigLoaded(); // Ensures _formatConfigInternal is loaded
+      final config = _formatConfigInternal!; // Use the loaded config
 
-      final formatted = _formatNotification(instruction, format, scheduledTime: null);
-      if (formatted == null) {
-        _logger.warning("[ShowNotification] Formatting failed for event type ${instruction.eventType}. Aborting show.");
-        return null;
-      }
+      // --- CALL NEW FORMATTER ---
+      final formatted = formatNotificationContent(
+        config: config,
+        eventType: instruction.eventType,
+        channelName: instruction.channelName,
+        videoTitle: instruction.videoTitle,
+        videoType: instruction.videoType,
+        availableAt: instruction.availableAt, // Event time (UTC)
+        notificationScheduledTime: null, // Immediate notification (UTC)
+        mentionTargetChannelName: instruction.mentionTargetChannelName,
+        mentionedChannelNames: instruction.mentionedChannelNames,
+        logger: _logger,
+      );
+      // --- END CALL ---
 
+      // Null check removed as formatter throws if config is bad, returns empty strings otherwise
       final title = formatted.title;
       final body = formatted.body;
-      final payload = instruction.videoId;
+      // ... create payload (same as before) ...
+      final payloadMap = <String, String>{'videoId': instruction.videoId};
+      if (instruction.videoType == 'placeholder' &&
+          instruction.videoSourceLink != null &&
+          instruction.videoSourceLink!.isNotEmpty) {
+        // We need the format config to decide if the source link action *will* be shown
+        final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
+        if (format.showSourceLink) {
+          payloadMap['sourceUrl'] = instruction.videoSourceLink!;
+          _logger.trace("[ShowNotification] Adding sourceUrl to payload for ${instruction.videoId}");
+        }
+      }
+      final payload = jsonEncode(payloadMap);
       _logger.debug("[ShowNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
 
       AndroidBitmap<Object>? largeIconBitmap;
@@ -403,7 +484,7 @@ class LocalNotificationService implements INotificationService {
           _logger.error("[ShowNotification] Failed fetch avatar", e);
         }
       }
-      if (format.showThumbnail && instruction.videoThumbnailUrl != null && instruction.videoThumbnailUrl!.isNotEmpty) {
+      if (config.formats[instruction.eventType]!.showThumbnail && instruction.videoThumbnailUrl != null && instruction.videoThumbnailUrl!.isNotEmpty) {
         try {
           _logger.trace("[ShowNotification] Fetching thumbnail (showThumbnail=true): ${instruction.videoThumbnailUrl}");
           final thumbnailFile = await _cacheManager.getSingleFile(instruction.videoThumbnailUrl!);
@@ -425,7 +506,7 @@ class LocalNotificationService implements INotificationService {
         darwinAttachments = [DarwinNotificationAttachment(largeIconPath)];
         _logger.debug("[ShowNotification] Using avatar as Darwin attachment (thumbnail disabled or unavailable).");
       }
-      if (!format.showThumbnail) {
+      if (!config.formats[instruction.eventType]!.showThumbnail) {
         _logger.debug("[ShowNotification] Thumbnail display skipped (showThumbnail=false).");
       }
 
@@ -436,7 +517,7 @@ class LocalNotificationService implements INotificationService {
       final Priority priority = _getPriorityFromId(channelId);
       _logger.debug("[ShowNotification] Using channel: $channelId");
 
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
+      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!); // pass the specific format config
 
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         channelId,
@@ -472,22 +553,43 @@ class LocalNotificationService implements INotificationService {
   Future<int?> scheduleNotification({required NotificationInstruction instruction, required DateTime scheduledTime}) async {
     _logger.debug("[ScheduleNotification] Start instruction: ${instruction.eventType}, videoId: ${instruction.videoId}, time: $scheduledTime");
     try {
-      await _ensureConfigLoaded();
-      final config = _formatConfig;
-      final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
-      _logger.trace("[ScheduleNotification] Using format config: ${format.toJson()}");
+      await _ensureConfigLoaded(); // Ensures _formatConfigInternal is loaded
+      final config = _formatConfigInternal!; // Use the loaded config
 
-      final formatted = _formatNotification(instruction, format, scheduledTime: scheduledTime);
-      if (formatted == null) {
-        _logger.warning("[ScheduleNotification] Formatting failed for event type ${instruction.eventType}. Aborting schedule.");
-        return null;
-      }
+      // --- CALL NEW FORMATTER ---
+      final formatted = formatNotificationContent(
+        config: config,
+        eventType: instruction.eventType,
+        channelName: instruction.channelName,
+        videoTitle: instruction.videoTitle,
+        videoType: instruction.videoType,
+        availableAt: instruction.availableAt, // Event time UTC
+        notificationScheduledTime: scheduledTime, // Notification show time UTC
+        mentionTargetChannelName: instruction.mentionTargetChannelName,
+        mentionedChannelNames: instruction.mentionedChannelNames,
+        logger: _logger,
+      );
+      // --- END CALL ---
 
+      // Null check removed
       final title = formatted.title;
       final body = formatted.body;
-      final payload = instruction.videoId;
+      // ... create payload (same as before) ...
+      final payloadMap = <String, String>{'videoId': instruction.videoId};
+      if (instruction.videoType == 'placeholder' &&
+          instruction.videoSourceLink != null &&
+          instruction.videoSourceLink!.isNotEmpty) {
+        // We need the format config to decide if the source link action *will* be shown
+        final format = config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!;
+        if (format.showSourceLink) {
+          payloadMap['sourceUrl'] = instruction.videoSourceLink!;
+          _logger.trace("[ShowNotification] Adding sourceUrl to payload for ${instruction.videoId}");
+        }
+      }
+      final payload = jsonEncode(payloadMap);
       _logger.debug("[ScheduleNotification] Formatted: Title='$title', Body='$body', Payload='$payload'");
 
+      // ... rest of scheduleNotification (channel selection, details, plugin call) ...
       final String channelId = _getChannelIdForScheduleInstruction(instruction);
       final String channelName = _getChannelNameFromId(channelId);
       final String channelDesc = _getChannelDescFromId(channelId);
@@ -495,7 +597,7 @@ class LocalNotificationService implements INotificationService {
       final Priority priority = _getPriorityFromId(channelId);
       _logger.debug("[ScheduleNotification] Using channel: $channelId");
 
-      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, format);
+      final List<AndroidNotificationAction> androidActions = _buildAndroidActions(instruction, config.formats[instruction.eventType] ?? NotificationFormatConfig.defaultConfig().formats[instruction.eventType]!); // Pass the correct format
 
       AndroidBitmap<Object>? largeIconBitmap;
       if (instruction.channelAvatarUrl != null && instruction.channelAvatarUrl!.isNotEmpty) {
@@ -539,7 +641,6 @@ class LocalNotificationService implements INotificationService {
         payload: payload,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
-
       _logger.info(
         "[ScheduleNotification] Notification scheduled successfully. ID: $notificationId for $scheduledTZTime Type: ${instruction.eventType}",
       );
@@ -550,7 +651,12 @@ class LocalNotificationService implements INotificationService {
     }
   }
 
+  // _buildAndroidActions needs the specific format config
   List<AndroidNotificationAction> _buildAndroidActions(NotificationInstruction instruction, NotificationFormat format) {
+    // ... existing logic ...
+    // Make sure you are using the passed `format` object correctly here
+    // to check format.showYoutubeLink, etc.
+    // ...
     final List<AndroidNotificationAction> actions = [];
     final String? sourceLink = instruction.videoSourceLink;
     final bool isPlaceholder = instruction.videoType == 'placeholder';
@@ -576,97 +682,6 @@ class LocalNotificationService implements INotificationService {
     }
     _logger.debug("[BuildActions] Final actions for ${instruction.videoId}: ${actions.map((a) => a.id).join(', ')}");
     return actions;
-  }
-
-  ({String title, String body})? _formatNotification(
-    NotificationInstruction instruction,
-    NotificationFormat format, {
-    required DateTime? scheduledTime,
-  }) {
-     _logger.trace("[Format] Input: type=${instruction.eventType}, videoId=${instruction.videoId}, scheduledTime=$scheduledTime");
-     _logger.trace("[Format] Using format: Title='${format.titleTemplate}', Body='${format.bodyTemplate}'");
-
-     final DateTime now = DateTime.now();
-     final DateTime eventTime = instruction.availableAt;
-     final DateTime localEventTime = eventTime.toLocal(); 
-
-    String timeToEventString = '';
-    String timeToNotifString = '';
-
-    
-    
-    
-    String mentionedChannelsDisplay = instruction.mentionTargetChannelName ??
-        (instruction.mentionedChannelNames != null && instruction.mentionedChannelNames!.isNotEmpty
-            ? instruction.mentionedChannelNames!.join(', ')
-            : ''); 
-
-
-    try {
-        timeToEventString = timeago.format(localEventTime, locale: 'en_short', allowFromNow: true);
-        _logger.trace("[Format] Calculated timeToEventString: '$timeToEventString' (from $localEventTime)");
-    } catch (e) {
-      _logger.error("Error formatting timeToEventString using eventTime: $localEventTime", e);
-      timeToEventString = (localEventTime.isBefore(now)) ? "just now" : "soon";
-    }
-
-    if (scheduledTime != null) {
-        final DateTime localScheduledTime = scheduledTime.toLocal();
-        try {
-            timeToNotifString = timeago.format(localScheduledTime, locale: 'en_short', allowFromNow: true);
-           _logger.trace("[Format] Calculated timeToNotifString: '$timeToNotifString' (from $localScheduledTime)");
-        } catch (e) {
-           _logger.error("Error formatting timeToNotifString using scheduledTime: $localScheduledTime", e);
-            timeToNotifString = (localScheduledTime.isBefore(now)) ? "now" : "soon";
-       }
-    } else {
-        timeToNotifString = "now"; 
-       _logger.trace("[Format] timeToNotifString set to 'now' (immediate notification)");
-    }
-
-    final String mediaTime = DateFormat.jm().format(localEventTime);
-    String mediaType = instruction.videoType ?? 'Media';
-    if (mediaType.isEmpty || mediaType == 'placeholder') mediaType = 'Media';
-    String mediaTypeCaps = mediaType.toUpperCase();
-
-    String dateYMD = DateFormat('yyyy-MM-dd').format(localEventTime);
-    String dateDMY = DateFormat('dd-MM-yyyy').format(localEventTime);
-     String dateMDY = DateFormat('MM-dd-yyyy').format(localEventTime);
-    String dateMD = DateFormat('MM-dd').format(localEventTime);
-     String dateDM = DateFormat('dd-MM').format(localEventTime);
-     String dateAsia = '${DateFormat('yyyy').format(localEventTime)}年${DateFormat('MM').format(localEventTime)}月${DateFormat('dd').format(localEventTime)}日';
-
-
-    Map<String, String> replacements = {
-      '{channelName}': instruction.channelName,
-       
-      '{mentionedChannels}': mentionedChannelsDisplay,
-      '{mediaTitle}': instruction.videoTitle,
-      '{mediaType}': mediaType,
-      '{mediaTypeCaps}': mediaTypeCaps,
-      '{mediaTime}': mediaTime,
-      '{timeToEvent}': timeToEventString,
-      '{timeToNotif}': timeToNotifString,
-      '{mediaDateYMD}': dateYMD,
-       '{mediaDateDMY}': dateDMY,
-      '{mediaDateMDY}': dateMDY,
-       '{mediaDateMD}': dateMD,
-       '{mediaDateDM}': dateDM,
-      '{mediaDateAsia}': dateAsia,
-      '{newLine}': '\n',
-    };
-
-    String title = format.titleTemplate;
-    String body = format.bodyTemplate;
-
-
-    replacements.forEach((key, value) {
-      title = title.replaceAll(key, value);
-      body = body.replaceAll(key, value);
-    });
-
-     _logger.trace("[Format] Result -> Title='$title', Body='$body'");
-    return (title: title, body: body);
   }
 
   String _getChannelIdForInstruction(NotificationInstruction instruction) {
@@ -710,7 +725,7 @@ class LocalNotificationService implements INotificationService {
   }
 
   String _getChannelDescFromId(String id) {
-    if (id == scheduledChannelId) return scheduledChannelDesc;
+    if (id == scheduledChannelDesc) return scheduledChannelDesc;
     if (id == reminderChannelId) return reminderChannelDesc;
     return defaultChannelDesc;
   }

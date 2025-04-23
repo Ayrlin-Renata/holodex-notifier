@@ -275,7 +275,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                               }
 
                               ref.refresh(scheduledNotificationsProvider);
-                              ref.refresh(dismissedNotificationsProvider);
+                              ref.refresh(dismissedNotificationsNotifierProvider);
                               logger.info("Dismissal process COMPLETED for ${videoData.videoId}. Providers refreshed.");
                             } catch (e, s) {
                               logger.error("Error cancelling notification ID after dismiss: $notificationId", e, s);
@@ -286,7 +286,7 @@ class ScheduledNotificationsCard extends HookConsumerWidget {
                               }
 
                               ref.refresh(scheduledNotificationsProvider);
-                              ref.refresh(dismissedNotificationsProvider);
+                              ref.refresh(dismissedNotificationsNotifierProvider);
                             }
                           },
                           child: cardContent,

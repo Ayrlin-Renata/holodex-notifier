@@ -1,5 +1,7 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: avoid_print, unused_local_variable
 
+import 'dart:isolate';
+import 'dart:ui';
 import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -33,6 +35,9 @@ import 'package:dio/dio.dart';
 import 'package:holodex_notifier/ui/pages/permission_explanation_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 //TODO: implement config.json
 
@@ -97,6 +102,9 @@ final settingsServiceFutureProvider = FutureProvider<ISettingsService>((ref) asy
   final secureStorage = ref.watch(secureStorageServiceProvider);
   final service = SharedPrefsSettingsService(secureStorage, log);
   log.info("Initializing Settings Service...");
+
+  WidgetsFlutterBinding.ensureInitialized();
+
   await service.initialize();
   log.info("Settings Service initialized.");
   return service;
@@ -174,8 +182,59 @@ final appControllerProvider = Provider<AppController>((ref) {
   return AppController(ref, settingsService, loggingService, cacheService, notificationService, decisionService, actionHandler);
 }, name: 'appControllerProvider');
 
+@pragma('vm:entry-point')
+Future<void> periodicAlarmCallback() async {
+  print("[${DateTime.now()}] ALARM CALLBACK: Periodic alarm fired!");
+
+  try {
+    DartPluginRegistrant.ensureInitialized();
+
+    final service = FlutterBackgroundService();
+    bool isRunning = await service.isRunning();
+    print("[${DateTime.now()}] ALARM CALLBACK: Service running status before start: $isRunning");
+
+    if (!isRunning) {
+      print("[${DateTime.now()}] ALARM CALLBACK: Service is not running, attempting to start...");
+      try {
+        await service.startService();
+        print("[${DateTime.now()}] ALARM CALLBACK: service.startService() called successfully.");
+      } catch (e, s) {
+        print("[${DateTime.now()}] ALARM CALLBACK: Error calling startService(): $e\n$s");
+        await logAlarm(e, s);
+      }
+    } else {
+      print("[${DateTime.now()}] ALARM CALLBACK: Service already running, no action needed.");
+    }
+  } catch (e, s) {
+    print("[${DateTime.now()}] ALARM CALLBACK: FATAL Error during callback execution: $e\n$s");
+    await logAlarm(e, s);
+  }
+  print("[${DateTime.now()}] ALARM CALLBACK: Finished.");
+}
+
+Future<void> logAlarm(Object e, StackTrace s) async {
+  print("[${DateTime.now()}] ALARM CALLBACK: Attempting to write error to log file...");
+  try {
+    final directory = Directory('/storage/emulated/0/Documents/HolodexNotifier/logs');
+    await directory.create(recursive: true); // Create directory if it doesn't exist
+  
+    final file = File('${directory.path}/background_alarm_error_log.txt');
+    await file.writeAsString('[${DateTime.now()}] Error calling startService(): $e\n$s\n', mode: FileMode.append);
+    print("[${DateTime.now()}] ALARM CALLBACK: Error written to log file successfully.");
+  } catch (logError, logStack) {
+    print("[${DateTime.now()}] ALARM CALLBACK: Failed to write error to log file: $logError\n$logStack");
+  }
+}
+
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    print("MAIN: Initializing AndroidAlarmManager...");
+    await AndroidAlarmManager.initialize();
+    print("MAIN: AndroidAlarmManager Initialized.");
+  }
 
   final container = ProviderContainer();
   ILoggingService? logger;
@@ -253,6 +312,7 @@ Future<void> main() async {
     }
 
     logger.info("Waiting for Settings Service...");
+
     settingsService = await container.read(settingsServiceFutureProvider.future);
     logger.info("Settings Service resolved.");
 
@@ -269,12 +329,31 @@ Future<void> main() async {
 
     logger.info("All core async services initialized.");
 
+    if (Platform.isAndroid) {
+      const int alarmId = 0;
+
+      final alarmFrequencyMinutes = 10;
+      final alarmFrequency = Duration(minutes: alarmFrequencyMinutes);
+
+      logger.info("MAIN: Scheduling periodic alarm check (Every $alarmFrequencyMinutes minutes, ID: $alarmId)...");
+      await AndroidAlarmManager.periodic(
+        alarmFrequency,
+        alarmId,
+        periodicAlarmCallback,
+        exact: true,
+        wakeup: true,
+        rescheduleOnReboot: true,
+        allowWhileIdle: true,
+      );
+      logger.info("MAIN: Periodic alarm scheduled.");
+    }
+
     try {
-      logger.info("Starting background polling service...");
+      logger.info("Starting background polling service via startPolling()...");
       await backgroundService.startPolling();
       logger.info("Background polling service start initiated.");
     } catch (e, s) {
-      logger.error("Error starting background polling service", e, s);
+      logger.error("Error starting background polling service during main init", e, s);
     }
 
     await settingsService.setMainServicesReady(true);
@@ -307,6 +386,7 @@ Future<void> main() async {
   } catch (e, s) {
     final initLogger = logger ?? LoggerService();
     initLogger.fatal("--- FATAL ERROR during app initialization! ---", e, s);
+
     try {
       if (settingsService != null) {
         await settingsService.setMainServicesReady(false);
