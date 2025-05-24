@@ -46,3 +46,6 @@ app.*.map.json
 
 # keystore
 holodex-notifier.keystore
+
+# Firebase options
+lib/firebase_options.dart
