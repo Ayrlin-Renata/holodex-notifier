@@ -46,8 +46,6 @@ class NotificationFormatEditorNotifier extends StateNotifier<AsyncValue<Notifica
       await _settingsService.setNotificationFormatConfig(updatedConfig);
       _ref.read(loggingServiceProvider).info("Successfully saved updated NotificationFormatConfig.");
       _ref.invalidate(notificationFormatConfigProvider);
-
-      _ref.read(backgroundServiceProvider).notifySettingChanged('notificationFormat', null);
     } catch (e, s) {
       _ref.read(loggingServiceProvider).error("Failed to save updated NotificationFormatConfig", e, s);
       state = AsyncValue.error(e, s).copyWithPrevious(state) as AsyncValue<NotificationFormatConfig>;

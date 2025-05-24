@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "313399613631",
+    "project_id": "holodex-notifier",
+    "storage_bucket": "holodex-notifier.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313399613631:android:2efa17f54de43f08e20e0a",
+        "android_client_info": {
+          "package_name": "com.ayrlin.holodex_notifier"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5ZrfD5960Ujoogrn-hSB4VtWeJynoqZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

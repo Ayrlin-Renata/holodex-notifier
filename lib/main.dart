@@ -1,14 +1,15 @@
 // ignore_for_file: avoid_print, unused_local_variable
 
-import 'dart:ui';
 import 'dart:async';
 import 'dart:io';
+
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:holodex_notifier/application/controllers/app_controller.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/domain/interfaces/api_service.dart';
-import 'package:holodex_notifier/domain/interfaces/background_polling_service.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
 import 'package:holodex_notifier/domain/interfaces/connectivity_service.dart';
 import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
@@ -17,9 +18,10 @@ import 'package:holodex_notifier/domain/interfaces/notification_decision_service
 import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/secure_storage_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
+import 'package:holodex_notifier/firebase_options.dart';
 import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/infrastructure/network/dio_client.dart';
-import 'package:holodex_notifier/infrastructure/services/background_poller_service.dart';
+import 'package:holodex_notifier/infrastructure/services/background_fcm_handler.dart';
 import 'package:holodex_notifier/infrastructure/services/connectivity_plus_service.dart';
 import 'package:holodex_notifier/infrastructure/services/drift_cache_service.dart';
 import 'package:holodex_notifier/infrastructure/services/flutter_secure_storage_service.dart';
@@ -29,16 +31,11 @@ import 'package:holodex_notifier/infrastructure/services/logger_service.dart';
 import 'package:holodex_notifier/infrastructure/services/notification_action_handler.dart';
 import 'package:holodex_notifier/infrastructure/services/notification_decision_service.dart';
 import 'package:holodex_notifier/infrastructure/services/shared_prefs_settings_service.dart';
+import 'package:holodex_notifier/ui/pages/permission_explanation_page.dart';
 import 'package:holodex_notifier/ui/screens/home_screen.dart';
 import 'package:dio/dio.dart';
-import 'package:holodex_notifier/ui/pages/permission_explanation_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
-
-//TODO: implement config.json
 
 enum IsolateContext { main, background }
 
@@ -135,15 +132,6 @@ final notificationServiceFutureProvider = FutureProvider<INotificationService>((
   return service;
 }, name: 'notificationServiceFutureProvider');
 
-final backgroundServiceFutureProvider = FutureProvider<IBackgroundPollingService>((ref) async {
-  final log = ref.watch(loggingServiceProvider);
-  final service = BackgroundPollerService(log);
-  log.info("Initializing Background Service...");
-  await service.initialize();
-  log.info("Background Service initialized (Setup).");
-  return service;
-}, name: 'backgroundServiceFutureProvider');
-
 final settingsServiceProvider = Provider<ISettingsService>((ref) {
   return ref.watch(settingsServiceFutureProvider).requireValue;
 }, name: 'settingsServiceProvider');
@@ -151,10 +139,6 @@ final settingsServiceProvider = Provider<ISettingsService>((ref) {
 final notificationServiceProvider = Provider<INotificationService>((ref) {
   return ref.watch(notificationServiceFutureProvider).requireValue;
 }, name: 'notificationServiceProvider');
-
-final backgroundServiceProvider = Provider<IBackgroundPollingService>((ref) {
-  return ref.watch(backgroundServiceFutureProvider).requireValue;
-}, name: 'backgroundServiceProvider');
 
 final notificationDecisionServiceProvider = Provider<INotificationDecisionService>((ref) {
   final cacheService = ref.watch(cacheServiceProvider);
@@ -181,58 +165,48 @@ final appControllerProvider = Provider<AppController>((ref) {
   return AppController(ref, settingsService, loggingService, cacheService, notificationService, decisionService, actionHandler);
 }, name: 'appControllerProvider');
 
-@pragma('vm:entry-point')
-Future<void> periodicAlarmCallback() async {
-  print("[${DateTime.now()}] ALARM CALLBACK: Periodic alarm fired!");
-
-  try {
-    DartPluginRegistrant.ensureInitialized();
-
-    final service = FlutterBackgroundService();
-    bool isRunning = await service.isRunning();
-    print("[${DateTime.now()}] ALARM CALLBACK: Service running status before start: $isRunning");
-
-    if (!isRunning) {
-      print("[${DateTime.now()}] ALARM CALLBACK: Service is not running, attempting to start...");
-      try {
-        await service.startService();
-        print("[${DateTime.now()}] ALARM CALLBACK: service.startService() called successfully.");
-      } catch (e, s) {
-        print("[${DateTime.now()}] ALARM CALLBACK: Error calling startService(): $e\n$s");
-        await logAlarm(e, s);
-      }
-    } else {
-      print("[${DateTime.now()}] ALARM CALLBACK: Service already running, no action needed.");
-    }
-  } catch (e, s) {
-    print("[${DateTime.now()}] ALARM CALLBACK: FATAL Error during callback execution: $e\n$s");
-    await logAlarm(e, s);
-  }
-  print("[${DateTime.now()}] ALARM CALLBACK: Finished.");
-}
-
-Future<void> logAlarm(Object e, StackTrace s) async {
-  print("[${DateTime.now()}] ALARM CALLBACK: Attempting to write error to log file...");
-  try {
-    final directory = Directory('/storage/emulated/0/Documents/HolodexNotifier/logs');
-    await directory.create(recursive: true);
-
-    final file = File('${directory.path}/background_alarm_error_log.txt');
-    await file.writeAsString('[${DateTime.now()}] Error calling startService(): $e\n$s\n', mode: FileMode.append);
-    print("[${DateTime.now()}] ALARM CALLBACK: Error written to log file successfully.");
-  } catch (logError, logStack) {
-    print("[${DateTime.now()}] ALARM CALLBACK: Failed to write error to log file: $logError\n$logStack");
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Platform.isAndroid) {
-    print("MAIN: Initializing AndroidAlarmManager...");
-    await AndroidAlarmManager.initialize();
-    print("MAIN: AndroidAlarmManager Initialized.");
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  print('FCM Permission granted: ${settings.authorizationStatus}');
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    print('User granted permission to receive notifications.');
+  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    print('User granted provisional permission to receive notifications.');
+  } else {
+    print('User declined or did not grant permission to receive notifications.');
   }
+
+  String? fcmToken = await FirebaseMessaging.instance.getToken();
+  print('FCM Registration Token: $fcmToken');
+
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    print('FCM Token refreshed: $newToken');
+    // TODO: Send this new token to your server
+  });
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('FCM Foreground Message: got a message whilst in the foreground!');
+    print('FCM Foreground Message: Message data: ${message.data}');
+
+    if (message.notification != null) {
+      print('FCM Foreground Message: Message also contained a notification: ${message.notification}');
+    }
+    // TODO: appController.handleForegroundMessage(message);
+  });
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   final container = ProviderContainer();
   ILoggingService? logger;
@@ -321,38 +295,7 @@ Future<void> main() async {
     notificationService = await container.read(notificationServiceFutureProvider.future);
     logger.info("Notification Service resolved.");
 
-    logger.info("Waiting for Background Service...");
-    final backgroundService = await container.read(backgroundServiceFutureProvider.future);
-    logger.info("Background Service resolved.");
-
     logger.info("All core async services initialized.");
-
-    if (Platform.isAndroid) {
-      const int alarmId = 0;
-
-      final alarmFrequencyMinutes = 10;
-      final alarmFrequency = Duration(minutes: alarmFrequencyMinutes);
-
-      logger.info("MAIN: Scheduling periodic alarm check (Every $alarmFrequencyMinutes minutes, ID: $alarmId)...");
-      await AndroidAlarmManager.periodic(
-        alarmFrequency,
-        alarmId,
-        periodicAlarmCallback,
-        exact: true,
-        wakeup: true,
-        rescheduleOnReboot: true,
-        allowWhileIdle: true,
-      );
-      logger.info("MAIN: Periodic alarm scheduled.");
-    }
-
-    try {
-      logger.info("Starting background polling service via startPolling()...");
-      await backgroundService.startPolling();
-      logger.info("Background polling service start initiated.");
-    } catch (e, s) {
-      logger.error("Error starting background polling service during main init", e, s);
-    }
 
     await settingsService.setMainServicesReady(true);
     logger.info("Main Services Readiness Flag SET to TRUE.");
@@ -400,6 +343,21 @@ Future<void> main() async {
     }
     runApp(ErrorApp(error: e, stackTrace: s));
   }
+}
+
+void _manageFCMToken() async {
+  final messaging = FirebaseMessaging.instance;
+
+  String? token = await messaging.getToken();
+  if (token != null) {
+    print('FCM Token: $token');
+    // TODO: Send this token to your backend server
+  }
+
+  messaging.onTokenRefresh.listen((newToken) async {
+    print('FCM Token refreshed: $newToken');
+    // TODO: Send this new token to your backend server
+  });
 }
 
 class MyApp extends ConsumerWidget {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:holodex_notifier/application/state/background_service_state.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/main.dart';
 import 'package:holodex_notifier/ui/widgets/channel_management_card.dart';
@@ -21,24 +20,6 @@ class ChannelsPage extends HookConsumerWidget {
     final channelListNotifier = ref.read(channelListProvider.notifier);
 
     final isFirstLaunchAsync = ref.watch(isFirstLaunchProvider);
-    final statusAsync = ref.watch(backgroundServiceStatusStreamProvider);
-    useEffect(() {
-      if (manualPollTriggeredAt.value == null) {
-        return null;
-      }
-
-      statusAsync.whenData((status) {
-        final lastPoll = status.lastPollTime;
-        final triggerTime = manualPollTriggeredAt.value;
-
-        if (lastPoll != null && triggerTime != null && lastPoll.isAfter(triggerTime)) {
-          logger.info("[ChannelsPage Effect] Detected poll completion after manual trigger. Reloading channel state...");
-          channelListNotifier.reloadState();
-          manualPollTriggeredAt.value = null;
-        }
-      });
-      return null;
-    }, [statusAsync, manualPollTriggeredAt.value]);
 
     return RefreshIndicator(
       onRefresh: () async {

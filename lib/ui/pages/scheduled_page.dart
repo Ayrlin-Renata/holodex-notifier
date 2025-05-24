@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:holodex_notifier/application/state/background_service_state.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -25,41 +22,6 @@ class ScheduledPage extends HookConsumerWidget {
     final manualPollTriggeredAt = useState<DateTime?>(null);
 
     final scheduledNotifier = ref.read(scheduledNotificationsProvider.notifier);
-    final statusAsync = ref.watch(backgroundServiceStatusStreamProvider);
-
-    useEffect(() {
-      if (manualPollTriggeredAt.value == null) {
-        logger.trace("[ScheduledPage Effect] No active manual poll trigger time set. Skipping status check.");
-        return null;
-      }
-
-      statusAsync.whenData((status) {
-        logger.trace("[ScheduledPage Effect] Received status update. LastPoll=${status.lastPollTime}, TriggerTime=${manualPollTriggeredAt.value}");
-        final lastPoll = status.lastPollTime;
-        final triggerTime = manualPollTriggeredAt.value;
-
-        if (triggerTime != null && lastPoll != null && lastPoll.isAfter(triggerTime)) {
-          logger.info("[ScheduledPage Effect] Detected poll completion after manual trigger. Scheduling refresh and reset for post-frame.");
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (manualPollTriggeredAt.value == triggerTime) {
-              logger.trace("[ScheduledPage Effect - PostFrame] Refreshing scheduled notifications...");
-
-              unawaited(scheduledNotifier.fetchScheduledNotifications(isRefreshing: true));
-
-              logger.trace("[ScheduledPage Effect - PostFrame] Resetting trigger time...");
-              manualPollTriggeredAt.value = null;
-            } else {
-              logger.trace("[ScheduledPage Effect - PostFrame] Trigger time changed before post-frame callback executed. Skipping refresh/reset.");
-            }
-          });
-        } else {
-          logger.trace("[ScheduledPage Effect] Poll completion not detected or trigger time missing/stale.");
-        }
-      });
-
-      return null;
-    }, [statusAsync, manualPollTriggeredAt.value]);
 
     final theme = Theme.of(context);
 

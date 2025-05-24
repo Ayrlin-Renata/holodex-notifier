@@ -8,23 +8,24 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holodex_notifier/application/state/scheduled_notifications_state.dart';
 import 'package:holodex_notifier/domain/interfaces/cache_service.dart';
+import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_action_handler.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_decision_service.dart';
 import 'package:holodex_notifier/domain/interfaces/notification_service.dart';
 import 'package:holodex_notifier/domain/interfaces/settings_service.dart';
-import 'package:holodex_notifier/domain/interfaces/logging_service.dart';
 import 'package:holodex_notifier/domain/models/app_config.dart';
 import 'package:holodex_notifier/domain/models/channel.dart';
+import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
 import 'package:holodex_notifier/domain/models/notification_action.dart';
 import 'package:holodex_notifier/domain/models/notification_instruction.dart';
-import 'package:holodex_notifier/main.dart';
+import 'package:holodex_notifier/domain/models/video_full.dart';
+import 'package:holodex_notifier/infrastructure/data/database.dart';
 import 'package:holodex_notifier/application/state/settings_providers.dart';
 import 'package:holodex_notifier/application/state/channel_providers.dart';
-import 'package:holodex_notifier/domain/models/channel_subscription_setting.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AppController {
   final Ref _ref;
@@ -45,6 +46,45 @@ class AppController {
     this._decisionService,
     this._actionHandler,
   );
+
+  Future<void> handleForegroundMessage(RemoteMessage message) async {
+    _loggingService.info('AppController: Handling FCM foreground message.');
+    try {
+      final String? videoJsonString = message.data['video'];
+
+      if (videoJsonString != null) {
+        final Map<String, dynamic> parsedJson = jsonDecode(videoJsonString);
+        final VideoFull videoFullFromFcm = VideoFull.fromJson(parsedJson);
+        _loggingService.info('AppController: Successfully parsed VideoFull for foreground handling.');
+
+        CachedVideo? cachedVideo;
+        try {
+          cachedVideo = await _cacheService.getVideo(videoFullFromFcm.id);
+          _loggingService.debug('AppController: CachedVideo fetched: ${cachedVideo != null}');
+        } catch (cacheError, cacheStack) {
+          _loggingService.warning('AppController: Error fetching cached video.', cacheError, cacheStack);
+        }
+
+        final List<ChannelSubscriptionSetting> allChannelSettings = await _settingsService.getChannelSubscriptions();
+        final Set<String> mentionedForChannels = videoFullFromFcm.mentions?.map((m) => m.id).toSet() ?? {};
+
+        final actions = await _decisionService.determineActionsForVideoUpdate(
+          fetchedVideo: videoFullFromFcm,
+          cachedVideo: cachedVideo,
+          allChannelSettings: allChannelSettings,
+          mentionedForChannels: mentionedForChannels,
+        );
+        _loggingService.info('AppController: determined ${actions.length} actions for foreground message.');
+
+        await _actionHandler.executeActions(actions);
+        _loggingService.info('AppController: Executed actions for foreground message.');
+      } else {
+        _loggingService.error('AppController: No valid JSON payload found in FCM data for foreground message.');
+      }
+    } catch (e, s) {
+      _loggingService.error('AppController: Error handling FCM foreground message.', e, s);
+    }
+  }
 
   Future<void> addChannel(Channel channelData) async {
     _loggingService.info('AppController: Adding channel ${channelData.id}: ${channelData.name}');
@@ -175,10 +215,6 @@ class AppController {
       _loggingService.info('AppController: Updating global setting $settingKey to $value');
     }
     try {
-      bool shouldNotifyBackground = false;
-      String backgroundMessageKey = '';
-      dynamic backgroundMessageValue;
-
       Duration? oldReminderLeadTime;
 
       try {
@@ -215,13 +251,6 @@ class AppController {
         case 'delayNewMedia':
           await _settingsService.setDelayNewMedia(value as bool);
           break;
-        case 'pollFrequency':
-          final Duration durationValue = value as Duration;
-          await _settingsService.setPollFrequency(durationValue);
-          shouldNotifyBackground = true;
-          backgroundMessageKey = 'pollFrequency';
-          backgroundMessageValue = durationValue.inMinutes;
-          break;
         case 'reminderLeadTime':
           final Duration durationValue = value as Duration;
           await _settingsService.setReminderLeadTime(durationValue);
@@ -241,23 +270,6 @@ class AppController {
         await _actionHandler.executeActions(actions);
         _loggingService.info('AppController: Action handler executed ${actions.length} actions for global setting change.');
         _ref.refresh(scheduledNotificationsProvider);
-      }
-
-      if (shouldNotifyBackground) {
-        try {
-          final bgService = _ref.read(backgroundServiceProvider);
-          final isRunning = await bgService.isRunning();
-          if (isRunning) {
-            _loggingService.info(
-              'AppController: Notifying running background service of setting change: $backgroundMessageKey=$backgroundMessageValue',
-            );
-            FlutterBackgroundService().invoke('updateSetting', {'key': backgroundMessageKey, 'value': backgroundMessageValue});
-          } else {
-            _loggingService.info('AppController: Background service not running, setting [$backgroundMessageKey] will be read on next start.');
-          }
-        } catch (e, s) {
-          _loggingService.error('AppController: Error notifying background service of setting change [$backgroundMessageKey].', e, s);
-        }
       }
     } catch (e, s) {
       _loggingService.error('AppController: Failed to update global setting $settingKey', e, s);
